@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}ورود / ثبت‌نام{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="auth-icon">💎</span>
+            <h1 class="auth-title">ورود به عطر رایحه</h1>
+            <p class="auth-subtitle">شماره موبایل خود را وارد کنید</p>
+        </div>
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_phone_number">{{ form.phone_number.label }}</label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                <span class="form-error">{{ form.phone_number.errors.0 }}</span>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">دریافت کد تأیید</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

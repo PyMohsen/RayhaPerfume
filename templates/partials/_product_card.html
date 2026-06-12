@@ -1,0 +1,52 @@
+{% load static %}
+{% load product_tags %}
+<!-- Product Card -->
+<div class="product-card">
+    <a href="{{ perfume.get_absolute_url }}" class="product-card-link">
+        <div class="product-card-image">
+            {% if perfume.primary_image %}
+            <img src="{{ perfume.primary_image.image.url }}" 
+                 alt="{{ perfume.primary_image.alt_text|default:perfume.name }}" 
+                 loading="lazy">
+            {% else %}
+            <div class="product-card-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                </svg>
+            </div>
+            {% endif %}
+
+            {% if perfume.has_discount %}
+            <span class="product-badge discount-badge">{{ perfume.max_discount }}% تخفیف</span>
+            {% endif %}
+
+            {% if not perfume.is_available %}
+            <span class="product-badge unavailable-badge">ناموجود</span>
+            {% endif %}
+        </div>
+
+        <div class="product-card-body">
+            <h3 class="product-card-title">{{ perfume.name }}</h3>
+            <p class="product-card-brand">{{ perfume.brand }}</p>
+
+            {% if perfume.gender %}
+            <span class="product-card-gender">{{ perfume.gender.name }}</span>
+            {% endif %}
+
+            <div class="product-card-price">
+                {% if perfume.is_available %}
+                    {% with variant=perfume.variants.first %}
+                    {% if variant.discount_percent > 0 %}
+                    <span class="price-original">{{ variant.price|price_format }} تومان</span>
+                    <span class="price-final">{{ variant.final_price|price_format }} تومان</span>
+                    {% else %}
+                    <span class="price-final">{{ variant.price|price_format }} تومان</span>
+                    {% endif %}
+                    {% endwith %}
+                {% else %}
+                <span class="price-unavailable">ناموجود</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+</div>

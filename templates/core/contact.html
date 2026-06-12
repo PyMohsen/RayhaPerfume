@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}تماس با ما{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-header"><h1 class="page-title">تماس با ما</h1></div>
+    <div class="contact-layout">
+        <div class="contact-form-wrapper">
+            <form method="POST" class="contact-form">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<span class="form-error">{{ field.errors.0 }}</span>{% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">ارسال پیام</button>
+            </form>
+        </div>
+        <div class="contact-info">
+            {% if site_settings.phone %}<p>📞 {{ site_settings.phone }}</p>{% endif %}
+            {% if site_settings.email %}<p>📧 {{ site_settings.email }}</p>{% endif %}
+            {% if site_settings.address %}<p>📍 {{ site_settings.address }}</p>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

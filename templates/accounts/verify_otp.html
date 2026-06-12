@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}تأیید کد{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="auth-icon">🔐</span>
+            <h1 class="auth-title">تأیید شماره موبایل</h1>
+            <p class="auth-subtitle">کد ۵ رقمی ارسال شده به <strong dir="ltr">{{ phone_number }}</strong> را وارد کنید</p>
+        </div>
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.code }}
+                {% if form.code.errors %}
+                <span class="form-error">{{ form.code.errors.0 }}</span>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">تأیید</button>
+        </form>
+        <div class="auth-footer">
+            <p class="otp-timer" id="otp-timer">ارسال مجدد کد تا <span id="timer-count">120</span> ثانیه دیگر</p>
+            <a href="{% url 'accounts:resend_otp' %}" class="auth-link resend-link" id="resend-link" style="display:none;">ارسال مجدد کد</a>
+            <a href="{% url 'accounts:login' %}" class="auth-link">تغییر شماره موبایل</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/otp.js' %}"></script>
+{% endblock %}

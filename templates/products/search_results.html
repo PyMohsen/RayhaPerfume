@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+{% block title %}جستجو: {{ query }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="page-title">نتایج جستجو {% if query %}برای «{{ query }}»{% endif %}</h1>
+    {% if perfumes %}
+    <p class="results-count">{{ perfumes|length }} نتیجه یافت شد</p>
+    <div class="products-grid">
+        {% for perfume in perfumes %}
+        {% include 'partials/_product_card.html' with perfume=perfume %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>نتیجه‌ای یافت نشد</h3>
+        <p>عبارت دیگری جستجو کنید.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

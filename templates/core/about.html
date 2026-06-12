@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}درباره ما{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-header"><h1 class="page-title">درباره ما</h1></div>
+    <div class="content-box">{{ site_settings.about_text|linebreaks|default:"<p>فروشگاه اینترنتی عطر رایحه، عرضه‌کننده انواع عطرهای اصل با بهترین قیمت و کیفیت.</p>" }}</div>
+</div>
+{% endblock %}

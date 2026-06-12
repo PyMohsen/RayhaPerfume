@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}خانه{% endblock %}
+
+{% block content %}
+<!-- Hero Slider -->
+{% if sliders %}
+<section class="hero-slider" id="hero-slider">
+    <div class="slider-wrapper">
+        {% for slider in sliders %}
+        <div class="slide {% if forloop.first %}active{% endif %}">
+            <img src="{{ slider.image.url }}" alt="{{ slider.title }}" class="slide-image">
+            <div class="slide-content">
+                <h2 class="slide-title">{{ slider.title }}</h2>
+                {% if slider.subtitle %}
+                <p class="slide-subtitle">{{ slider.subtitle }}</p>
+                {% endif %}
+                {% if slider.link %}
+                <a href="{{ slider.link }}" class="btn btn-primary btn-lg">{{ slider.button_text }}</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if sliders|length > 1 %}
+    <button class="slider-btn slider-prev" id="slider-prev">❮</button>
+    <button class="slider-btn slider-next" id="slider-next">❯</button>
+    <div class="slider-dots" id="slider-dots">
+        {% for slider in sliders %}
+        <span class="dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+
+<!-- Categories by Gender -->
+{% if genders %}
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">👤</span>
+                دسته‌بندی بر اساس جنسیت
+            </h2>
+        </div>
+        <div class="category-cards">
+            {% for gender in genders %}
+            <a href="{% url 'products:by_gender' slug=gender.slug %}" class="category-card gender-card">
+                {% if gender.icon %}
+                <img src="{{ gender.icon.url }}" alt="{{ gender.name }}" class="category-card-icon">
+                {% else %}
+                <div class="category-card-icon-placeholder">👤</div>
+                {% endif %}
+                <h3 class="category-card-title">{{ gender.name }}</h3>
+                <span class="category-card-count">{{ gender.perfumes.count }} عطر</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Featured Products -->
+{% if featured_perfumes %}
+<section class="section section-featured">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">⭐</span>
+                محصولات ویژه
+            </h2>
+            <a href="{% url 'products:list' %}" class="section-link">مشاهده همه ←</a>
+        </div>
+        <div class="products-grid">
+            {% for perfume in featured_perfumes %}
+            {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories by Nature -->
+{% if natures %}
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">🌡️</span>
+                دسته‌بندی بر اساس طبع
+            </h2>
+        </div>
+        <div class="category-cards">
+            {% for nature in natures %}
+            <a href="{% url 'products:by_nature' slug=nature.slug %}" class="category-card nature-card">
+                {% if nature.icon %}
+                <img src="{{ nature.icon.url }}" alt="{{ nature.name }}" class="category-card-icon">
+                {% else %}
+                <div class="category-card-icon-placeholder">🌡️</div>
+                {% endif %}
+                <h3 class="category-card-title">{{ nature.name }}</h3>
+                <span class="category-card-count">{{ nature.perfumes.count }} عطر</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories by Taste -->
+{% if tastes %}
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">🍬</span>
+                دسته‌بندی بر اساس طعم
+            </h2>
+        </div>
+        <div class="category-cards">
+            {% for taste in tastes %}
+            <a href="{% url 'products:by_taste' slug=taste.slug %}" class="category-card taste-card">
+                {% if taste.icon %}
+                <img src="{{ taste.icon.url }}" alt="{{ taste.name }}" class="category-card-icon">
+                {% else %}
+                <div class="category-card-icon-placeholder">🍬</div>
+                {% endif %}
+                <h3 class="category-card-title">{{ taste.name }}</h3>
+                <span class="category-card-count">{{ taste.perfumes.count }} عطر</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Latest Products -->
+{% if latest_perfumes %}
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">🆕</span>
+                جدیدترین عطرها
+            </h2>
+            <a href="{% url 'products:list' %}?sort=newest" class="section-link">مشاهده همه ←</a>
+        </div>
+        <div class="products-grid">
+            {% for perfume in latest_perfumes %}
+            {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Discounted Products -->
+{% if discounted_perfumes %}
+<section class="section section-discount">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">🔥</span>
+                تخفیف‌های ویژه
+            </h2>
+            <a href="{% url 'products:list' %}?discount=1" class="section-link">مشاهده همه ←</a>
+        </div>
+        <div class="products-grid">
+            {% for perfume in discounted_perfumes %}
+            {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Popular Products -->
+{% if popular_perfumes %}
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="title-icon">🏆</span>
+                پرفروش‌ترین عطرها
+            </h2>
+            <a href="{% url 'products:list' %}?sort=popular" class="section-link">مشاهده همه ←</a>
+        </div>
+        <div class="products-grid">
+            {% for perfume in popular_perfumes %}
+            {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Features -->
+<section class="section section-features">
+    <div class="container">
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">🚚</div>
+                <h3 class="feature-title">ارسال سریع</h3>
+                <p class="feature-desc">ارسال به سراسر کشور</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">✅</div>
+                <h3 class="feature-title">ضمانت اصالت</h3>
+                <p class="feature-desc">تضمین اصل بودن تمام عطرها</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">💳</div>
+                <h3 class="feature-title">پرداخت امن</h3>
+                <p class="feature-desc">درگاه پرداخت معتبر زرین‌پال</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔄</div>
+                <h3 class="feature-title">بازگشت کالا</h3>
+                <p class="feature-desc">۷ روز ضمانت بازگشت</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Hero Slider
+(function() {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    const prevBtn = document.getElementById('slider-prev');
+    const nextBtn = document.getElementById('slider-next');
+    
+    if (slides.length <= 1) return;
+    
+    let current = 0;
+    
+    function showSlide(index) {
+        slides.forEach(s => s.classList.remove('active'));
+        dots.forEach(d => d.classList.remove('active'));
+        current = (index + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        dots[current].classList.add('active');
+    }
+    
+    if (prevBtn) prevBtn.addEventListener('click', () => showSlide(current - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => showSlide(current + 1));
+    dots.forEach(dot => {
+        dot.addEventListener('click', () => showSlide(parseInt(dot.dataset.index)));
+    });
+    
+    // Auto slide
+    setInterval(() => showSlide(current + 1), 5000);
+})();
+</script>
+{% endblock %}

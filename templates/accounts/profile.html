@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="profile-layout">
+        <aside class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.full_name }}">
+                    {% else %}
+                    <span class="avatar-placeholder">{{ user.get_full_name|first }}</span>
+                    {% endif %}
+                </div>
+                <h3 class="profile-name">{{ user.get_full_name }}</h3>
+                <p class="profile-phone" dir="ltr">{{ user.phone_number }}</p>
+            </div>
+            <nav class="profile-nav">
+                <a href="{% url 'accounts:profile' %}" class="profile-nav-link active">داشبورد</a>
+                <a href="{% url 'accounts:profile_update' %}" class="profile-nav-link">ویرایش اطلاعات</a>
+                <a href="{% url 'accounts:address_list' %}" class="profile-nav-link">آدرس‌ها</a>
+                <a href="{% url 'accounts:order_history' %}" class="profile-nav-link">سفارشات</a>
+                <a href="{% url 'products:wishlist' %}" class="profile-nav-link">علاقه‌مندی‌ها</a>
+                <a href="{% url 'accounts:logout' %}" class="profile-nav-link logout-link">خروج</a>
+            </nav>
+        </aside>
+        <div class="profile-content">
+            <h2 class="page-title">داشبورد</h2>
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <span class="dashboard-icon">📦</span>
+                    <span class="dashboard-value">{{ user.orders.count }}</span>
+                    <span class="dashboard-label">سفارش</span>
+                </div>
+                <div class="dashboard-card">
+                    <span class="dashboard-icon">❤️</span>
+                    <span class="dashboard-value">{{ user.wishlists.count }}</span>
+                    <span class="dashboard-label">علاقه‌مندی</span>
+                </div>
+                <div class="dashboard-card">
+                    <span class="dashboard-icon">📍</span>
+                    <span class="dashboard-value">{{ user.addresses.count }}</span>
+                    <span class="dashboard-label">آدرس</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

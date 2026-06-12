@@ -1,0 +1,353 @@
+/* ============================================
+   Responsive Stylesheet
+   ============================================ */
+
+/* ---------- Tablet (max 1024px) ---------- */
+@media (max-width: 1024px) {
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .product-detail {
+        gap: var(--space-6);
+    }
+
+    .shop-layout {
+        grid-template-columns: 220px 1fr;
+    }
+
+    .profile-layout {
+        grid-template-columns: 240px 1fr;
+    }
+}
+
+/* ---------- Small Tablet (max 768px) ---------- */
+@media (max-width: 768px) {
+    :root {
+        --header-height: 80px;
+    }
+
+    .top-bar-text {
+        font-size: var(--font-size-xs);
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+    }
+
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+    }
+
+    .hero-slider {
+        height: 350px;
+    }
+
+    .slide-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    /* Product Detail */
+    .product-detail {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+    }
+
+    .gallery-main-img {
+        height: 350px;
+    }
+
+    .product-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    /* Shop Layout */
+    .shop-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-sidebar {
+        position: static;
+        display: flex;
+        gap: var(--space-3);
+        overflow-x: auto;
+        padding-bottom: var(--space-3);
+    }
+
+    .filter-section {
+        min-width: 160px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+
+    /* Cart */
+    .cart-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cart-summary {
+        position: static;
+    }
+
+    .cart-item {
+        flex-wrap: wrap;
+    }
+
+    /* Checkout */
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-summary {
+        position: static;
+    }
+
+    /* Profile */
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-sidebar {
+        position: static;
+    }
+
+    .dashboard-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Orders */
+    .order-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .order-detail-sidebar {
+        position: static;
+    }
+
+    /* Footer */
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+    }
+
+    /* Contact */
+    .contact-layout {
+        grid-template-columns: 1fr;
+    }
+
+    /* Tabs */
+    .tabs-nav {
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--font-size-sm);
+        white-space: nowrap;
+    }
+
+    /* Mobile menu */
+    .mobile-menu-toggle {
+        display: flex;
+    }
+
+    .search-form {
+        display: none;
+    }
+
+    .navbar-actions .nav-action-text {
+        display: none;
+    }
+
+    .category-nav {
+        display: none;
+    }
+
+    .category-nav.open {
+        display: block;
+    }
+
+    .category-list {
+        flex-direction: column;
+    }
+
+    .category-link {
+        border-bottom: 1px solid var(--gray-100);
+        border-left: none;
+    }
+
+    .dropdown-menu {
+        position: static;
+        box-shadow: none;
+        border: none;
+        padding-right: var(--space-4);
+    }
+
+    .has-dropdown:hover .dropdown-menu {
+        animation: none;
+    }
+}
+
+/* ---------- Mobile (max 480px) ---------- */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 var(--space-4);
+    }
+
+    .hero-slider {
+        height: 250px;
+    }
+
+    .slide-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .slide-subtitle {
+        font-size: var(--font-size-sm);
+    }
+
+    .section {
+        padding: var(--space-10) 0;
+    }
+
+    .section-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-2);
+    }
+
+    .product-card-body {
+        padding: var(--space-3);
+    }
+
+    .product-card-title {
+        font-size: var(--font-size-sm);
+    }
+
+    .price-final {
+        font-size: var(--font-size-base);
+    }
+
+    .category-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .feature-icon {
+        font-size: 32px;
+    }
+
+    .feature-title {
+        font-size: var(--font-size-sm);
+    }
+
+    .gallery-main-img {
+        height: 280px;
+    }
+
+    .gallery-thumb {
+        width: 60px;
+        height: 60px;
+    }
+
+    .product-actions {
+        flex-wrap: wrap;
+    }
+
+    .btn-add-cart {
+        order: 3;
+        flex: 100%;
+    }
+
+    .cart-item {
+        position: relative;
+    }
+
+    .cart-item-image {
+        width: 70px;
+        height: 70px;
+    }
+
+    .dashboard-cards {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-2);
+    }
+
+    .dashboard-card {
+        padding: var(--space-4);
+    }
+
+    .dashboard-value {
+        font-size: var(--font-size-xl);
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-card {
+        padding: var(--space-6);
+    }
+
+    .auth-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .page-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .address-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .notes-grid {
+        gap: var(--space-3);
+    }
+
+    .note-item {
+        width: 100px;
+    }
+
+    .note-image,
+    .note-placeholder {
+        width: 80px;
+        height: 80px;
+    }
+
+    .season-cards {
+        flex-wrap: wrap;
+    }
+
+    .season-card {
+        min-width: 80px;
+        padding: var(--space-3);
+    }
+
+    .specs-table th,
+    .specs-table td {
+        padding: var(--space-3);
+        font-size: var(--font-size-xs);
+    }
+
+    .specs-table th {
+        width: 120px;
+    }
+}

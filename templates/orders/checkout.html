@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+{% load static %}
+{% block title %}تکمیل سفارش{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="page-title">تکمیل سفارش</h1>
+    <form method="POST" action="{% url 'orders:create' %}" class="checkout-layout">
+        {% csrf_token %}
+        <div class="checkout-main">
+            <!-- Address Selection -->
+            <div class="checkout-section">
+                <h3 class="checkout-section-title">آدرس تحویل</h3>
+                {% if addresses %}
+                <div class="address-select-grid">
+                    {% for address in addresses %}
+                    <label class="address-select-card {% if address.is_default %}selected{% endif %}">
+                        <input type="radio" name="address_id" value="{{ address.pk }}" {% if address.is_default %}checked{% endif %}>
+                        <h4>{{ address.title }}</h4>
+                        <p>{{ address.full_name }} - {{ address.phone_number }}</p>
+                        <p>{{ address.province }}، {{ address.city }}</p>
+                        <p>{{ address.address }}</p>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert">
+                    <p>آدرسی ثبت نشده. <a href="{% url 'accounts:address_create' %}">ابتدا آدرس اضافه کنید</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Note -->
+            <div class="checkout-section">
+                <h3 class="checkout-section-title">یادداشت سفارش (اختیاری)</h3>
+                <textarea name="note" class="form-input" rows="3" placeholder="توضیحات یا یادداشتی دارید؟"></textarea>
+            </div>
+
+            <!-- Coupon -->
+            <div class="checkout-section">
+                <h3 class="checkout-section-title">کد تخفیف</h3>
+                <div class="coupon-form">
+                    <input type="text" id="coupon-input" class="form-input" placeholder="کد تخفیف را وارد کنید" dir="ltr"
+                           {% if coupon %}value="{{ coupon.code }}" disabled{% endif %}>
+                    {% if coupon %}
+                    <button type="button" class="btn btn-danger" id="remove-coupon-btn">حذف</button>
+                    {% else %}
+                    <button type="button" class="btn btn-primary" id="apply-coupon-btn">اعمال</button>
+                    {% endif %}
+                </div>
+                <p class="coupon-message" id="coupon-message">
+                    {% if coupon %}✅ کد تخفیف {{ coupon.discount_percent }}% اعمال شده{% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="checkout-summary">
+            <h3 class="cart-summary-title">خلاصه سفارش</h3>
+            {% for item in items %}
+            <div class="checkout-item">
+                <span>{{ item.variant.perfume.name }} ({{ item.variant.get_size_display }}) × {{ item.quantity }}</span>
+                <span>{{ item.total_price|price_format }} تومان</span>
+            </div>
+            {% endfor %}
+            <hr>
+            <div class="cart-summary-row"><span>مبلغ کل:</span><span>{{ total_price|price_format }} تومان</span></div>
+            {% if discount_amount > 0 %}
+            <div class="cart-summary-row discount"><span>تخفیف محصولات:</span><span>{{ discount_amount|price_format }} تومان</span></div>
+            {% endif %}
+            {% if coupon_discount > 0 %}
+            <div class="cart-summary-row discount"><span>تخفیف کد:</span><span id="coupon-discount-amount">{{ coupon_discount|price_format }} تومان</span></div>
+            {% endif %}
+            <div class="cart-summary-row"><span>هزینه ارسال:</span><span>{% if shipping_cost > 0 %}{{ shipping_cost|price_format }} تومان{% else %}رایگان{% endif %}</span></div>
+            <div class="cart-summary-row total"><span>مبلغ قابل پرداخت:</span><span id="final-price">{{ final_price|price_format }} تومان</span></div>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" {% if not addresses %}disabled{% endif %}>پرداخت و ثبت سفارش</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/cart.js' %}"></script>
+{% endblock %}

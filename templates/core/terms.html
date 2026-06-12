@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}قوانین و مقررات{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-header"><h1 class="page-title">قوانین و مقررات</h1></div>
+    <div class="content-box">{{ site_settings.terms|linebreaks|default:"<p>قوانین و مقررات سایت بزودی درج خواهد شد.</p>" }}</div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+{% block title %}علاقه‌مندی‌ها{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="page-title">علاقه‌مندی‌های من</h1>
+    {% if wishlists %}
+    <div class="products-grid">
+        {% for wl in wishlists %}
+        {% include 'partials/_product_card.html' with perfume=wl.perfume %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>لیست علاقه‌مندی خالی است</h3>
+        <a href="{% url 'products:list' %}" class="btn btn-primary">مشاهده محصولات</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

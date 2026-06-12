@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="page-title">{{ title }}</h2>
+    <div class="form-card">
+        <form method="POST" class="address-form">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<span class="form-error">{{ field.errors.0 }}</span>{% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">ذخیره</button>
+            <a href="{% url 'accounts:address_list' %}" class="btn btn-outline">انصراف</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

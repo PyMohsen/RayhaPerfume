@@ -1,0 +1,48 @@
+{% load static %}
+{% load product_tags %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}فروشگاه اینترنتی عطر رایحه - خرید عطر اصل با بهترین قیمت{% endblock %}">
+    <title>{% block title %}عطر رایحه{% endblock %} | فروشگاه عطر</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% include 'partials/_header.html' %}
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container" id="messages-container">
+        {% for message in messages %}
+        <div class="message message-{{ message.tags }}" role="alert">
+            <span class="message-text">{{ message }}</span>
+            <button class="message-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% include 'partials/_footer.html' %}
+    
+    <!-- Scripts -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

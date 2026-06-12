@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}سوالات متداول{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-header"><h1 class="page-title">سوالات متداول</h1></div>
+    {% if faqs %}
+    <div class="faq-list">
+        {% for faq in faqs %}
+        <div class="faq-item">
+            <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                <span>{{ faq.question }}</span>
+                <span class="faq-arrow">▼</span>
+            </button>
+            <div class="faq-answer">{{ faq.answer|linebreaks }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

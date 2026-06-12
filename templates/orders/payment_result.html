@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+{% block title %}نتیجه پرداخت{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="payment-result {% if success %}success{% else %}failed{% endif %}">
+        {% if success %}
+        <div class="result-icon">✅</div>
+        <h1>پرداخت موفق</h1>
+        <p class="result-message">سفارش شما با موفقیت ثبت شد.</p>
+        <div class="result-details">
+            <p>شماره سفارش: <strong>{{ order.order_number }}</strong></p>
+            <p>شماره پیگیری: <strong>{{ order.ref_id }}</strong></p>
+            <p>مبلغ پرداختی: <strong>{{ order.final_price|price_format }} تومان</strong></p>
+        </div>
+        <a href="{% url 'orders:detail' order_number=order.order_number %}" class="btn btn-primary">مشاهده جزئیات سفارش</a>
+        {% else %}
+        <div class="result-icon">❌</div>
+        <h1>پرداخت ناموفق</h1>
+        <p class="result-message">متأسفانه پرداخت انجام نشد.</p>
+        <p>شماره سفارش: {{ order.order_number }}</p>
+        <a href="{% url 'cart:detail' %}" class="btn btn-primary">بازگشت به سبد خرید</a>
+        {% endif %}
+        <a href="{% url 'core:home' %}" class="btn btn-outline">بازگشت به صفحه اصلی</a>
+    </div>
+</div>
+{% endblock %}

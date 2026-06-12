@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}آدرس‌ها{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="page-title">آدرس‌های من</h2>
+    <a href="{% url 'accounts:address_create' %}" class="btn btn-primary mb-3">+ افزودن آدرس جدید</a>
+    {% if addresses %}
+    <div class="address-grid">
+        {% for address in addresses %}
+        <div class="address-card {% if address.is_default %}default{% endif %}">
+            {% if address.is_default %}<span class="address-badge">پیش‌فرض</span>{% endif %}
+            <h4 class="address-title">{{ address.title }}</h4>
+            <p><strong>{{ address.full_name }}</strong></p>
+            <p>{{ address.province }}، {{ address.city }}</p>
+            <p>{{ address.address }}</p>
+            <p dir="ltr">{{ address.postal_code }}</p>
+            <p dir="ltr">{{ address.phone_number }}</p>
+            <div class="address-actions">
+                <a href="{% url 'accounts:address_update' pk=address.pk %}" class="btn btn-sm btn-outline">ویرایش</a>
+                <form method="POST" action="{% url 'accounts:address_delete' pk=address.pk %}" class="d-inline" onsubmit="return confirm('آیا مطمئن هستید؟')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>هنوز آدرسی ثبت نکرده‌اید.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

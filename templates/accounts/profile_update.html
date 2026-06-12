@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}ویرایش پروفایل{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="profile-layout">
+        <aside class="profile-sidebar">
+            {% include 'accounts/profile.html' only %}
+        </aside>
+        <div class="profile-content">
+            <h2 class="page-title">ویرایش اطلاعات</h2>
+            <form method="POST" enctype="multipart/form-data" class="profile-form">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<span class="form-error">{{ field.errors.0 }}</span>{% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+{% block title %}سفارش {{ order.order_number }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="page-title">جزئیات سفارش {{ order.order_number }}</h1>
+    <div class="order-detail-layout">
+        <div class="order-detail-main">
+            <div class="order-status-bar">
+                <span class="order-status {{ order.status_display_class }}">{{ order.get_status_display }}</span>
+                {% if order.tracking_code %}<span>کد پیگیری پستی: {{ order.tracking_code }}</span>{% endif %}
+            </div>
+            <h3>آیتم‌های سفارش</h3>
+            <div class="order-items-list">
+                {% for item in items %}
+                <div class="order-item-row">
+                    <span class="order-item-name">{{ item.perfume_name }} ({{ item.size }} ml)</span>
+                    <span>{{ item.quantity }} عدد</span>
+                    <span>{{ item.final_price|price_format }} تومان</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="order-detail-sidebar">
+            <h3>اطلاعات تحویل</h3>
+            <p>{{ order.full_name }}</p>
+            <p>{{ order.province }}، {{ order.city }}</p>
+            <p>{{ order.address }}</p>
+            <p>کد پستی: {{ order.postal_code }}</p>
+            <p>تلفن: {{ order.phone_number }}</p>
+            <hr>
+            <div class="cart-summary-row"><span>مبلغ کل:</span><span>{{ order.total_price|price_format }} تومان</span></div>
+            {% if order.discount_amount > 0 %}
+            <div class="cart-summary-row discount"><span>تخفیف:</span><span>{{ order.discount_amount|price_format }} تومان</span></div>
+            {% endif %}
+            {% if order.coupon_discount > 0 %}
+            <div class="cart-summary-row discount"><span>کد تخفیف:</span><span>{{ order.coupon_discount|price_format }} تومان</span></div>
+            {% endif %}
+            <div class="cart-summary-row total"><span>مبلغ پرداختی:</span><span>{{ order.final_price|price_format }} تومان</span></div>
+            {% if order.ref_id %}<p class="ref-id">شماره پیگیری: {{ order.ref_id }}</p>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
