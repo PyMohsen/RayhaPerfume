@@ -30,7 +30,7 @@ def checkout_view(request):
     coupon = None
     if coupon_code:
         try:
-            coupon = CouponCode.objects.get(code=coupon_code)
+            coupon = CouponCode.objects.get(code__iexact=coupon_code)
             if coupon.is_valid:
                 coupon_discount = coupon.calculate_discount(cart.get_total_price())
         except CouponCode.DoesNotExist:
@@ -63,7 +63,7 @@ def apply_coupon_view(request):
     cart = Cart(request)
 
     try:
-        coupon = CouponCode.objects.get(code=code)
+        coupon = CouponCode.objects.get(code__iexact=code)
     except CouponCode.DoesNotExist:
         return JsonResponse({'error': 'کد تخفیف نامعتبر است'}, status=400)
 
@@ -133,7 +133,7 @@ def create_order_view(request):
     coupon_code = request.session.get('coupon_code')
     if coupon_code:
         try:
-            coupon = CouponCode.objects.get(code=coupon_code)
+            coupon = CouponCode.objects.get(code__iexact=coupon_code)
             if coupon.is_valid:
                 coupon_discount = coupon.calculate_discount(subtotal)
         except CouponCode.DoesNotExist:

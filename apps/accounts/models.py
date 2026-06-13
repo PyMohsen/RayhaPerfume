@@ -79,6 +79,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.full_name or self.phone_number
 
     def get_short_name(self):
+        if self.full_name:
+            return self.full_name.split(' ')[0]
         return self.phone_number
 
 
