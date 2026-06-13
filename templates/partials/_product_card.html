@@ -17,7 +17,7 @@
             {% endif %}
 
             {% if perfume.has_discount %}
-            <span class="product-badge discount-badge">{{ perfume.max_discount }}% تخفیف</span>
+            <span class="product-badge discount-badge">{{ perfume.max_discount|persian_digits }}% تخفیف</span>
             {% endif %}
 
             {% if not perfume.is_available %}

@@ -77,7 +77,7 @@
                         {% if variant.discount_percent > 0 %}
                         <span class="variant-original-price">{{ variant.price|price_format }}</span>
                         <span class="variant-price">{{ variant.final_price|price_format }} تومان</span>
-                        <span class="variant-discount">{{ variant.discount_percent }}%</span>
+                        <span class="variant-discount">{{ variant.discount_percent|persian_digits }}%</span>
                         {% else %}
                         <span class="variant-price">{{ variant.price|price_format }} تومان</span>
                         {% endif %}
@@ -298,10 +298,10 @@
                 <div class="gender-chart">
                     <div class="gender-bar">
                         <div class="gender-male" style="width: {{ perfume.gender_male_percent }}%;">
-                            <span>{{ perfume.gender_male_percent }}% مردانه</span>
+                            <span>{{ perfume.gender_male_percent|persian_digits }}% مردانه</span>
                         </div>
                         <div class="gender-female" style="width: {{ perfume.gender_female_percent }}%;">
-                            <span>{{ perfume.gender_female_percent }}% زنانه</span>
+                            <span>{{ perfume.gender_female_percent|persian_digits }}% زنانه</span>
                         </div>
                     </div>
                 </div>

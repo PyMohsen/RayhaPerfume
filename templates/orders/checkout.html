@@ -49,7 +49,7 @@
                     {% endif %}
                 </div>
                 <p class="coupon-message" id="coupon-message">
-                    {% if coupon %}✅ کد تخفیف {{ coupon.discount_percent }}% اعمال شده{% endif %}
+                    {% if coupon %}✅ کد تخفیف {{ coupon.discount_percent|persian_digits }}% اعمال شده{% endif %}
                 </p>
             </div>
         </div>
