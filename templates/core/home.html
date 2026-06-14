@@ -5,256 +5,156 @@
 {% block title %}خانه{% endblock %}
 
 {% block content %}
-<!-- Hero Slider -->
-{% if sliders %}
-<section class="hero-slider" id="hero-slider">
-    <div class="slider-wrapper">
-        {% for slider in sliders %}
-        <div class="slide {% if forloop.first %}active{% endif %}">
-            <img src="{{ slider.image.url }}" alt="{{ slider.title }}" class="slide-image">
-            <div class="slide-content">
-                <h2 class="slide-title">{{ slider.title }}</h2>
-                {% if slider.subtitle %}
-                <p class="slide-subtitle">{{ slider.subtitle }}</p>
-                {% endif %}
-                {% if slider.link %}
-                <a href="{{ slider.link }}" class="btn btn-primary btn-lg">{{ slider.button_text }}</a>
+<!-- Hero Section Grid -->
+<section class="container">
+    <div class="hero-banner-grid">
+        <!-- Main Banner (Left/Center) -->
+        <div class="hero-main-banner">
+            {% if sliders %}
+                {% with slider=sliders.first %}
+                <img src="{{ slider.image.url }}" alt="{{ slider.title }}">
+                <div class="hero-main-content">
+                    <h1 class="hero-main-title">{{ slider.title }}</h1>
+                    {% if slider.subtitle %}
+                    <p class="hero-main-subtitle">{{ slider.subtitle }}</p>
+                    {% endif %}
+                    {% if slider.link %}
+                    <a href="{{ slider.link }}" class="hero-main-btn">{{ slider.button_text|default:"خرید کن 🛒" }}</a>
+                    {% endif %}
+                </div>
+                {% endwith %}
+            {% else %}
+                <img src="{% static 'images/spring_banner.png' %}" alt="طراوت روزهای بهاری">
+                <div class="hero-main-content">
+                    <h1 class="hero-main-title">طراوت روزهای بهاری</h1>
+                    <p class="hero-main-subtitle">عطرهای خنک زنانه</p>
+                    <a href="/products/gender/%D8%B2%D9%86%D8%A7%D9%86%D9%87/" class="hero-main-btn">خرید کن 🛒</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Side Banners (Right) -->
+        <div class="hero-side-banners">
+            <a href="/products/" class="hero-side-banner">
+                <img src="{% static 'images/installment_banner.png' %}" alt="خرید قسطی با اسنپ پی">
+            </a>
+            <a href="{% url 'core:faq' %}" class="hero-side-banner">
+                <img src="{% static 'images/faq_banner.png' %}" alt="سوالات متداول">
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Shelf 1: Scent Recommendation (Overlapping Shelf) -->
+<section class="scent-recommendation-shelf">
+    <div class="container" style="position: relative;">
+        <div class="scent-recommendation-bg"></div>
+        <div class="scent-recommendation-content">
+            <div class="scent-recommendation-title-wrapper">
+                <h2 class="scent-recommendation-title">پیشنهاد<br>خوش رایحه</h2>
+                <span class="scent-recommendation-subtitle">تخفیف‌های ویژه</span>
+            </div>
+            <div class="scent-recommendation-grid">
+                {% if discounted_perfumes %}
+                    {% for perfume in discounted_perfumes|slice:":4" %}
+                        {% include 'partials/_product_card.html' with perfume=perfume %}
+                    {% endfor %}
+                {% else %}
+                    {% for perfume in featured_perfumes|slice:":4" %}
+                        {% include 'partials/_product_card.html' with perfume=perfume %}
+                    {% endfor %}
                 {% endif %}
             </div>
         </div>
-        {% endfor %}
-    </div>
-    {% if sliders|length > 1 %}
-    <button class="slider-btn slider-prev" id="slider-prev">❮</button>
-    <button class="slider-btn slider-next" id="slider-next">❯</button>
-    <div class="slider-dots" id="slider-dots">
-        {% for slider in sliders %}
-        <span class="dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
-        {% endfor %}
-    </div>
-    {% endif %}
-</section>
-{% endif %}
-
-<!-- Categories by Gender -->
-{% if genders %}
-<section class="section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">👤</span>
-                دسته‌بندی بر اساس جنسیت
-            </h2>
-        </div>
-        <div class="category-cards">
-            {% for gender in genders %}
-            <a href="{% url 'products:by_gender' slug=gender.slug %}" class="category-card gender-card">
-                {% if gender.icon %}
-                <img src="{{ gender.icon.url }}" alt="{{ gender.name }}" class="category-card-icon">
-                {% else %}
-                <div class="category-card-icon-placeholder">👤</div>
-                {% endif %}
-                <h3 class="category-card-title">{{ gender.name }}</h3>
-                <span class="category-card-count">{{ gender.perfumes.count }} عطر</span>
-            </a>
-            {% endfor %}
-        </div>
     </div>
 </section>
-{% endif %}
 
-<!-- Featured Products -->
-{% if featured_perfumes %}
-<section class="section section-featured">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">⭐</span>
-                محصولات ویژه
-            </h2>
-            <a href="{% url 'products:list' %}" class="section-link">مشاهده همه ←</a>
-        </div>
-        <div class="products-grid">
-            {% for perfume in featured_perfumes %}
-            {% include 'partials/_product_card.html' with perfume=perfume %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-<!-- Categories by Nature -->
-{% if natures %}
-<section class="section section-alt">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">🌡️</span>
-                دسته‌بندی بر اساس طبع
-            </h2>
-        </div>
-        <div class="category-cards">
-            {% for nature in natures %}
-            <a href="{% url 'products:by_nature' slug=nature.slug %}" class="category-card nature-card">
-                {% if nature.icon %}
-                <img src="{{ nature.icon.url }}" alt="{{ nature.name }}" class="category-card-icon">
-                {% else %}
-                <div class="category-card-icon-placeholder">🌡️</div>
-                {% endif %}
-                <h3 class="category-card-title">{{ nature.name }}</h3>
-                <span class="category-card-count">{{ nature.perfumes.count }} عطر</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-<!-- Categories by Taste -->
-{% if tastes %}
-<section class="section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">🍬</span>
-                دسته‌بندی بر اساس طعم
-            </h2>
-        </div>
-        <div class="category-cards">
-            {% for taste in tastes %}
-            <a href="{% url 'products:by_taste' slug=taste.slug %}" class="category-card taste-card">
-                {% if taste.icon %}
-                <img src="{{ taste.icon.url }}" alt="{{ taste.name }}" class="category-card-icon">
-                {% else %}
-                <div class="category-card-icon-placeholder">🍬</div>
-                {% endif %}
-                <h3 class="category-card-title">{{ taste.name }}</h3>
-                <span class="category-card-count">{{ taste.perfumes.count }} عطر</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-<!-- Latest Products -->
-{% if latest_perfumes %}
-<section class="section section-alt">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">🆕</span>
-                جدیدترین عطرها
-            </h2>
-            <a href="{% url 'products:list' %}?sort=newest" class="section-link">مشاهده همه ←</a>
+<!-- Shelf 2: Men's Perfumes (Themed Blue Shelf) -->
+<section class="container" style="margin-top: 4rem;">
+    <div class="themed-shelf themed-shelf-blue">
+        <div class="themed-shelf-header">
+            <div class="themed-shelf-title-container">
+                <div class="themed-shelf-badge">
+                    <span></span><span></span><span></span>
+                </div>
+                <h2 class="themed-shelf-title">عطرهای مردانه</h2>
+            </div>
+            <a href="/products/gender/%D9%85%D8%B1%D8%AF%D8%A7%D9%86%D9%87/" class="themed-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
             {% for perfume in latest_perfumes %}
-            {% include 'partials/_product_card.html' with perfume=perfume %}
+                {% if perfume.gender.slug == 'مردانه' or perfume.gender.slug == 'mordane' %}
+                    {% include 'partials/_product_card.html' with perfume=perfume %}
+                {% endif %}
             {% endfor %}
         </div>
     </div>
 </section>
-{% endif %}
 
-<!-- Discounted Products -->
-{% if discounted_perfumes %}
-<section class="section section-discount">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">🔥</span>
-                تخفیف‌های ویژه
-            </h2>
-            <a href="{% url 'products:list' %}?discount=1" class="section-link">مشاهده همه ←</a>
+<!-- Shelf 3: Women's Perfumes (Themed Cream Shelf) -->
+<section class="container" style="margin-top: 2rem;">
+    <div class="themed-shelf themed-shelf-cream">
+        <div class="themed-shelf-header">
+            <div class="themed-shelf-title-container">
+                <div class="themed-shelf-badge">
+                    <span></span><span></span><span></span>
+                </div>
+                <h2 class="themed-shelf-title">عطرهای زنانه</h2>
+            </div>
+            <a href="/products/gender/%D8%B2%D9%86%D8%A7%D9%86%D9%87/" class="themed-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
-            {% for perfume in discounted_perfumes %}
-            {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% for perfume in latest_perfumes %}
+                {% if perfume.gender.slug == 'زنانه' or perfume.gender.slug == 'zanane' %}
+                    {% include 'partials/_product_card.html' with perfume=perfume %}
+                {% endif %}
             {% endfor %}
         </div>
     </div>
 </section>
-{% endif %}
 
-<!-- Popular Products -->
+<!-- Shelf 4: Best Selling Perfumes (Dark Themed Shelf) -->
 {% if popular_perfumes %}
-<section class="section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">
-                <span class="title-icon">🏆</span>
-                پرفروش‌ترین عطرها
-            </h2>
-            <a href="{% url 'products:list' %}?sort=popular" class="section-link">مشاهده همه ←</a>
+<section class="container" style="margin-top: 2rem;">
+    <div class="dark-shelf">
+        <div class="dark-shelf-header">
+            <h2 class="dark-shelf-title">پرفروش‌ترین عطرهای سال</h2>
+            <a href="{% url 'products:list' %}?sort=popular" class="dark-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
-            {% for perfume in popular_perfumes %}
-            {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% for perfume in popular_perfumes|slice:":5" %}
+                {% include 'partials/_product_card.html' with perfume=perfume %}
             {% endfor %}
         </div>
     </div>
 </section>
 {% endif %}
 
-<!-- Features -->
-<section class="section section-features">
+<!-- Features (Elegantly Styled Footer Features) -->
+<section class="section section-features" style="background: var(--primary-gradient); color: var(--white); border-radius: 24px; margin: 4rem auto 0 auto; max-width: calc(100% - var(--space-8)); padding: var(--space-8) 0; box-shadow: var(--shadow-lg);">
     <div class="container">
         <div class="features-grid">
             <div class="feature-item">
-                <div class="feature-icon">🚚</div>
-                <h3 class="feature-title">ارسال سریع</h3>
-                <p class="feature-desc">ارسال به سراسر کشور</p>
+                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">🚚</div>
+                <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">ارسال سریع</h3>
+                <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">ارسال به سراسر کشور</p>
             </div>
             <div class="feature-item">
-                <div class="feature-icon">✅</div>
-                <h3 class="feature-title">ضمانت اصالت</h3>
-                <p class="feature-desc">تضمین اصل بودن تمام عطرها</p>
+                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">✅</div>
+                <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">ضمانت اصالت</h3>
+                <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">تضمین اصل بودن تمام عطرها</p>
             </div>
             <div class="feature-item">
-                <div class="feature-icon">💳</div>
-                <h3 class="feature-title">پرداخت امن</h3>
-                <p class="feature-desc">درگاه پرداخت معتبر زرین‌پال</p>
+                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">💳</div>
+                <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">پرداخت امن</h3>
+                <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">درگاه پرداخت معتبر زرین‌پال</p>
             </div>
             <div class="feature-item">
-                <div class="feature-icon">🔄</div>
-                <h3 class="feature-title">بازگشت کالا</h3>
-                <p class="feature-desc">۷ روز ضمانت بازگشت</p>
+                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">🔄</div>
+                <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">بازگشت کالا</h3>
+                <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">۷ روز ضمانت بازگشت</p>
             </div>
         </div>
     </div>
 </section>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-// Hero Slider
-(function() {
-    const slides = document.querySelectorAll('.slide');
-    const dots = document.querySelectorAll('.dot');
-    const prevBtn = document.getElementById('slider-prev');
-    const nextBtn = document.getElementById('slider-next');
-    
-    if (slides.length <= 1) return;
-    
-    let current = 0;
-    
-    function showSlide(index) {
-        slides.forEach(s => s.classList.remove('active'));
-        dots.forEach(d => d.classList.remove('active'));
-        current = (index + slides.length) % slides.length;
-        slides[current].classList.add('active');
-        dots[current].classList.add('active');
-    }
-    
-    if (prevBtn) prevBtn.addEventListener('click', () => showSlide(current - 1));
-    if (nextBtn) nextBtn.addEventListener('click', () => showSlide(current + 1));
-    dots.forEach(dot => {
-        dot.addEventListener('click', () => showSlide(parseInt(dot.dataset.index)));
-    });
-    
-    // Auto slide
-    setInterval(() => showSlide(current + 1), 5000);
-})();
-</script>
 {% endblock %}

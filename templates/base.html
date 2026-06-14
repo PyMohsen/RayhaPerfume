@@ -44,5 +44,19 @@
     <!-- Scripts -->
     <script src="{% static 'js/main.js' %}"></script>
     {% block extra_js %}{% endblock %}
+
+    <!-- Floating Chat Widget -->
+    <a href="javascript:void(0);" class="floating-chat-btn" id="floating-chat-btn" title="گفتگو با پشتیبانی" style="position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: #4a2c5a; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(74, 44, 90, 0.3); z-index: 9999; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </a>
+    <style>
+        .floating-chat-btn:hover {
+            transform: scale(1.08) rotate(5deg);
+            background: #693c7d !important;
+            box-shadow: 0 6px 20px rgba(74, 44, 90, 0.45) !important;
+        }
+    </style>
 </body>
 </html>

@@ -3,6 +3,7 @@
 <!-- Product Card -->
 <div class="product-card">
     <a href="{{ perfume.get_absolute_url }}" class="product-card-link">
+        <!-- Image & Badges -->
         <div class="product-card-image">
             {% if perfume.primary_image %}
             <img src="{{ perfume.primary_image.image.url }}" 
@@ -16,23 +17,37 @@
             </div>
             {% endif %}
 
+            <!-- Top Right Discount Badge -->
             {% if perfume.has_discount %}
-            <span class="product-badge discount-badge">{{ perfume.max_discount|persian_digits }}% تخفیف</span>
+            <span class="product-badge discount-badge">-{{ perfume.max_discount|persian_digits }}٪</span>
             {% endif %}
 
+            <!-- Out of Stock Badge -->
             {% if not perfume.is_available %}
             <span class="product-badge unavailable-badge">ناموجود</span>
             {% endif %}
+
+            <!-- Bottom Left Brand Stamp -->
+            <div class="product-brand-stamp" title="{{ perfume.brand }}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2a3 3 0 0 0-3 3v2a6 6 0 0 0-6 6v6a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-6a6 6 0 0 0-6-6V5a3 3 0 0 0-3-3zm1 5h-2V5a1 1 0 0 1 2 0v2z"/>
+                </svg>
+            </div>
         </div>
 
+        <!-- Body Details -->
         <div class="product-card-body">
+            <!-- Title -->
             <h3 class="product-card-title">{{ perfume.name }}</h3>
+            <!-- Brand -->
             <p class="product-card-brand">{{ perfume.brand }}</p>
 
-            {% if perfume.gender %}
-            <span class="product-card-gender">{{ perfume.gender.name }}</span>
-            {% endif %}
+            <!-- Star Ratings (Aesthetic) -->
+            <div class="product-rating">
+                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+            </div>
 
+            <!-- Price -->
             <div class="product-card-price">
                 {% if perfume.is_available %}
                     {% with variant=perfume.variants.first %}
@@ -47,6 +62,9 @@
                 <span class="price-unavailable">ناموجود</span>
                 {% endif %}
             </div>
+
+            <!-- View and Buy CTA Button -->
+            <span class="product-card-btn" style="display: block;">مشاهده و خرید</span>
         </div>
     </a>
 </div>

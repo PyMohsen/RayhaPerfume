@@ -173,28 +173,37 @@
         display: none;
     }
 
-    .category-nav.open {
-        display: block;
-    }
-
-    .category-list {
+    .nav-menu {
+        display: none;
         flex-direction: column;
+        width: 100%;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: var(--white);
+        border-top: 1px solid var(--gray-150);
+        box-shadow: 0 4px 15px rgba(74, 44, 90, 0.08);
+        padding: var(--space-4) var(--space-6);
+        gap: var(--space-3);
+        z-index: 999;
     }
 
-    .category-link {
+    .nav-menu.open {
+        display: flex;
+    }
+
+    .nav-menu-item {
+        width: 100%;
+    }
+
+    .nav-menu-link {
+        display: block;
+        padding: var(--space-2) 0;
         border-bottom: 1px solid var(--gray-100);
-        border-left: none;
     }
 
-    .dropdown-menu {
-        position: static;
-        box-shadow: none;
-        border: none;
-        padding-right: var(--space-4);
-    }
-
-    .has-dropdown:hover .dropdown-menu {
-        animation: none;
+    .nav-menu-item:last-child .nav-menu-link {
+        border-bottom: none;
     }
 }
 

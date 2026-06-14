@@ -32,3 +32,6 @@ desktop.ini
 htmlcov/
 .coverage
 .coverage.*
+
+# Images
+images/

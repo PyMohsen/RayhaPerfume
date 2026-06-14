@@ -8,11 +8,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Mobile Menu Toggle
     // ==========================================
     const menuToggle = document.getElementById('mobile-menu-toggle');
-    const categoryNav = document.querySelector('.category-nav');
+    const navMenu = document.querySelector('.nav-menu');
 
-    if (menuToggle && categoryNav) {
+    if (menuToggle && navMenu) {
         menuToggle.addEventListener('click', function () {
-            categoryNav.classList.toggle('open');
+            navMenu.classList.toggle('open');
             this.classList.toggle('active');
         });
     }
