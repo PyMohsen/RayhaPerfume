@@ -149,3 +149,9 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 ZARINPAL_MERCHANT_ID = os.getenv('ZARINPAL_MERCHANT_ID', 'test-merchant-id')
 ZARINPAL_SANDBOX = os.getenv('ZARINPAL_SANDBOX', 'True').lower() in ('true', '1', 'yes')
+
+
+# SMS.ir Settings
+SMS_API_KEY = os.getenv('SMS_API_KEY', '')
+SMS_TEMPLATE_ID = os.getenv('SMS_TEMPLATE_ID', '')
+

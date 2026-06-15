@@ -163,13 +163,61 @@ class OTPCode(models.Model):
     def send_otp(phone_number, code):
         """
         ارسال کد OTP از طریق SMS
-        فعلاً در console چاپ می‌شود
         """
+        import requests
+        import logging
+        from django.conf import settings
+
+        logger = logging.getLogger(__name__)
+
+        # چاپ در کنسول برای توسعه و دیباگ
         print(f'\n{"="*40}')
         print(f'  OTP Code for {phone_number}: {code}')
         print(f'{"="*40}\n')
-        # TODO: ادغام با سرویس SMS واقعی
-        # مثال: kavenegar.send(phone_number, code)
+
+        api_key = getattr(settings, 'SMS_API_KEY', '')
+        template_id = getattr(settings, 'SMS_TEMPLATE_ID', '')
+
+        if not api_key or not template_id or api_key == 'your-sms-api-key' or template_id == 'your-template-id':
+            logger.warning("تنظیمات SMS.ir (SMS_API_KEY یا SMS_TEMPLATE_ID) به درستی در فایل .env تعریف نشده است. پیامک ارسال نشد.")
+            return False
+
+        url = "https://api.sms.ir/v1/send/verify"
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "x-api-key": api_key,
+        }
+        payload = {
+            "mobile": phone_number,
+            "templateId": int(template_id),
+            "parameters": [
+                {
+                    "name": "Code",
+                    "value": str(code)
+                }
+            ]
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            response_json = response.json()
+            
+            if response.status_code == 200 and response_json.get('status') == 1:
+                logger.info(f"کد تأیید با موفقیت به شماره {phone_number} ارسال شد. شناسه پیام: {response_json.get('data')}")
+                return True
+            else:
+                logger.error(
+                    f"خطا در ارسال پیامک به شماره {phone_number}. "
+                    f"کد وضعیت: {response.status_code}، پاسخ سرور: {response_json}"
+                )
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"خطای شبکه در ارسال پیامک به شماره {phone_number}: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"خطای غیرمنتظره در ارسال پیامک به شماره {phone_number}: {str(e)}")
+            return False
 
 
 class UserAddress(models.Model):
