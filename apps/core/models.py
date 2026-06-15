@@ -5,7 +5,7 @@ class SiteSettings(models.Model):
     """تنظیمات کلی سایت (Singleton)"""
     site_name = models.CharField(
         max_length=200,
-        default='عطر رایحه',
+        default='عطر رایحا',
         verbose_name='نام سایت'
     )
     logo = models.ImageField(

@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
             name='SiteSettings',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('site_name', models.CharField(default='عطر رایحه', max_length=200, verbose_name='نام سایت')),
+                ('site_name', models.CharField(default='عطر رایحا', max_length=200, verbose_name='نام سایت')),
                 ('logo', models.ImageField(blank=True, null=True, upload_to='site/', verbose_name='لوگو')),
                 ('favicon', models.ImageField(blank=True, null=True, upload_to='site/', verbose_name='فاویکون')),
                 ('phone', models.CharField(blank=True, max_length=20, verbose_name='شماره تماس')),

@@ -180,7 +180,7 @@ def create_order_view(request):
 
     result = zarinpal.request_payment(
         amount=final_price,
-        description=f'سفارش {order.order_number} - فروشگاه عطر رایحه',
+        description=f'سفارش {order.order_number} - فروشگاه عطر رایحا',
         callback_url=callback_url,
         mobile=request.user.phone_number,
         email=request.user.email,

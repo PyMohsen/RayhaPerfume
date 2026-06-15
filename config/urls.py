@@ -4,8 +4,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 # تنظیمات پنل ادمین
-admin.site.site_header = 'پنل مدیریت عطر رایحه'
-admin.site.site_title = 'عطر رایحه'
+admin.site.site_header = 'پنل مدیریت عطر رایحا'
+admin.site.site_title = 'عطر رایحا'
 admin.site.index_title = 'مدیریت فروشگاه'
 
 urlpatterns = [
