@@ -35,3 +35,5 @@ htmlcov/
 
 # Images
 images/
+
+deploy_package/
