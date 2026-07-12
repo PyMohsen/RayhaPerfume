@@ -15,6 +15,7 @@ db.sqlite3-journal
 media/
 staticfiles/
 *.log
+admin/
 
 # IDE
 .vscode/
