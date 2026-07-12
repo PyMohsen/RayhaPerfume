@@ -127,12 +127,12 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 
-STATIC_URL = os.getenv('STATIC_URL', 'static/')
+STATIC_URL = 'static/'
 STATIC_ROOT = os.getenv('STATIC_ROOT', BASE_DIR / 'static')
 
 # Media files (User uploads)
 
-MEDIA_URL = os.getenv('MEDIA_URL', 'media/')
+MEDIA_URL = 'media/'
 MEDIA_ROOT = os.getenv('MEDIA_ROOT', BASE_DIR / 'media')
 
 
