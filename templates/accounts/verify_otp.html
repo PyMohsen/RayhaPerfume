@@ -9,7 +9,7 @@
             <h1 class="auth-title">تأیید شماره موبایل</h1>
             <p class="auth-subtitle">کد ۵ رقمی ارسال شده به <strong dir="ltr">{{ phone_number }}</strong> را وارد کنید</p>
         </div>
-        <form method="POST" class="auth-form">
+        <form method="POST" class="auth-form" id="otp-form">
             {% csrf_token %}
             <div class="form-group">
                 {{ form.code }}
@@ -19,6 +19,55 @@
             </div>
             <button type="submit" class="btn btn-primary btn-block">تأیید</button>
         </form>
+        
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // پیدا کردن دقیق فیلد ورودی بر اساس تگ input درون فرم
+            const otpInput = document.querySelector('#otp-form input[type="text"]') || document.querySelector('#otp-form input');
+            const form = document.getElementById('otp-form');
+        
+            if (otpInput) {
+                otpInput.setAttribute('autocomplete', 'one-time-code');
+                otpInput.setAttribute('inputmode', 'numeric');
+                otpInput.setAttribute('pattern', '[0-9]*');
+            }
+        
+            if ('OTPCredential' in window && otpInput && form) {
+                const ac = new AbortController();
+                
+                form.addEventListener('submit', (e) => {
+                    // اگر کاربر دستی دکمه را زد و فیلد خالی بود، جلوی ارسال گرفته شود
+                    if (!otpInput.value) {
+                        e.preventDefault();
+                        ac.abort();
+                    }
+                });
+        
+                navigator.credentials.get({
+                    otp: { transport: ['sms'] },
+                    signal: ac.signal
+                }).then(otp => {
+                    // ۱. مقداردهی فیلد اصلی
+                    otpInput.value = otp.code;
+                    
+                    // ۲. حذف موقت ویژگی required برای جلوگیری از خطای مرورگر هنگام ارسال خودکار
+                    otpInput.removeAttribute('required');
+                    
+                    // ۳. با زدن این کامندها به قالب می‌فهمانیم که فیلد پر شده است
+                    otpInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    otpInput.dispatchEvent(new Event('change', { bubbles: true }));
+        
+                    // ۴. ارسال مستقیم فرم از طریق متد پروتیپ برای دور زدن هرگونه تداخل اسکریپتی
+                    setTimeout(() => {
+                        HTMLFormElement.prototype.submit.call(form);
+                    }, 100);
+        
+                }).catch(err => {
+                    console.log('WebOTP failed or cancelled:', err);
+                });
+            }
+        });
+        </script>
         <div class="auth-footer">
             <p class="otp-timer" id="otp-timer">ارسال مجدد کد تا <span id="timer-count">120</span> ثانیه دیگر</p>
             <a href="{% url 'accounts:resend_otp' %}" class="auth-link resend-link" id="resend-link" style="display:none;">ارسال مجدد کد</a>

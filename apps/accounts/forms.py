@@ -39,6 +39,7 @@ class OTPVerifyForm(forms.Form):
             'dir': 'ltr',
             'autocomplete': 'one-time-code',
             'inputmode': 'numeric',
+            'pattern': '[0-9]*',
             'maxlength': '5',
         })
     )
