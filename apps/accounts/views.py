@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
 
 from .backends import PhoneBackend
 from .forms import (
@@ -51,6 +52,7 @@ def login_view(request):
     return render(request, 'accounts/login.html', {'form': form})
 
 
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def verify_otp_view(request):
     """صفحه تأیید کد OTP"""
     phone_number = request.session.get('otp_phone')
