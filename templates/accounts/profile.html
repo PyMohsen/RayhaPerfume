@@ -21,7 +21,10 @@
                 <a href="{% url 'accounts:address_list' %}" class="profile-nav-link">آدرس‌ها</a>
                 <a href="{% url 'accounts:order_history' %}" class="profile-nav-link">سفارشات</a>
                 <a href="{% url 'products:wishlist' %}" class="profile-nav-link">علاقه‌مندی‌ها</a>
-                <a href="{% url 'accounts:logout' %}" class="profile-nav-link logout-link">خروج</a>
+                <form method="POST" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="profile-nav-link logout-link" style="width:100%; text-align:right; cursor:pointer;">خروج</button>
+                </form>
             </nav>
         </aside>
         <div class="profile-content">
