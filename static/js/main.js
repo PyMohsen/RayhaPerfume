@@ -100,6 +100,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // CSRF Token Helper
     // ==========================================
     window.getCSRFToken = function () {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.getAttribute('content')) {
+            return meta.getAttribute('content');
+        }
         var cookie = document.cookie.split(';').find(function (c) {
             return c.trim().startsWith('csrftoken=');
         });

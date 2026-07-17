@@ -45,10 +45,22 @@ def login_view(request):
             # ذخیره شماره در session
             request.session['otp_phone'] = phone_number
 
+            # ذخیره آدرس بعدی در session
+            next_url = request.GET.get('next')
+            if next_url:
+                request.session['next'] = next_url
+
             messages.success(request, f'کد تأیید به شماره {phone_number} ارسال شد.')
             return redirect('accounts:verify_otp')
     else:
         form = PhoneLoginForm()
+        # در درخواست GET، اگر پارامتر next وجود داشت، در session ذخیره می‌کنیم
+        next_url = request.GET.get('next')
+        if next_url:
+            request.session['next'] = next_url
+        else:
+            # اگر پارامتر next وجود نداشت، next قبلی را پاک می‌کنیم تا تداخل ایجاد نشود
+            request.session.pop('next', None)
 
     return render(request, 'accounts/login.html', {'form': form})
 
@@ -99,7 +111,7 @@ def verify_otp_view(request):
                     else:
                         messages.success(request, f'خوش آمدید {user.full_name}!')
                         # بازگشت به صفحه قبلی یا صفحه اصلی
-                        next_url = request.session.get('next', 'core:home')
+                        next_url = request.session.pop('next', None) or 'core:home'
                         return redirect(next_url)
             else:
                 if otp and otp.is_expired:
@@ -146,7 +158,8 @@ def complete_profile_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'اطلاعات شما با موفقیت ذخیره شد.')
-            return redirect('core:home')
+            next_url = request.session.pop('next', None) or 'core:home'
+            return redirect(next_url)
     else:
         form = ProfileCompleteForm(instance=request.user)
 
