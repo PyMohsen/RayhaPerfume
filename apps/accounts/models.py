@@ -1,4 +1,4 @@
-import random
+import secrets
 from datetime import timedelta
 
 from django.conf import settings
@@ -127,7 +127,7 @@ class OTPCode(models.Model):
     @staticmethod
     def generate_code():
         """تولید کد ۵ رقمی تصادفی"""
-        return str(random.randint(10000, 99999))
+        return str(secrets.randbelow(90000) + 10000)
 
     @property
     def is_expired(self):

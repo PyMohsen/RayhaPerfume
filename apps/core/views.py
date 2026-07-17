@@ -1,13 +1,11 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
-from django.views.decorators.clickjacking import xframe_options_exempt
 
 from apps.products.models import Perfume, Gender, Nature, Taste, Season
 from .forms import ContactForm
 from .models import SiteSettings, Slider, FAQ
 
 
-@xframe_options_exempt
 def home_view(request):
     """صفحه اصلی"""
     sliders = Slider.objects.filter(is_active=True)

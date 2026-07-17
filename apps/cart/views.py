@@ -26,7 +26,15 @@ def cart_detail_view(request):
 def cart_add_view(request):
     """افزودن محصول به سبد خرید (AJAX)"""
     variant_id = request.POST.get('variant_id')
-    quantity = int(request.POST.get('quantity', 1))
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+        if quantity < 1:
+            raise ValueError
+    except (ValueError, TypeError):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'تعداد نامعتبر است'}, status=400)
+        messages.error(request, 'تعداد نامعتبر است.')
+        return redirect('cart:detail')
 
     variant = get_object_or_404(PerfumeVariant, id=variant_id)
 
@@ -91,7 +99,15 @@ def cart_remove_view(request):
 def cart_update_view(request):
     """به‌روزرسانی تعداد محصول (AJAX)"""
     variant_id = request.POST.get('variant_id')
-    quantity = int(request.POST.get('quantity', 1))
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+        if quantity < 1:
+            raise ValueError
+    except (ValueError, TypeError):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'تعداد نامعتبر است'}, status=400)
+        messages.error(request, 'تعداد نامعتبر است.')
+        return redirect('cart:detail')
 
     variant = get_object_or_404(PerfumeVariant, id=variant_id)
 

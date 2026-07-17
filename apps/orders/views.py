@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -191,7 +192,7 @@ def create_order_view(request):
         order.save()
         return redirect(result['url'])
     else:
-        messages.error(request, f'خطا در اتصال به درگاه: {result["error"]}')
+        messages.error(request, 'خطا در اتصال به درگاه پرداخت. لطفاً دوباره تلاش کنید.')
         order.status = Order.Status.CANCELLED
         order.save()
         return redirect('cart:detail')
@@ -226,11 +227,14 @@ def payment_callback_view(request):
             order.paid_at = timezone.now()
             order.save()
 
-            # کاهش موجودی
-            for item in order.items.all():
+            # کاهش موجودی (اتمیک برای جلوگیری از race condition)
+            for item in order.items.select_related('variant').all():
                 if item.variant:
-                    item.variant.stock -= item.quantity
-                    item.variant.save()
+                    PerfumeVariant = item.variant.__class__
+                    PerfumeVariant.objects.filter(
+                        pk=item.variant.pk,
+                        stock__gte=item.quantity,
+                    ).update(stock=F('stock') - item.quantity)
 
             # افزایش استفاده کد تخفیف
             if order.coupon:

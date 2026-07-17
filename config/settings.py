@@ -3,6 +3,7 @@ Django settings for Rayha Perfume project.
 """
 
 import os
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -19,7 +20,16 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['*'] # os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# هشدار برای SECRET_KEY ناامن در حالت production
+if not DEBUG and 'insecure' in SECRET_KEY:
+    warnings.warn(
+        'SECRET_KEY حاوی کلمه "insecure" است! '
+        'لطفاً یک کلید امن در فایل .env تنظیم کنید.',
+        UserWarning,
+        stacklevel=1,
+    )
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -147,6 +157,38 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 SESSION_SAVE_EVERY_REQUEST = True
+
+
+# ============================================
+# Security Settings
+# ============================================
+
+# محافظت در برابر Clickjacking
+X_FRAME_OPTIONS = 'DENY'
+
+# هدرهای امنیتی
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# تنظیمات امنیتی Cookie
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# تنظیمات امنیتی مخصوص Production (فقط وقتی DEBUG=False)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# محدودیت سایز آپلود فایل
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 # ZarinPal settings

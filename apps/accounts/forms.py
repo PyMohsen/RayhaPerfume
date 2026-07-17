@@ -86,9 +86,26 @@ class ProfileUpdateForm(forms.ModelForm):
             }),
             'avatar': forms.FileInput(attrs={
                 'class': 'form-input',
-                'accept': 'image/*',
+                'accept': 'image/jpeg,image/png,image/webp',
             }),
         }
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data.get('avatar')
+        if avatar:
+            # محدودیت سایز فایل (حداکثر ۲ مگابایت)
+            max_size = 2 * 1024 * 1024  # 2MB
+            if hasattr(avatar, 'size') and avatar.size > max_size:
+                raise forms.ValidationError(
+                    'حجم تصویر نباید بیشتر از ۲ مگابایت باشد.'
+                )
+            # محدودیت نوع فایل
+            allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+            if hasattr(avatar, 'content_type') and avatar.content_type not in allowed_types:
+                raise forms.ValidationError(
+                    'فقط فرمت‌های JPEG، PNG و WebP مجاز هستند.'
+                )
+        return avatar
 
 
 class UserAddressForm(forms.ModelForm):

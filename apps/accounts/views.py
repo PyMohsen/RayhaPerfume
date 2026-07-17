@@ -17,6 +17,7 @@ from .forms import (
 from .models import CustomUser, OTPCode, UserAddress
 
 
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
 def login_view(request):
     """صفحه ورود با شماره موبایل"""
     if request.user.is_authenticated:
@@ -114,6 +115,7 @@ def verify_otp_view(request):
     })
 
 
+@ratelimit(key='ip', rate='3/m', method='ALL', block=True)
 def resend_otp_view(request):
     """ارسال مجدد کد OTP"""
     phone_number = request.session.get('otp_phone')
@@ -240,6 +242,7 @@ def order_history_view(request):
     return render(request, 'accounts/order_history.html', {'orders': orders})
 
 
+@require_POST
 def logout_view(request):
     """خروج کاربر"""
     logout(request)
