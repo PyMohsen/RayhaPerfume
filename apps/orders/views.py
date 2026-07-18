@@ -110,7 +110,15 @@ def create_order_view(request):
     note = request.POST.get('note', '')
 
     # دریافت آدرس
-    address = get_object_or_404(UserAddress, pk=address_id, user=request.user)
+    if not address_id:
+        messages.error(request, 'لطفاً یک آدرس برای ارسال سفارش انتخاب کنید.')
+        return redirect('orders:checkout')
+
+    try:
+        address = UserAddress.objects.get(pk=address_id, user=request.user)
+    except (UserAddress.DoesNotExist, ValueError, TypeError):
+        messages.error(request, 'آدرس انتخاب شده معتبر نیست. لطفاً یک آدرس معتبر انتخاب کنید.')
+        return redirect('orders:checkout')
 
     # بررسی موجودی
     items = cart.get_items()

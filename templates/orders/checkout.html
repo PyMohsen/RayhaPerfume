@@ -80,4 +80,22 @@
 {% endblock %}
 {% block extra_js %}
 <script src="{% static 'js/cart.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.querySelector('form.checkout-layout');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                var addressSelected = form.querySelector('input[name="address_id"]:checked');
+                if (!addressSelected) {
+                    e.preventDefault();
+                    if (typeof showToast === 'function') {
+                        showToast('لطفاً یک آدرس برای ارسال سفارش انتخاب کنید.', 'error');
+                    } else {
+                        alert('لطفاً یک آدرس برای ارسال سفارش انتخاب کنید.');
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
