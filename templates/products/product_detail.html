@@ -14,7 +14,7 @@
         <a href="{% url 'products:list' %}">عطرها</a>
         <span class="breadcrumb-sep">›</span>
         {% if perfume.gender %}
-        <a href="{% url 'products:by_gender' slug=perfume.gender.slug %}">{{ perfume.gender.name }}</a>
+        <a href="{% url 'products:list' %}?gender={{ perfume.gender.slug }}">{{ perfume.gender.name }}</a>
         <span class="breadcrumb-sep">›</span>
         {% endif %}
         <span class="breadcrumb-current">{{ perfume.name }}</span>

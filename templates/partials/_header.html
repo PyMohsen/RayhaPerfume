@@ -70,14 +70,14 @@
                     </li>
                     {% for gender in nav_genders %}
                     <li class="nav-menu-item">
-                        <a href="{% url 'products:by_gender' slug=gender.slug %}" class="nav-menu-link">عطر و ادکلن {{ gender.name }}</a>
+                        <a href="{% url 'products:list' %}?gender={{ gender.slug }}" class="nav-menu-link">عطر و ادکلن {{ gender.name }}</a>
                     </li>
                     {% empty %}
                     <li class="nav-menu-item">
-                        <a href="/products/gender/mordane/" class="nav-menu-link">عطر و ادکلن مردانه</a>
+                        <a href="{% url 'products:list' %}?gender=مردانه" class="nav-menu-link">عطر و ادکلن مردانه</a>
                     </li>
                     <li class="nav-menu-item">
-                        <a href="/products/gender/zanane/" class="nav-menu-link">عطر و ادکلن زنانه</a>
+                        <a href="{% url 'products:list' %}?gender=زنانه" class="nav-menu-link">عطر و ادکلن زنانه</a>
                     </li>
                     {% endfor %}
                     <li class="nav-menu-item">

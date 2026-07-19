@@ -25,7 +25,7 @@
                 <h3 class="filter-title">جنسیت</h3>
                 <ul class="filter-list">
                     {% for gender in genders %}
-                    <li><a href="{% url 'products:by_gender' slug=gender.slug %}" class="filter-link {% if active_filter.slug == gender.slug %}active{% endif %}">{{ gender.name }}</a></li>
+                    <li><a href="{% url 'products:list' %}?gender={{ gender.slug }}" class="filter-link {% if active_filter.slug == gender.slug %}active{% endif %}">{{ gender.name }}</a></li>
                     {% endfor %}
                 </ul>
             </div>

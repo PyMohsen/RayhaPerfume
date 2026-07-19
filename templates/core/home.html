@@ -28,7 +28,7 @@
                 <div class="hero-main-content">
                     <h1 class="hero-main-title">طراوت روزهای بهاری</h1>
                     <p class="hero-main-subtitle">عطرهای خنک زنانه</p>
-                    <a href="/products/gender/%D8%B2%D9%86%D8%A7%D9%86%D9%87/" class="hero-main-btn">خرید کن 🛒</a>
+                    <a href="{% url 'products:list' %}?gender=زنانه" class="hero-main-btn">خرید کن 🛒</a>
                 </div>
             {% endif %}
         </div>
@@ -79,7 +79,7 @@
                 </div>
                 <h2 class="themed-shelf-title">عطرهای مردانه</h2>
             </div>
-            <a href="/products/gender/%D9%85%D8%B1%D8%AF%D8%A7%D9%86%D9%87/" class="themed-shelf-btn-all">همه</a>
+            <a href="{% url 'products:list' %}?gender=مردانه" class="themed-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
             {% for perfume in latest_perfumes %}
@@ -101,7 +101,7 @@
                 </div>
                 <h2 class="themed-shelf-title">عطرهای زنانه</h2>
             </div>
-            <a href="/products/gender/%D8%B2%D9%86%D8%A7%D9%86%D9%87/" class="themed-shelf-btn-all">همه</a>
+            <a href="{% url 'products:list' %}?gender=زنانه" class="themed-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
             {% for perfume in latest_perfumes %}

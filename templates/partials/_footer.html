@@ -41,7 +41,7 @@
                 <h3 class="footer-title">دسته‌بندی‌ها</h3>
                 <ul class="footer-links">
                     {% for gender in nav_genders %}
-                    <li><a href="{% url 'products:by_gender' slug=gender.slug %}">عطر {{ gender.name }}</a></li>
+                    <li><a href="{% url 'products:list' %}?gender={{ gender.slug }}">عطر {{ gender.name }}</a></li>
                     {% endfor %}
                     {% for nature in nav_natures %}
                     <li><a href="{% url 'products:by_nature' slug=nature.slug %}">طبع {{ nature.name }}</a></li>

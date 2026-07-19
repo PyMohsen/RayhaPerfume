@@ -25,7 +25,7 @@ class Gender(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('products:by_gender', kwargs={'slug': self.slug})
+        return f"{reverse('products:list')}?gender={self.slug}"
 
 
 class Season(models.Model):
