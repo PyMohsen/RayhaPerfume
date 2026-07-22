@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+{% block title %}انتقال به درگاه پرداخت زرین‌پال{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 3rem auto; text-align: center;">
+    <div class="checkout-section" style="padding: 2.5rem; border-radius: 12px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <div class="spinner" style="width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem auto;"></div>
+        
+        <h2 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1.4rem;">در حال انتقال به درگاه پرداخت زرین‌پال...</h2>
+        <p style="color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            لطفاً چند لحظه شکیبا باشید. شما در حال هدایت به درگاه امن پرداخت زرین‌پال برای سفارش شماره <strong>{{ order.order_number }}</strong> هستید.
+        </p>
+
+        <div style="background: #f9f9f9; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #555;">مبلغ قابل پرداخت:</span>
+            <strong style="color: #27ae60; font-size: 1.15rem;">{{ order.final_price|price_format }} تومان</strong>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+            <a href="{{ gateway_url }}" id="gateway-link" rel="referrer" class="btn btn-primary btn-block btn-lg" style="text-decoration: none;">
+                انتقال مستقیم به درگاه پرداخت
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // انتقال از سمت فرانت/جاوااسکریپت درون دامنه پذیرنده برای حفظ ریفرر (Referer) و جلوگیری از مرور خرید (صفحه میان‌پی)
+        var gatewayUrl = "{{ gateway_url|escapejs }}";
+        if (gatewayUrl) {
+            setTimeout(function() {
+                window.location.href = gatewayUrl;
+            }, 300);
+        }
+    });
+</script>
+{% endblock %}

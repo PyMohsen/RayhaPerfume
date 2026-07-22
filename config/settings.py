@@ -164,7 +164,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # ============================================
 
 # محافظت در برابر Clickjacking
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # هدرهای امنیتی
 SECURE_BROWSER_XSS_FILTER = True
@@ -175,6 +175,9 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+# تنظیمات Referrer-Policy برای درگاه‌های پرداخت خارج از دامنه (زرین‌پال)
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # تنظیمات امنیتی مخصوص Production (فقط وقتی DEBUG=False)
 if not DEBUG:

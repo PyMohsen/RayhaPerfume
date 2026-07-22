@@ -68,3 +68,36 @@ class OrderCreateAddressValidationTests(TestCase):
         messages = list(response.wsgi_request._messages)
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), 'آدرس انتخاب شده معتبر نیست. لطفاً یک آدرس معتبر انتخاب کنید.')
+
+    from unittest.mock import patch
+
+    @patch('apps.orders.views.ZarinPalService')
+    def test_create_order_success_renders_gateway_redirect(self, mock_zarinpal_cls):
+        from apps.accounts.models import UserAddress
+        address = UserAddress.objects.create(
+            user=self.user,
+            title='Home',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            is_default=True
+        )
+
+        mock_instance = mock_zarinpal_cls.return_value
+        mock_instance.request_payment.return_value = {
+            'success': True,
+            'authority': 'A0000000000000000000000000000000000',
+            'url': 'https://sandbox.zarinpal.com/pg/StartPay/A0000000000000000000000000000000000'
+        }
+
+        response = self.client.post(self.create_url, {'address_id': address.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'orders/redirect_to_gateway.html')
+        self.assertIn('gateway_url', response.context)
+        self.assertEqual(
+            response.context['gateway_url'],
+            'https://sandbox.zarinpal.com/pg/StartPay/A0000000000000000000000000000000000'
+        )

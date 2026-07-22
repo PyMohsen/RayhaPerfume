@@ -198,7 +198,10 @@ def create_order_view(request):
     if result['success']:
         order.payment_authority = result['authority']
         order.save()
-        return redirect(result['url'])
+        return render(request, 'orders/redirect_to_gateway.html', {
+            'gateway_url': result['url'],
+            'order': order,
+        })
     else:
         messages.error(request, 'خطا در اتصال به درگاه پرداخت. لطفاً دوباره تلاش کنید.')
         order.status = Order.Status.CANCELLED
