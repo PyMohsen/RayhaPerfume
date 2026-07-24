@@ -37,7 +37,7 @@ def checkout_view(request):
         except CouponCode.DoesNotExist:
             pass
 
-    shipping_cost = 0  # هزینه ارسال (فعلاً رایگان)
+    shipping_cost = 98000  # هزینه ارسال
     total = cart.get_total_price()
     final_price = total - coupon_discount + shipping_cost
 
