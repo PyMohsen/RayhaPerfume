@@ -3,6 +3,23 @@
    Theme: Purple & Gold | RTL | Persian
    ============================================ */
 
+/* ---------- Font Face Declarations ---------- */
+@font-face {
+    font-family: 'RaviFaNum';
+    src: url('../fonts/RaviFaNum-Regular.ttf') format('truetype');
+    font-weight: 100 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'RaviFaNum';
+    src: url('../fonts/RaviFaNum-SemiBold.ttf') format('truetype');
+    font-weight: 600 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ---------- CSS Variables ---------- */
 :root {
     /* Primary Colors */
@@ -37,7 +54,7 @@
     --info: #3B82F6;
 
     /* Typography */
-    --font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    --font-family: 'RaviFaNum', system-ui, -apple-system, sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -91,6 +108,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    font-family: var(--font-family);
 }
 
 html {
@@ -98,8 +116,11 @@ html {
     -webkit-text-size-adjust: 100%;
 }
 
-body {
+body, button, input, textarea, select {
     font-family: var(--font-family);
+}
+
+body {
     font-size: var(--font-size-base);
     line-height: 1.7;
     color: var(--gray-800);
