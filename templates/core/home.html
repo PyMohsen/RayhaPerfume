@@ -12,31 +12,39 @@
         <div class="hero-main-banner">
             {% if sliders %}
                 {% with slider=sliders.first %}
-                <img src="{{ slider.image.url }}" alt="{{ slider.title }}">
-                <div class="hero-main-content">
-                    <h1 class="hero-main-title">{{ slider.title }}</h1>
-                    {% if slider.subtitle %}
-                    <p class="hero-main-subtitle">{{ slider.subtitle }}</p>
-                    {% endif %}
                     {% if slider.link %}
-                    <a href="{{ slider.link }}" class="hero-main-btn">{{ slider.button_text|default:"خرید کن 🛒" }}</a>
+                    <a href="{{ slider.link }}" class="hero-main-banner-link">
                     {% endif %}
-                </div>
+                        <img src="{{ slider.image.url }}" alt="{{ slider.title|default:'اسلایدر' }}">
+                        {% if slider.title or slider.subtitle %}
+                        <div class="hero-main-content">
+                            {% if slider.title %}
+                            <h1 class="hero-main-title">{{ slider.title }}</h1>
+                            {% endif %}
+                            {% if slider.subtitle %}
+                            <p class="hero-main-subtitle">{{ slider.subtitle }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% if slider.link %}
+                    </a>
+                    {% endif %}
                 {% endwith %}
             {% else %}
-                <img src="{% static 'images/spring_banner.png' %}" alt="طراوت روزهای بهاری">
-                <div class="hero-main-content">
-                    <h1 class="hero-main-title">طراوت روزهای بهاری</h1>
-                    <p class="hero-main-subtitle">عطرهای خنک زنانه</p>
-                    <a href="{% url 'products:list' %}?gender=زنانه" class="hero-main-btn">خرید کن 🛒</a>
-                </div>
+                <a href="{% url 'products:list' %}?gender=زنانه" class="hero-main-banner-link">
+                    <img src="{% static 'images/spring_banner.png' %}" alt="طراوت روزهای بهاری">
+                    <div class="hero-main-content">
+                        <h1 class="hero-main-title">طراوت روزهای بهاری</h1>
+                        <p class="hero-main-subtitle">عطرهای خنک زنانه</p>
+                    </div>
+                </a>
             {% endif %}
         </div>
 
         <!-- Side Banners (Right) -->
         <div class="hero-side-banners">
             <a href="/products/" class="hero-side-banner">
-                <img src="{% static 'images/installment_banner.png' %}" alt="خرید قسطی با اسنپ پی">
+                <img src="{% static 'images/snap-torob-pay.png' %}" alt="خرید قسطی با اسنپ پی">
             </a>
             <a href="{% url 'core:faq' %}" class="hero-side-banner">
                 <img src="{% static 'images/faq_banner.png' %}" alt="سوالات متداول">

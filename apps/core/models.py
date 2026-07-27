@@ -94,7 +94,11 @@ class SiteSettings(models.Model):
 
 class Slider(models.Model):
     """اسلایدر صفحه اصلی"""
-    title = models.CharField(max_length=200, verbose_name='عنوان')
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='عنوان'
+    )
     subtitle = models.CharField(
         max_length=300,
         blank=True,
@@ -123,7 +127,7 @@ class Slider(models.Model):
         ordering = ['order']
 
     def __str__(self):
-        return self.title
+        return self.title or f'اسلایدر {self.pk or ""}'
 
 
 class FAQ(models.Model):
