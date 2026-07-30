@@ -1,3 +1,5 @@
+import re
+from urllib.parse import unquote
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -6,7 +8,7 @@ from django.utils.text import slugify
 class Gender(models.Model):
     """دسته‌بندی جنسیتی عطر: مردانه، زنانه، مشترک"""
     name = models.CharField(max_length=50, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     icon = models.ImageField(
         upload_to='categories/genders/',
         blank=True,
@@ -24,6 +26,13 @@ class Gender(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return f"{reverse('products:list')}?gender={self.slug}"
 
@@ -31,7 +40,7 @@ class Gender(models.Model):
 class Season(models.Model):
     """فصل مناسب عطر: بهار، تابستان، پاییز، زمستان"""
     name = models.CharField(max_length=50, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     icon = models.ImageField(
         upload_to='categories/seasons/',
         blank=True,
@@ -48,6 +57,13 @@ class Season(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
+
 
 class ScentFamily(models.Model):
     """
@@ -55,7 +71,7 @@ class ScentFamily(models.Model):
     مثال: شرقی، فوگره، گورمند، چوبی، گلی و...
     """
     name = models.CharField(max_length=100, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     color = models.CharField(
         max_length=7,
         default='#6B4C9A',
@@ -72,13 +88,20 @@ class ScentFamily(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
+
 
 class Nature(models.Model):
     """
     طبع عطر: گرم، سرد، معتدل
     """
     name = models.CharField(max_length=50, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     icon = models.ImageField(
         upload_to='categories/natures/',
         blank=True,
@@ -96,6 +119,13 @@ class Nature(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse('products:by_nature', kwargs={'slug': self.slug})
 
@@ -105,7 +135,7 @@ class Taste(models.Model):
     طعم عطر: شیرین، تلخ، تند
     """
     name = models.CharField(max_length=50, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     icon = models.ImageField(
         upload_to='categories/tastes/',
         blank=True,
@@ -123,6 +153,13 @@ class Taste(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse('products:by_taste', kwargs={'slug': self.slug})
 
@@ -133,7 +170,7 @@ class Scent(models.Model):
     مثال: وانیلی، اسطوخودوس، آجیلی، بالزامیک و...
     """
     name = models.CharField(max_length=100, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     color = models.CharField(
         max_length=7,
         default='#D4A574',
@@ -150,6 +187,13 @@ class Scent(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
+
 
 class Note(models.Model):
     """
@@ -157,7 +201,7 @@ class Note(models.Model):
     مثال: وانیل، دارچین، لاوندر، فلفل صورتی و...
     """
     name = models.CharField(max_length=100, verbose_name='نام')
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name='اسلاگ')
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name='اسلاگ')
     image = models.ImageField(
         upload_to='notes/',
         blank=True,
@@ -173,6 +217,13 @@ class Note(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            self.slug = slugify(unquote(self.slug), allow_unicode=True)
+        super().save(*args, **kwargs)
 
 
 class Perfume(models.Model):
@@ -192,10 +243,17 @@ class Perfume(models.Model):
         ENORMOUS = 'enormous', 'قوی و نافذ'
 
     name = models.CharField(max_length=200, verbose_name='نام عطر')
+    name_en = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='نام انگلیسی عطر',
+        help_text='نام انگلیسی عطر که برای اسلاگ لینک استفاده می‌شود'
+    )
     slug = models.SlugField(
         max_length=250,
         unique=True,
         allow_unicode=True,
+        blank=True,
         verbose_name='اسلاگ'
     )
     brand = models.CharField(max_length=200, verbose_name='برند')
@@ -298,6 +356,25 @@ class Perfume(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            if self.name_en:
+                self.slug = slugify(self.name_en)
+            else:
+                eng_words = re.findall(r'[a-zA-Z0-9]+', self.name)
+                if eng_words:
+                    self.slug = slugify(' '.join(eng_words))
+                else:
+                    self.slug = slugify(self.name, allow_unicode=True)
+        else:
+            unquoted_slug = unquote(self.slug)
+            eng_words = re.findall(r'[a-zA-Z0-9]+', unquoted_slug)
+            if eng_words:
+                self.slug = slugify(' '.join(eng_words))
+            else:
+                self.slug = slugify(unquoted_slug, allow_unicode=True)
+        super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse('products:detail', kwargs={'slug': self.slug})

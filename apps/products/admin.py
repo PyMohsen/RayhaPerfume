@@ -82,8 +82,8 @@ class PerfumeAdmin(admin.ModelAdmin):
         'is_active', 'is_featured', 'gender', 'nature',
         'scent_family', 'seasons', 'tastes'
     )
-    search_fields = ('name', 'brand', 'description')
-    prepopulated_fields = {'slug': ('name',)}
+    search_fields = ('name', 'name_en', 'brand', 'description')
+    prepopulated_fields = {'slug': ('name_en',)}
     filter_horizontal = ('seasons', 'tastes', 'scents')
     readonly_fields = ('views_count', 'created_at', 'updated_at')
 
@@ -91,7 +91,7 @@ class PerfumeAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('اطلاعات اصلی', {
-            'fields': ('name', 'slug', 'brand', 'short_description', 'description')
+            'fields': ('name', 'name_en', 'slug', 'brand', 'short_description', 'description')
         }),
         ('دسته‌بندی‌ها', {
             'fields': ('gender', 'seasons', 'scent_family', 'nature', 'tastes', 'scents')

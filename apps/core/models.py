@@ -127,7 +127,7 @@ class Slider(models.Model):
         ordering = ['order']
 
     def __str__(self):
-        return self.title or f'اسلایدر {self.pk or ""}'
+        return f"{self.pk} - {self.title}"
 
 
 class FAQ(models.Model):

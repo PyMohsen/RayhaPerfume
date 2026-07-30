@@ -1,3 +1,4 @@
+from urllib.parse import unquote
 from django.db.models import Q, Min
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
@@ -102,6 +103,7 @@ def product_list_view(request):
 
 def product_detail_view(request, slug):
     """جزئیات محصول"""
+    slug = unquote(slug)
     perfume = get_object_or_404(
         Perfume.objects.select_related(
             'gender', 'nature', 'scent_family'
@@ -139,6 +141,7 @@ def product_detail_view(request, slug):
 
 def products_by_gender_view(request, slug):
     """لیست محصولات بر اساس جنسیت"""
+    slug = unquote(slug)
     gender = get_object_or_404(Gender, slug=slug)
     perfumes = Perfume.objects.filter(
         is_active=True, gender=gender
@@ -158,6 +161,7 @@ def products_by_gender_view(request, slug):
 
 def products_by_nature_view(request, slug):
     """لیست محصولات بر اساس طبع"""
+    slug = unquote(slug)
     nature = get_object_or_404(Nature, slug=slug)
     perfumes = Perfume.objects.filter(
         is_active=True, nature=nature
@@ -177,6 +181,7 @@ def products_by_nature_view(request, slug):
 
 def products_by_taste_view(request, slug):
     """لیست محصولات بر اساس طعم"""
+    slug = unquote(slug)
     taste = get_object_or_404(Taste, slug=slug)
     perfumes = Perfume.objects.filter(
         is_active=True, tastes=taste
