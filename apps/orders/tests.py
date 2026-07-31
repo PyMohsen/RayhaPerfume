@@ -101,3 +101,11 @@ class OrderCreateAddressValidationTests(TestCase):
             response.context['gateway_url'],
             'https://sandbox.zarinpal.com/pg/StartPay/A0000000000000000000000000000000000'
         )
+
+        from apps.orders.models import Order
+        order = Order.objects.get(user=self.user)
+        self.assertEqual(order.shipping_cost, 98000)
+        self.assertEqual(order.final_price, 198000)  # 100,000 product + 98,000 shipping
+        mock_instance.request_payment.assert_called_once()
+        self.assertEqual(mock_instance.request_payment.call_args[1]['amount'], 198000)
+

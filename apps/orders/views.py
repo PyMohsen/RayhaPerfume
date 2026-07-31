@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
@@ -37,7 +38,7 @@ def checkout_view(request):
         except CouponCode.DoesNotExist:
             pass
 
-    shipping_cost = 98000  # هزینه ارسال
+    shipping_cost = getattr(settings, 'SHIPPING_COST')
     total = cart.get_total_price()
     final_price = total - coupon_discount + shipping_cost
 
@@ -79,11 +80,12 @@ def apply_coupon_view(request):
 
     discount = coupon.calculate_discount(total)
     request.session['coupon_code'] = code
+    shipping_cost = getattr(settings, 'SHIPPING_COST', 98000)
 
     return JsonResponse({
         'success': True,
         'discount': discount,
-        'final_price': total - discount,
+        'final_price': total - discount + shipping_cost,
         'message': f'کد تخفیف {coupon.discount_percent}% اعمال شد',
     })
 
@@ -148,7 +150,7 @@ def create_order_view(request):
         except CouponCode.DoesNotExist:
             pass
 
-    shipping_cost = 0
+    shipping_cost = getattr(settings, 'SHIPPING_COST', 98000)
     final_price = subtotal - coupon_discount + shipping_cost
 
     # ایجاد سفارش

@@ -36,6 +36,7 @@
             {% if order.coupon_discount > 0 %}
             <div class="cart-summary-row discount"><span>کد تخفیف:</span><span>{{ order.coupon_discount|price_format }} تومان</span></div>
             {% endif %}
+            <div class="cart-summary-row"><span>هزینه ارسال:</span><span>{% if order.shipping_cost > 0 %}{{ order.shipping_cost|price_format }} تومان{% else %}رایگان{% endif %}</span></div>
             <div class="cart-summary-row total"><span>مبلغ پرداختی:</span><span>{{ order.final_price|price_format }} تومان</span></div>
             {% if order.ref_id %}<p class="ref-id">شماره پیگیری: {{ order.ref_id }}</p>{% endif %}
         </div>

@@ -204,3 +204,8 @@ ZARINPAL_SANDBOX = os.getenv('ZARINPAL_SANDBOX', 'True').lower() in ('true', '1'
 SMS_API_KEY = os.getenv('SMS_API_KEY', '')
 SMS_TEMPLATE_ID = os.getenv('SMS_TEMPLATE_ID', '')
 
+
+# Shipping Settings
+SHIPPING_COST = 0  # هزینه ارسال به تومان
+
+
