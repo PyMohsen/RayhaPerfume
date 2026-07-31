@@ -127,10 +127,29 @@ body {
     background-color: #fafafc;
     background-image: var(--bg-pattern);
     background-attachment: fixed;
-    direction: rtl;
-    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
 }
+
+.main-content {
+    padding-top: 86px;
+    min-height: calc(100vh - 300px);
+}
+
+.messages-container {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+    right: 20px;
+    z-index: 990;
+    max-width: 500px;
+    margin: 0 auto;
+    pointer-events: none;
+}
+
+.messages-container .message {
+    pointer-events: auto;
+}
+
 
 a {
     color: var(--primary);
@@ -263,121 +282,469 @@ input, textarea, select {
     color: var(--primary);
 }
 
-/* ---------- Navbar ---------- */
-.navbar {
-    background: var(--white);
-    box-shadow: 0 2px 10px rgba(74, 44, 90, 0.06);
-    position: sticky;
-    top: 0;
+/* ---------- Floating Liquid Glass Navbar ---------- */
+.liquid-header-wrapper {
+    position: fixed;
+    top: 14px;
+    left: 0;
+    right: 0;
     z-index: 1000;
-    border-bottom: 1px solid var(--gray-100);
+    width: 100%;
+    pointer-events: none;
 }
 
-.navbar-content {
+.floating-navbar-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 16px;
+    pointer-events: auto;
+    position: relative;
+}
+
+.floating-navbar-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-3) 0;
-    gap: var(--space-6);
+    gap: 12px;
 }
 
-.logo {
+/* Glass Pill Base Styling — Luminous Liquid Glass */
+.glass-pill {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.76) 0%, rgba(246, 242, 252, 0.58) 100%);
+    backdrop-filter: blur(28px) saturate(210%);
+    -webkit-backdrop-filter: blur(28px) saturate(210%);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-top: 2.5px solid rgba(255, 255, 255, 0.98);
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 
+        0 14px 38px rgba(74, 44, 90, 0.14),
+        0 4px 12px rgba(0, 0, 0, 0.03),
+        inset 0 2px 3px rgba(255, 255, 255, 0.95),
+        inset 0 -2px 4px rgba(74, 44, 90, 0.05);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+
+/* Fluid Liquid Specular Sheen (Curved Top Reflection) */
+.glass-pill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 60%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* Liquid Light Wave Shimmer effect on Hover */
+.glass-pill::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    transform: rotate(25deg);
+    pointer-events: none;
+    transition: left 0.75s ease;
+}
+
+.glass-pill:hover::after {
+    left: 180%;
+}
+
+/* 1. Right Circle Pill: Logo */
+.glass-pill-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
 }
 
-.logo-text {
-    font-size: var(--font-size-xl);
-    font-weight: 800;
-    color: var(--primary);
+.glass-pill-logo:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 
+        0 18px 45px rgba(74, 44, 90, 0.22),
+        0 0 20px rgba(204, 160, 75, 0.35),
+        inset 0 2px 4px #ffffff;
+    border-color: rgba(204, 160, 75, 0.6);
+}
+
+.glass-logo-link {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
 }
 
-.logo-sub {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    display: block;
-    color: var(--gray-400);
-    margin-top: -4px;
-}
-
-.logo-img {
-    height: 52px;
-    width: auto;
-}
-
-/* Merged Main Menu Links */
-.nav-menu {
+.glass-logo-badge {
     display: flex;
     align-items: center;
-    gap: var(--space-6);
+    justify-content: center;
+}
+
+.glass-logo-img {
+    max-width: 36px;
+    max-height: 36px;
+    object-fit: contain;
+}
+
+/* 2. Center Elongated Pill: User Badge & Nav Header Links */
+.glass-pill-main {
+    height: 56px;
+    border-radius: 9999px;
+    padding: 0 12px 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex: 1;
+    max-width: fit-content;
+}
+
+.glass-user-wrapper {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.glass-user-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2c1836;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 4px 14px 4px 6px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(74, 44, 90, 0.06), inset 0 1px 1px #ffffff;
+    transition: all 0.25s ease;
+}
+
+.glass-user-badge:hover {
+    background: #ffffff;
+    border-color: rgba(204, 160, 75, 0.5);
+    box-shadow: 0 4px 16px rgba(204, 160, 75, 0.3);
+    color: #4a2c5a;
+    transform: translateY(-1px);
+}
+
+.user-avatar-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #cca04b 0%, #dfbc73 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(204, 160, 75, 0.45);
+    flex-shrink: 0;
+}
+
+.user-name-text {
+    font-size: 13.5px;
+    white-space: nowrap;
+}
+
+.glass-pill-separator {
+    width: 1px;
+    height: 24px;
+    background: rgba(74, 44, 90, 0.15);
+    flex-shrink: 0;
+}
+
+.glass-nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.nav-menu-item {
+.glass-nav-item {
     position: relative;
 }
 
-.nav-menu-link {
-    color: var(--gray-800);
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    padding: var(--space-2) 0;
-    transition: var(--transition-fast);
-    border-bottom: 2px solid transparent;
+.glass-nav-link {
+    color: #321b3d;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 20px;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
 }
 
-.nav-menu-link:hover {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
+.glass-nav-link:hover {
+    color: #4a2c5a;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 14px rgba(74, 44, 90, 0.1), inset 0 1px 1px #ffffff;
+    transform: translateY(-1px);
 }
 
-/* Navbar Actions */
-.navbar-actions {
+/* 3. Left Small Pill: Search & Cart */
+.glass-pill-actions {
+    height: 56px;
+    border-radius: 9999px;
+    padding: 0 12px;
     display: flex;
     align-items: center;
-    gap: var(--space-5);
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.nav-action {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--gray-700);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    transition: var(--transition-fast);
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-lg);
-    background: transparent;
-}
-
-.nav-action:hover {
-    color: var(--primary);
-    background: rgba(74, 44, 90, 0.04);
-}
-
-.nav-action-text {
-    font-size: var(--font-size-sm);
-}
-
-.cart-action {
-    position: relative;
-    padding: var(--space-2);
+.glass-action-btn {
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    width: 42px;
-    height: 42px;
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.7);
+    color: #321b3d;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    background: rgba(74, 44, 90, 0.04);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(74, 44, 90, 0.06), inset 0 1px 1px #ffffff;
 }
 
-.cart-action:hover {
+.glass-action-btn:hover {
+    background: #ffffff;
+    color: #4a2c5a;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(74, 44, 90, 0.18), inset 0 1px 1px #ffffff;
+    border-color: rgba(204, 160, 75, 0.5);
+}
+
+.glass-cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+.mobile-menu-toggle {
+    display: none;
+}
+
+/* Glass Search Dropdown Overlay */
+.glass-search-overlay {
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.glass-search-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.glass-search-box {
+    width: 100%;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    border-radius: 28px;
+    padding: 8px 16px;
+    box-shadow: 0 20px 45px rgba(74, 44, 90, 0.18), inset 0 2px 2px #ffffff;
+}
+
+.glass-search-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.glass-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #2c1836;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    padding: 10px 4px;
+    outline: none;
+}
+
+.glass-search-input::placeholder {
+    color: #71647a;
+}
+
+.glass-search-submit,
+.glass-search-close {
+    background: rgba(74, 44, 90, 0.06);
+    border: none;
+    color: #321b3d;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.glass-search-submit:hover,
+.glass-search-close:hover {
+    color: #ffffff;
+    background: var(--primary);
+}
+
+/* Glass Mobile Drawer */
+.glass-mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.glass-mobile-drawer.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.mobile-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(44, 24, 56, 0.4);
+    backdrop-filter: blur(8px);
+}
+
+.mobile-drawer-content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 290px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(28px);
+    border-left: 1.5px solid rgba(255, 255, 255, 0.9);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -10px 0 35px rgba(74, 44, 90, 0.2);
+}
+
+.glass-mobile-drawer.active .mobile-drawer-content {
+    transform: translateX(0);
+}
+
+.mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(74, 44, 90, 0.1);
+}
+
+.mobile-logo-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.mobile-drawer-close {
+    background: transparent;
+    border: none;
+    color: #321b3d;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.mobile-user-section {
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(74, 44, 90, 0.1);
+}
+
+.mobile-user-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #321b3d;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.mobile-menu-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+}
+
+.mobile-menu-links a {
+    color: #321b3d;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 700;
+    display: block;
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-links a:hover {
+    color: var(--primary);
     background: rgba(74, 44, 90, 0.08);
 }
+
+
 
 .cart-badge {
     position: absolute;

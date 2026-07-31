@@ -200,55 +200,62 @@
         white-space: nowrap;
     }
 
-    /* Mobile menu */
+    /* Floating Liquid Glass Mobile Styling */
+    .liquid-header-wrapper {
+        top: 10px;
+    }
+
+    .floating-navbar-container {
+        padding: 0 10px;
+    }
+
+    .glass-pill-main {
+        max-width: none;
+        padding: 0 10px;
+        justify-content: center;
+    }
+
+    .glass-pill-separator,
+    .glass-nav-menu {
+        display: none;
+    }
+
     .mobile-menu-toggle {
         display: flex;
     }
 
-    .search-form {
-        display: none;
+    .glass-pill-logo {
+        width: 48px;
+        height: 48px;
     }
 
-    .navbar-actions .nav-action-text {
-        display: none;
+    .glass-pill-main {
+        height: 48px;
     }
 
-    .category-nav {
-        display: none;
+    .glass-pill-actions {
+        height: 48px;
+        padding: 0 8px;
+        gap: 6px;
     }
 
-    .nav-menu {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: var(--white);
-        border-top: 1px solid var(--gray-150);
-        box-shadow: 0 4px 15px rgba(74, 44, 90, 0.08);
-        padding: var(--space-4) var(--space-6);
-        gap: var(--space-3);
-        z-index: 999;
+    .glass-action-btn {
+        width: 34px;
+        height: 34px;
     }
 
-    .nav-menu.open {
-        display: flex;
+    .user-avatar-circle {
+        width: 30px;
+        height: 30px;
     }
 
-    .nav-menu-item {
-        width: 100%;
+    .user-name-text {
+        font-size: 12px;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .nav-menu-link {
-        display: block;
-        padding: var(--space-2) 0;
-        border-bottom: 1px solid var(--gray-100);
-    }
-
-    .nav-menu-item:last-child .nav-menu-link {
-        border-bottom: none;
-    }
 
     /* Banner Grid */
     .hero-main-banner {

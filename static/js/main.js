@@ -5,17 +5,65 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ==========================================
-    // Mobile Menu Toggle
+    // Liquid Glass Search Overlay Toggle
     // ==========================================
-    const menuToggle = document.getElementById('mobile-menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
+    const searchToggleBtn = document.getElementById('search-toggle-btn');
+    const searchOverlay = document.getElementById('glass-search-overlay');
+    const searchCloseBtn = document.getElementById('glass-search-close');
+    const searchInput = document.getElementById('glass-search-input');
 
-    if (menuToggle && navMenu) {
-        menuToggle.addEventListener('click', function () {
-            navMenu.classList.toggle('open');
-            this.classList.toggle('active');
+    if (searchToggleBtn && searchOverlay) {
+        searchToggleBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            searchOverlay.classList.toggle('active');
+            if (searchOverlay.classList.contains('active') && searchInput) {
+                searchInput.focus();
+            }
+        });
+
+        if (searchCloseBtn) {
+            searchCloseBtn.addEventListener('click', function () {
+                searchOverlay.classList.remove('active');
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (searchOverlay.classList.contains('active') && !searchOverlay.contains(e.target) && e.target !== searchToggleBtn) {
+                searchOverlay.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && searchOverlay.classList.contains('active')) {
+                searchOverlay.classList.remove('active');
+            }
         });
     }
+
+    // ==========================================
+    // Glass Mobile Drawer Toggle
+    // ==========================================
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileDrawer = document.getElementById('glass-mobile-drawer');
+    const drawerCloseBtn = document.getElementById('mobile-drawer-close');
+    const drawerBackdrop = document.getElementById('mobile-drawer-backdrop');
+
+    if (menuToggle && mobileDrawer) {
+        menuToggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            mobileDrawer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        function closeDrawer() {
+            mobileDrawer.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeDrawer);
+        if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+    }
+
 
     // ==========================================
     // Auto-hide Messages
