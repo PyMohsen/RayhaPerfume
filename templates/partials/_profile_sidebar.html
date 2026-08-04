@@ -1,0 +1,22 @@
+<div class="profile-card">
+    <div class="profile-avatar">
+        {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="{{ user.full_name }}">
+        {% else %}
+        <span class="avatar-placeholder">{{ user.get_full_name|first }}</span>
+        {% endif %}
+    </div>
+    <h3 class="profile-name">{{ user.get_full_name }}</h3>
+    <p class="profile-phone" dir="ltr">{{ user.phone_number }}</p>
+</div>
+<nav class="profile-nav">
+    <a href="{% url 'accounts:profile' %}" class="profile-nav-link {% if active_tab == 'dashboard' %}active{% endif %}">داشبورد</a>
+    <a href="{% url 'accounts:profile_update' %}" class="profile-nav-link {% if active_tab == 'edit' %}active{% endif %}">ویرایش اطلاعات</a>
+    <a href="{% url 'accounts:address_list' %}" class="profile-nav-link {% if active_tab == 'addresses' %}active{% endif %}">آدرس‌ها</a>
+    <a href="{% url 'accounts:order_history' %}" class="profile-nav-link {% if active_tab == 'orders' %}active{% endif %}">سفارشات</a>
+    <a href="{% url 'products:wishlist' %}" class="profile-nav-link {% if active_tab == 'wishlist' %}active{% endif %}">علاقه‌مندی‌ها</a>
+    <form method="POST" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="profile-nav-link logout-link" style="width:100%; text-align:right; cursor:pointer;">خروج</button>
+    </form>
+</nav>

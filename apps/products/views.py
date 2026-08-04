@@ -1,53 +1,71 @@
 from urllib.parse import unquote
-from django.db.models import Q, Min
+from django.db.models import Q, Min, Count, Exists, OuterRef
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.views.decorators.http import require_POST
 
 from .models import (
     Perfume, Gender, Season, Nature, Taste,
     ScentFamily, PerfumeVariant, Wishlist,
+    Review, ReviewLike,
 )
+from apps.orders.models import Order, OrderItem
+
+
+def get_filter_list(request, param_name):
+    """استخراج لیست فیلترها از GET (چه به صورت کلیدهای تکراری چه به صورت جدا شده با کاما)"""
+    raw_list = request.GET.getlist(param_name)
+    result = []
+    for item in raw_list:
+        if not item:
+            continue
+        for sub_item in item.split(','):
+            val = sub_item.strip()
+            if val and val not in result:
+                result.append(val)
+    return result
 
 
 def product_list_view(request):
-    """لیست محصولات با فیلتر"""
+    """لیست محصولات با فیلترهای چندتایی"""
     perfumes = Perfume.objects.filter(is_active=True).select_related(
         'gender', 'nature', 'scent_family'
     ).prefetch_related('variants', 'images', 'seasons', 'tastes')
 
+    # دسته‌بندی‌ها برای سایدبار
+    genders = Gender.objects.all()
+    natures = Nature.objects.all()
+    tastes = Taste.objects.all()
+    seasons = Season.objects.all()
+    scent_families = ScentFamily.objects.all()
+
     # فیلترها
-    gender_slug = request.GET.get('gender')
-    nature_slug = request.GET.get('nature')
-    taste_slug = request.GET.get('taste')
-    season_slug = request.GET.get('season')
-    scent_family_slug = request.GET.get('scent_family')
-    search_query = request.GET.get('q')
+    selected_genders = get_filter_list(request, 'gender')
+    selected_natures = get_filter_list(request, 'nature')
+    selected_tastes = get_filter_list(request, 'taste')
+    selected_seasons = get_filter_list(request, 'season')
+    selected_scent_families = get_filter_list(request, 'scent_family')
+    search_query = request.GET.get('q', '').strip()
     sort = request.GET.get('sort', 'newest')
-    only_available = request.GET.get('available')
-    only_discount = request.GET.get('discount')
+    only_available = request.GET.get('available') in ['1', 'true', 'on']
+    only_discount = request.GET.get('discount') in ['1', 'true', 'on']
 
-    # فیلتر عنوان فعال
-    active_filter = None
+    if selected_genders:
+        perfumes = perfumes.filter(gender__slug__in=selected_genders)
 
-    if gender_slug:
-        perfumes = perfumes.filter(gender__slug=gender_slug)
-        active_filter = get_object_or_404(Gender, slug=gender_slug)
+    if selected_natures:
+        perfumes = perfumes.filter(nature__slug__in=selected_natures)
 
-    if nature_slug:
-        perfumes = perfumes.filter(nature__slug=nature_slug)
-        active_filter = get_object_or_404(Nature, slug=nature_slug)
+    if selected_tastes:
+        perfumes = perfumes.filter(tastes__slug__in=selected_tastes)
 
-    if taste_slug:
-        perfumes = perfumes.filter(tastes__slug=taste_slug)
-        active_filter = get_object_or_404(Taste, slug=taste_slug)
+    if selected_seasons:
+        perfumes = perfumes.filter(seasons__slug__in=selected_seasons)
 
-    if season_slug:
-        perfumes = perfumes.filter(seasons__slug=season_slug)
-
-    if scent_family_slug:
-        perfumes = perfumes.filter(scent_family__slug=scent_family_slug)
+    if selected_scent_families:
+        perfumes = perfumes.filter(scent_family__slug__in=selected_scent_families)
 
     if search_query:
         perfumes = perfumes.filter(
@@ -80,12 +98,29 @@ def product_list_view(request):
 
     perfumes = perfumes.distinct()
 
-    # دسته‌بندی‌ها برای سایدبار
-    genders = Gender.objects.all()
-    natures = Nature.objects.all()
-    tastes = Taste.objects.all()
-    seasons = Season.objects.all()
-    scent_families = ScentFamily.objects.all()
+    # چیپ‌های فیلترهای فعال برای نمایش به کاربر
+    active_chips = []
+    for g in genders:
+        if g.slug in selected_genders:
+            active_chips.append({'type': 'gender', 'value': g.slug, 'label': g.name})
+    for n in natures:
+        if n.slug in selected_natures:
+            active_chips.append({'type': 'nature', 'value': n.slug, 'label': f"طبع {n.name}"})
+    for t in tastes:
+        if t.slug in selected_tastes:
+            active_chips.append({'type': 'taste', 'value': t.slug, 'label': f"طعم {t.name}"})
+    for s in seasons:
+        if s.slug in selected_seasons:
+            active_chips.append({'type': 'season', 'value': s.slug, 'label': f"فصل {s.name}"})
+    for sf in scent_families:
+        if sf.slug in selected_scent_families:
+            active_chips.append({'type': 'scent_family', 'value': sf.slug, 'label': sf.name})
+    if only_available:
+        active_chips.append({'type': 'available', 'value': '1', 'label': 'فقط کالاهای موجود'})
+    if only_discount:
+        active_chips.append({'type': 'discount', 'value': '1', 'label': 'فقط کالاهای تخفیف‌دار'})
+
+    has_active_filters = bool(active_chips)
 
     context = {
         'perfumes': perfumes,
@@ -94,7 +129,15 @@ def product_list_view(request):
         'tastes': tastes,
         'seasons': seasons,
         'scent_families': scent_families,
-        'active_filter': active_filter,
+        'selected_genders': selected_genders,
+        'selected_natures': selected_natures,
+        'selected_tastes': selected_tastes,
+        'selected_seasons': selected_seasons,
+        'selected_scent_families': selected_scent_families,
+        'only_available': only_available,
+        'only_discount': only_discount,
+        'active_chips': active_chips,
+        'has_active_filters': has_active_filters,
         'search_query': search_query,
         'current_sort': sort,
     }
@@ -131,10 +174,51 @@ def product_detail_view(request, slug):
             user=request.user, perfume=perfume
         ).exists()
 
+    # ---- نظرات ----
+    reviews_qs = Review.objects.filter(
+        perfume=perfume,
+        parent__isnull=True,
+        is_approved=True,
+    ).select_related('user').prefetch_related(
+        'replies__user', 'replies__likes', 'likes',
+    ).annotate(
+        total_likes=Count('likes'),
+    ).order_by('-created_at')
+
+    # بررسی لایک‌های کاربر فعلی و خریدار بودن
+    buyer_user_ids = set()
+    user_liked_reviews = set()
+    if request.user.is_authenticated:
+        # لایک‌های کاربر
+        user_liked_reviews = set(
+            ReviewLike.objects.filter(
+                user=request.user,
+                review__perfume=perfume,
+            ).values_list('review_id', flat=True)
+        )
+
+    # شناسایی خریداران این محصول
+    paid_statuses = ['paid', 'processing', 'shipped', 'delivered']
+    buyer_user_ids = set(
+        Order.objects.filter(
+            status__in=paid_statuses,
+            items__variant__perfume=perfume,
+        ).values_list('user_id', flat=True)
+    )
+
+    # تعداد کل نظرات تأیید شده
+    reviews_count = Review.objects.filter(
+        perfume=perfume, is_approved=True,
+    ).count()
+
     context = {
         'perfume': perfume,
         'related_perfumes': related_perfumes,
         'is_wishlisted': is_wishlisted,
+        'reviews': reviews_qs,
+        'reviews_count': reviews_count,
+        'buyer_user_ids': buyer_user_ids,
+        'user_liked_reviews': user_liked_reviews,
     }
     return render(request, 'products/product_detail.html', context)
 
@@ -142,61 +226,19 @@ def product_detail_view(request, slug):
 def products_by_gender_view(request, slug):
     """لیست محصولات بر اساس جنسیت"""
     slug = unquote(slug)
-    gender = get_object_or_404(Gender, slug=slug)
-    perfumes = Perfume.objects.filter(
-        is_active=True, gender=gender
-    ).prefetch_related('variants', 'images')
-
-    context = {
-        'perfumes': perfumes,
-        'active_filter': gender,
-        'category_type': 'gender',
-        'genders': Gender.objects.all(),
-        'natures': Nature.objects.all(),
-        'tastes': Taste.objects.all(),
-        'current_sort': 'newest',
-    }
-    return render(request, 'products/product_list.html', context)
+    return redirect(f"{reverse('products:list')}?gender={slug}")
 
 
 def products_by_nature_view(request, slug):
     """لیست محصولات بر اساس طبع"""
     slug = unquote(slug)
-    nature = get_object_or_404(Nature, slug=slug)
-    perfumes = Perfume.objects.filter(
-        is_active=True, nature=nature
-    ).prefetch_related('variants', 'images')
-
-    context = {
-        'perfumes': perfumes,
-        'active_filter': nature,
-        'category_type': 'nature',
-        'genders': Gender.objects.all(),
-        'natures': Nature.objects.all(),
-        'tastes': Taste.objects.all(),
-        'current_sort': 'newest',
-    }
-    return render(request, 'products/product_list.html', context)
+    return redirect(f"{reverse('products:list')}?nature={slug}")
 
 
 def products_by_taste_view(request, slug):
     """لیست محصولات بر اساس طعم"""
     slug = unquote(slug)
-    taste = get_object_or_404(Taste, slug=slug)
-    perfumes = Perfume.objects.filter(
-        is_active=True, tastes=taste
-    ).prefetch_related('variants', 'images')
-
-    context = {
-        'perfumes': perfumes,
-        'active_filter': taste,
-        'category_type': 'taste',
-        'genders': Gender.objects.all(),
-        'natures': Nature.objects.all(),
-        'tastes': Taste.objects.all(),
-        'current_sort': 'newest',
-    }
-    return render(request, 'products/product_list.html', context)
+    return redirect(f"{reverse('products:list')}?taste={slug}")
 
 
 def search_view(request):
@@ -253,3 +295,65 @@ def wishlist_view(request):
         'wishlists': wishlists,
     }
     return render(request, 'products/wishlist.html', context)
+
+
+@login_required
+@require_POST
+def add_review_view(request, slug):
+    """ثبت نظر جدید برای محصول"""
+    slug = unquote(slug)
+    perfume = get_object_or_404(Perfume, slug=slug, is_active=True)
+
+    body = request.POST.get('body', '').strip()
+    parent_id = request.POST.get('parent_id')
+
+    if not body:
+        messages.error(request, 'لطفاً متن نظر را وارد کنید.')
+        return redirect('products:detail', slug=slug)
+
+    if len(body) > 1000:
+        messages.error(request, 'متن نظر نباید بیشتر از ۱۰۰۰ کاراکتر باشد.')
+        return redirect('products:detail', slug=slug)
+
+    parent = None
+    if parent_id:
+        parent = Review.objects.filter(
+            pk=parent_id, perfume=perfume, is_approved=True, parent__isnull=True
+        ).first()
+
+    Review.objects.create(
+        user=request.user,
+        perfume=perfume,
+        parent=parent,
+        body=body,
+        is_approved=False,
+    )
+
+    messages.success(request, 'نظر شما ثبت شد و پس از تأیید نمایش داده خواهد شد.')
+    return redirect('products:detail', slug=slug)
+
+
+@login_required
+@require_POST
+def toggle_review_like_view(request, review_id):
+    """لایک/آنلایک نظر (AJAX)"""
+    try:
+        review = Review.objects.get(pk=review_id, is_approved=True)
+    except Review.DoesNotExist:
+        return JsonResponse({'error': 'نظر یافت نشد'}, status=404)
+
+    like, created = ReviewLike.objects.get_or_create(
+        user=request.user, review=review
+    )
+
+    if not created:
+        like.delete()
+        return JsonResponse({
+            'status': 'unliked',
+            'likes_count': review.likes.count(),
+        })
+
+    return JsonResponse({
+        'status': 'liked',
+        'likes_count': review.likes.count(),
+    })

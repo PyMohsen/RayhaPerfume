@@ -14,6 +14,10 @@ urlpatterns = [
     path('nature/<str:slug>/', views.products_by_nature_view, name='by_nature'),
     path('taste/<str:slug>/', views.products_by_taste_view, name='by_taste'),
 
+    # نظرات
+    path('<str:slug>/reviews/add/', views.add_review_view, name='add_review'),
+    path('reviews/<int:review_id>/like/', views.toggle_review_like_view, name='toggle_review_like'),
+
     # جزئیات محصول (باید آخرین URL باشد)
     path('<str:slug>/', views.product_detail_view, name='detail'),
 ]

@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (
     Gender, Season, ScentFamily, Nature, Taste, Scent,
     Note, Perfume, PerfumeNote, PerfumeVariant, PerfumeImage,
-    Wishlist,
+    Wishlist, Review, ReviewLike,
 )
 
 
@@ -109,3 +109,40 @@ class PerfumeAdmin(admin.ModelAdmin):
 class WishlistAdmin(admin.ModelAdmin):
     list_display = ('user', 'perfume', 'created_at')
     raw_id_fields = ('user', 'perfume')
+
+
+class ReviewLikeInline(admin.TabularInline):
+    model = ReviewLike
+    extra = 0
+    readonly_fields = ('user', 'created_at')
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('user', 'perfume', 'short_body', 'is_approved', 'parent', 'likes_count', 'created_at')
+    list_filter = ('is_approved', 'created_at')
+    search_fields = ('body', 'user__full_name', 'user__phone_number', 'perfume__name')
+    raw_id_fields = ('user', 'perfume', 'parent')
+    list_editable = ('is_approved',)
+    readonly_fields = ('created_at', 'updated_at')
+    actions = ['approve_reviews', 'reject_reviews']
+    inlines = [ReviewLikeInline]
+
+    def short_body(self, obj):
+        return obj.body[:50] + '...' if len(obj.body) > 50 else obj.body
+    short_body.short_description = 'متن نظر'
+
+    def likes_count(self, obj):
+        return obj.likes.count()
+    likes_count.short_description = 'تعداد لایک'
+
+    @admin.action(description='تأیید نظرات انتخاب شده')
+    def approve_reviews(self, request, queryset):
+        updated = queryset.update(is_approved=True)
+        self.message_user(request, f'{updated} نظر تأیید شد.')
+
+    @admin.action(description='رد نظرات انتخاب شده')
+    def reject_reviews(self, request, queryset):
+        updated = queryset.update(is_approved=False)
+        self.message_user(request, f'{updated} نظر رد شد.')
+

@@ -119,6 +119,13 @@
             <button class="tab-btn" data-tab="notes">نوت‌های عطر</button>
             <button class="tab-btn" data-tab="scents">رایحه و طعم</button>
             <button class="tab-btn" data-tab="description">توضیحات</button>
+            <button class="tab-btn" data-tab="reviews">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 4px;">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                نظرات
+                {% if reviews_count %}<span class="tab-badge">{{ reviews_count|persian_digits }}</span>{% endif %}
+            </button>
         </div>
 
         <!-- Specs Tab -->
@@ -352,6 +359,189 @@
                 {{ perfume.description|linebreaks }}
             </div>
         </div>
+
+        <!-- Reviews Tab -->
+        <div class="tab-content" id="tab-reviews">
+            <div class="reviews-section">
+                <!-- فرم ثبت نظر -->
+                {% if user.is_authenticated %}
+                <div class="review-form-card">
+                    <h3 class="review-form-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        نظر خود را بنویسید
+                    </h3>
+                    <form action="{% url 'products:add_review' slug=perfume.slug %}" method="post" class="review-form">
+                        {% csrf_token %}
+                        <textarea name="body" rows="4" placeholder="نظر شما درباره این عطر..." maxlength="1000" required class="review-textarea" id="review-textarea"></textarea>
+                        <div class="review-form-footer">
+                            <span class="review-char-count" id="review-char-count">۰ / ۱٬۰۰۰</span>
+                            <button type="submit" class="btn btn-primary btn-review-submit">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                                ارسال نظر
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% else %}
+                <div class="review-login-prompt">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <p>برای ثبت نظر ابتدا <a href="{% url 'accounts:login' %}?next={{ request.path }}">وارد حساب کاربری</a> خود شوید.</p>
+                </div>
+                {% endif %}
+
+                <!-- لیست نظرات -->
+                {% if reviews %}
+                <div class="reviews-list">
+                    {% for review in reviews %}
+                    <div class="review-card" id="review-{{ review.id }}">
+                        <div class="review-header">
+                            <div class="review-avatar">
+                                {% if review.user.avatar %}
+                                <img src="{{ review.user.avatar.url }}" alt="{{ review.user.get_full_name }}">
+                                {% else %}
+                                <span>{{ review.user.get_short_name|first }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="review-meta">
+                                <div class="review-author-row">
+                                    <span class="review-author">{{ review.user.get_full_name }}</span>
+                                    {% if review.user.id in buyer_user_ids %}
+                                    <span class="buyer-tag">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        خریدار
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <span class="review-date">{{ review.created_at|jalali_date }}</span>
+                            </div>
+                        </div>
+                        <div class="review-body">{{ review.body|linebreaksbr }}</div>
+                        <div class="review-actions">
+                            {% if user.is_authenticated %}
+                            <button class="review-action-btn review-like-btn {% if review.id in user_liked_reviews %}liked{% endif %}"
+                                    data-review-id="{{ review.id }}"
+                                    data-url="{% url 'products:toggle_review_like' review_id=review.id %}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="{% if review.id in user_liked_reviews %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                <span class="like-count">{{ review.total_likes|persian_digits }}</span>
+                            </button>
+                            {% else %}
+                            <span class="review-action-btn review-like-static">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                <span class="like-count">{{ review.total_likes|persian_digits }}</span>
+                            </span>
+                            {% endif %}
+
+                            {% if user.is_authenticated %}
+                            <button class="review-action-btn review-reply-toggle" data-review-id="{{ review.id }}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 10 20 15 15 20"/>
+                                    <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
+                                </svg>
+                                پاسخ
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- فرم پاسخ -->
+                        {% if user.is_authenticated %}
+                        <div class="reply-form-container" id="reply-form-{{ review.id }}" style="display: none;">
+                            <form action="{% url 'products:add_review' slug=perfume.slug %}" method="post" class="reply-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="parent_id" value="{{ review.id }}">
+                                <textarea name="body" rows="3" placeholder="پاسخ شما..." maxlength="1000" required class="review-textarea reply-textarea"></textarea>
+                                <div class="reply-form-actions">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13"/>
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                        </svg>
+                                        ارسال پاسخ
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-ghost reply-cancel" data-review-id="{{ review.id }}">انصراف</button>
+                                </div>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        <!-- پاسخ‌ها -->
+                        {% for reply in review.replies.all %}
+                        {% if reply.is_approved %}
+                        <div class="review-reply">
+                            <div class="review-header">
+                                <div class="review-avatar review-avatar-sm">
+                                    {% if reply.user.avatar %}
+                                    <img src="{{ reply.user.avatar.url }}" alt="{{ reply.user.get_full_name }}">
+                                    {% else %}
+                                    <span>{{ reply.user.get_short_name|first }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="review-meta">
+                                    <div class="review-author-row">
+                                        <span class="review-author">{{ reply.user.get_full_name }}</span>
+                                        {% if reply.user.id in buyer_user_ids %}
+                                        <span class="buyer-tag">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            خریدار
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="review-date">{{ reply.created_at|jalali_date }}</span>
+                                </div>
+                            </div>
+                            <div class="review-body">{{ reply.body|linebreaksbr }}</div>
+                            <div class="review-actions">
+                                {% if user.is_authenticated %}
+                                <button class="review-action-btn review-like-btn {% if reply.id in user_liked_reviews %}liked{% endif %}"
+                                        data-review-id="{{ reply.id }}"
+                                        data-url="{% url 'products:toggle_review_like' review_id=reply.id %}">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="{% if reply.id in user_liked_reviews %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                    </svg>
+                                    <span class="like-count">{{ reply.likes.count|persian_digits }}</span>
+                                </button>
+                                {% else %}
+                                <span class="review-action-btn review-like-static">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                    </svg>
+                                    <span class="like-count">{{ reply.likes.count|persian_digits }}</span>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="reviews-empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <p>هنوز نظری برای این محصول ثبت نشده است.</p>
+                    <p class="reviews-empty-sub">اولین نفری باشید که نظر می‌دهد!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Related Products -->
@@ -413,6 +603,90 @@ document.getElementById('btn-add-cart').addEventListener('click', function() {
 document.getElementById('btn-wishlist').addEventListener('click', function() {
     const perfumeId = this.dataset.perfumeId;
     toggleWishlist(perfumeId, this);
+});
+
+// ---- Reviews ----
+
+// Character count for review textarea
+var reviewTextarea = document.getElementById('review-textarea');
+if (reviewTextarea) {
+    var charCount = document.getElementById('review-char-count');
+    reviewTextarea.addEventListener('input', function() {
+        var len = this.value.length;
+        charCount.textContent = formatPrice(len) + ' / ' + formatPrice(1000);
+        if (len > 900) {
+            charCount.style.color = 'var(--danger)';
+        } else {
+            charCount.style.color = 'var(--gray-400)';
+        }
+    });
+}
+
+// Toggle reply forms
+document.querySelectorAll('.review-reply-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var reviewId = this.dataset.reviewId;
+        var form = document.getElementById('reply-form-' + reviewId);
+        if (form) {
+            var isVisible = form.style.display !== 'none';
+            // Hide all reply forms first
+            document.querySelectorAll('.reply-form-container').forEach(function(f) {
+                f.style.display = 'none';
+            });
+            if (!isVisible) {
+                form.style.display = 'block';
+                form.querySelector('textarea').focus();
+            }
+        }
+    });
+});
+
+// Cancel reply
+document.querySelectorAll('.reply-cancel').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var reviewId = this.dataset.reviewId;
+        var form = document.getElementById('reply-form-' + reviewId);
+        if (form) {
+            form.style.display = 'none';
+            form.querySelector('textarea').value = '';
+        }
+    });
+});
+
+// Like/Unlike reviews (AJAX)
+document.querySelectorAll('.review-like-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var url = this.dataset.url;
+        var button = this;
+        var svg = button.querySelector('svg');
+        var countSpan = button.querySelector('.like-count');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.status === 'liked') {
+                button.classList.add('liked');
+                svg.setAttribute('fill', 'currentColor');
+            } else {
+                button.classList.remove('liked');
+                svg.setAttribute('fill', 'none');
+            }
+            countSpan.textContent = formatPrice(data.likes_count);
+
+            // Micro-animation
+            button.style.transform = 'scale(1.2)';
+            setTimeout(function() { button.style.transform = 'scale(1)'; }, 200);
+        })
+        .catch(function(err) {
+            console.error('Error toggling like:', err);
+        });
+    });
 });
 </script>
 {% endblock %}

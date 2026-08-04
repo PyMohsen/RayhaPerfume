@@ -4,7 +4,9 @@
 <div class="container">
     <div class="profile-layout">
         <aside class="profile-sidebar">
-            {% include 'accounts/profile.html' only %}
+            {% with active_tab='edit' %}
+                {% include 'partials/_profile_sidebar.html' %}
+            {% endwith %}
         </aside>
         <div class="profile-content">
             <h2 class="page-title">ویرایش اطلاعات</h2>

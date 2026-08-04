@@ -605,3 +605,75 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.perfume.name}'
+
+
+class Review(models.Model):
+    """نظرات کاربران درباره عطرها"""
+    user = models.ForeignKey(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='کاربر'
+    )
+    perfume = models.ForeignKey(
+        Perfume,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='عطر'
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        verbose_name='پاسخ به'
+    )
+    body = models.TextField(
+        max_length=1000,
+        verbose_name='متن نظر'
+    )
+    is_approved = models.BooleanField(
+        default=False,
+        verbose_name='تأیید شده'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ثبت')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='آخرین ویرایش')
+
+    class Meta:
+        verbose_name = 'نظر'
+        verbose_name_plural = 'نظرات'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} - {self.perfume.name} ({self.body[:30]}...)'
+
+    @property
+    def likes_count(self):
+        """تعداد لایک‌ها"""
+        return self.likes.count()
+
+
+class ReviewLike(models.Model):
+    """لایک نظرات"""
+    user = models.ForeignKey(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name='review_likes',
+        verbose_name='کاربر'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        verbose_name='نظر'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ')
+
+    class Meta:
+        verbose_name = 'لایک نظر'
+        verbose_name_plural = 'لایک‌های نظرات'
+        unique_together = ['user', 'review']
+
+    def __str__(self):
+        return f'{self.user} ❤ {self.review}'

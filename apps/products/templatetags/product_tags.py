@@ -71,3 +71,22 @@ def query_transform(request, **kwargs):
         elif k in updated:
             del updated[k]
     return updated.urlencode()
+
+
+@register.filter
+def jalali_date(value):
+    """تبدیل تاریخ میلادی به شمسی"""
+    if not value:
+        return ""
+    try:
+        import jdatetime
+        jdate = jdatetime.datetime.fromgregorian(datetime=value)
+        months = [
+            '', 'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+            'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند',
+        ]
+        result = f'{jdate.day} {months[jdate.month]} {jdate.year}'
+        return to_persian_digits(result)
+    except (ImportError, Exception):
+        return to_persian_digits(str(value.date()))
+
