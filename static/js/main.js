@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     var scrollTopBtn = document.createElement('button');
     scrollTopBtn.className = 'scroll-top-btn';
-    scrollTopBtn.innerHTML = '▲';
+    scrollTopBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
     scrollTopBtn.title = 'بازگشت به بالا';
     scrollTopBtn.style.cssText = 'position:fixed;bottom:24px;left:24px;width:44px;height:44px;border-radius:50%;background:var(--primary);color:white;border:none;font-size:16px;cursor:pointer;opacity:0;visibility:hidden;transition:all 0.3s ease;z-index:999;box-shadow:0 4px 12px rgba(107,76,154,0.3);';
     document.body.appendChild(scrollTopBtn);

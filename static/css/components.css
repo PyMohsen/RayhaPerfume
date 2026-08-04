@@ -1797,3 +1797,126 @@
     padding: var(--space-8);
     box-shadow: var(--shadow);
 }
+
+/* ---------- Custom Unified SVG Icons System ---------- */
+.feature-icon-svg-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(223, 188, 115, 0.12);
+    margin-bottom: 12px;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(223, 188, 115, 0.25);
+}
+
+.feature-item:hover .feature-icon-svg-wrapper {
+    transform: translateY(-4px) scale(1.05);
+    background: rgba(223, 188, 115, 0.25);
+    box-shadow: 0 6px 16px rgba(223, 188, 115, 0.3);
+}
+
+.feature-svg-icon {
+    transition: transform 0.3s ease;
+}
+
+.feature-item:hover .feature-svg-icon {
+    transform: scale(1.1);
+}
+
+/* Notes Title SVG Icons */
+.notes-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notes-title .note-header-icon {
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(204, 160, 75, 0.3));
+}
+
+.note-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(223, 188, 115, 0.1);
+    margin: 0 auto;
+}
+
+/* Auth Header SVG Icons */
+.auth-icon-svg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(74, 44, 90, 0.08) 0%, rgba(204, 160, 75, 0.15) 100%);
+    border: 1px solid rgba(204, 160, 75, 0.3);
+    margin-bottom: 16px;
+    box-shadow: 0 4px 15px rgba(74, 44, 90, 0.08);
+}
+
+/* Contact Info Items */
+.contact-info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-size: var(--font-size-base);
+    color: var(--gray-700);
+}
+
+.contact-info-item svg {
+    flex-shrink: 0;
+    padding: 6px;
+    background: rgba(204, 160, 75, 0.1);
+    border-radius: 10px;
+    box-sizing: content-box;
+}
+
+/* Payment Result SVG Icons */
+.result-icon-success, .result-icon-failed {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    margin: 0 auto 20px auto;
+    animation: resultPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.result-icon-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid rgba(16, 185, 129, 0.25);
+}
+
+.result-icon-failed {
+    background: rgba(239, 68, 68, 0.1);
+    border: 2px solid rgba(239, 68, 68, 0.25);
+}
+
+@keyframes resultPop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Scroll Top Button Flex Centering */
+.scroll-top-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.scroll-top-btn:hover {
+    transform: translateY(-3px);
+    background: var(--primary-light) !important;
+}
+

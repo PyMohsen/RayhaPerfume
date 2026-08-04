@@ -188,14 +188,25 @@
         <div class="tab-content" id="tab-notes">
             {% if perfume.top_notes %}
             <div class="notes-section">
-                <h3 class="notes-title">🌸 نوت آغازی</h3>
+                <h3 class="notes-title">
+                    <svg class="note-header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    نوت آغازی
+                </h3>
                 <div class="notes-grid">
                     {% for pn in perfume.top_notes %}
                     <div class="note-item">
                         {% if pn.note.image %}
                         <img src="{{ pn.note.image.url }}" alt="{{ pn.note.name }}" class="note-image">
                         {% else %}
-                        <div class="note-placeholder">🌿</div>
+                        <div class="note-placeholder">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 19 2c1 2 2 4.1 2 9 0 4.4-3.6 9-10 9z"/>
+                                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                            </svg>
+                        </div>
                         {% endif %}
                         <span class="note-name">{{ pn.note.name }}</span>
                     </div>
@@ -206,14 +217,28 @@
 
             {% if perfume.middle_notes %}
             <div class="notes-section">
-                <h3 class="notes-title">💐 نوت میانی</h3>
+                <h3 class="notes-title">
+                    <svg class="note-header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                        <path d="M6.5 13a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                        <path d="M17.5 13a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                        <path d="M12 17.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                        <circle cx="12" cy="12" r="2"/>
+                    </svg>
+                    نوت میانی
+                </h3>
                 <div class="notes-grid">
                     {% for pn in perfume.middle_notes %}
                     <div class="note-item">
                         {% if pn.note.image %}
                         <img src="{{ pn.note.image.url }}" alt="{{ pn.note.name }}" class="note-image">
                         {% else %}
-                        <div class="note-placeholder">🌿</div>
+                        <div class="note-placeholder">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 19 2c1 2 2 4.1 2 9 0 4.4-3.6 9-10 9z"/>
+                                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                            </svg>
+                        </div>
                         {% endif %}
                         <span class="note-name">{{ pn.note.name }}</span>
                     </div>
@@ -224,14 +249,27 @@
 
             {% if perfume.base_notes %}
             <div class="notes-section">
-                <h3 class="notes-title">🪵 نوت پایانی</h3>
+                <h3 class="notes-title">
+                    <svg class="note-header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v18"/>
+                        <path d="M5 7.5h14"/>
+                        <path d="M3 12h18"/>
+                        <path d="M6 16.5h12"/>
+                    </svg>
+                    نوت پایانی
+                </h3>
                 <div class="notes-grid">
                     {% for pn in perfume.base_notes %}
                     <div class="note-item">
                         {% if pn.note.image %}
                         <img src="{{ pn.note.image.url }}" alt="{{ pn.note.name }}" class="note-image">
                         {% else %}
-                        <div class="note-placeholder">🌿</div>
+                        <div class="note-placeholder">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 19 2c1 2 2 4.1 2 9 0 4.4-3.6 9-10 9z"/>
+                                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                            </svg>
+                        </div>
                         {% endif %}
                         <span class="note-name">{{ pn.note.name }}</span>
                     </div>

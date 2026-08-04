@@ -206,6 +206,6 @@ SMS_TEMPLATE_ID = os.getenv('SMS_TEMPLATE_ID', '')
 
 
 # Shipping Settings
-SHIPPING_COST = 0  # هزینه ارسال به تومان
+SHIPPING_COST = 98000  # هزینه ارسال به تومان
 
 

@@ -44,10 +44,10 @@
         <!-- Side Banners (Right) -->
         <div class="hero-side-banners">
             <a href="/products/" class="hero-side-banner">
-                <img src="{% static 'images/snap-torob-pay.png' %}" alt="خرید قسطی با اسنپ پی">
+                <img src="{% static 'images/snapp-torob-pay.jpg' %}" alt="خرید قسطی با اسنپ پی">
             </a>
             <a href="{% url 'core:faq' %}" class="hero-side-banner">
-                <img src="{% static 'images/faq_banner.png' %}" alt="سوالات متداول">
+                <img src="{% static 'images/faq_banner.jpg' %}" alt="سوالات متداول">
             </a>
         </div>
     </div>
@@ -143,22 +143,48 @@
     <div class="container">
         <div class="features-grid">
             <div class="feature-item">
-                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">🚚</div>
+                <div class="feature-icon-svg-wrapper">
+                    <svg class="feature-svg-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dfbc73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="3" width="15" height="13" rx="2" ry="2"/>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                        <circle cx="5.5" cy="18.5" r="2.5"/>
+                        <circle cx="18.5" cy="18.5" r="2.5"/>
+                        <line x1="1" y1="9" x2="5" y2="9"/>
+                    </svg>
+                </div>
                 <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">ارسال سریع</h3>
                 <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">ارسال به سراسر کشور</p>
             </div>
             <div class="feature-item">
-                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">✅</div>
+                <div class="feature-icon-svg-wrapper">
+                    <svg class="feature-svg-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dfbc73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2l2.4 1.8 3-.4.8 2.9 2.7 1.3-.9 2.9 1.8 2.4-2.4 1.8-.4 3-2.9.8-1.3 2.7-2.9-.9-2.4 1.8-1.8-2.4-3 .4-.8-2.9-2.7-1.3.9-2.9-1.8-2.4 2.4-1.8.4-3 2.9-.8 1.3-2.7 2.9.9z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
                 <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">ضمانت اصالت</h3>
                 <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">تضمین اصل بودن تمام عطرها</p>
             </div>
             <div class="feature-item">
-                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">💳</div>
+                <div class="feature-icon-svg-wrapper">
+                    <svg class="feature-svg-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dfbc73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="3"/>
+                        <line x1="2" y1="9" x2="22" y2="9"/>
+                        <rect x="5" y="13" width="4" height="3" rx="1"/>
+                        <circle cx="17.5" cy="14.5" r="1.5" fill="#dfbc73"/>
+                    </svg>
+                </div>
                 <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">پرداخت امن</h3>
                 <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">درگاه پرداخت معتبر زرین‌پال</p>
             </div>
             <div class="feature-item">
-                <div class="feature-icon" style="font-size: 36px; margin-bottom: 8px;">🔄</div>
+                <div class="feature-icon-svg-wrapper">
+                    <svg class="feature-svg-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dfbc73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 2.63-6.36L3 8"/>
+                        <path d="M3 3v5h5"/>
+                        <text x="12" y="15.5" font-size="8" font-weight="700" font-family="'RaviFaNum', system-ui, sans-serif" text-anchor="middle" fill="#dfbc73" stroke="none">۷</text>
+                    </svg>
+                </div>
                 <h3 class="feature-title" style="font-size: var(--font-size-base); font-weight: 700;">بازگشت کالا</h3>
                 <p class="feature-desc" style="font-size: var(--font-size-xs); opacity: 0.85;">۷ روز ضمانت بازگشت</p>
             </div>
