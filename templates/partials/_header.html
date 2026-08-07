@@ -122,6 +122,33 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
                 </form>
+
+                <!-- Live Search Results Dropdown -->
+                <div class="live-search-dropdown" id="live-search-dropdown">
+                    <!-- Loading Spinner -->
+                    <div class="live-search-loading" id="live-search-loading">
+                        <div class="live-search-spinner"></div>
+                        <span>در حال جستجو...</span>
+                    </div>
+
+                    <!-- Results List -->
+                    <div class="live-search-results" id="live-search-results"></div>
+
+                    <!-- Empty State -->
+                    <div class="live-search-empty" id="live-search-empty">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <span>نتیجه‌ای یافت نشد</span>
+                    </div>
+
+                    <!-- View All Link -->
+                    <a href="#" class="live-search-view-all" id="live-search-view-all">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <span>مشاهده همه نتایج (<span id="live-search-total">0</span>)</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon"><path d="m15 18-6-6 6-6"/></svg>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

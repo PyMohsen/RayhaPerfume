@@ -14,6 +14,55 @@ from .models import (
 from apps.orders.models import Order, OrderItem
 
 
+# ==========================================
+# نرمال‌سازی متن فارسی برای جستجوی هوشمند
+# ==========================================
+
+def normalize_persian(text):
+    """نرمال‌سازی کاراکترهای مشابه فارسی/عربی به فرم یکسان"""
+    replacements = {
+        'آ': 'ا',
+        'أ': 'ا',
+        'إ': 'ا',
+        'ي': 'ی',
+        'ك': 'ک',
+        'ة': 'ه',
+        'ؤ': 'و',
+        'ئ': 'ی',
+        '\u200c': '',  # نیم‌فاصله
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
+def get_search_variants(query):
+    """تولید نسخه‌های مختلف عبارت جستجو برای تطبیق هوشمند"""
+    variants = {query}
+
+    # نرمال‌سازی: آ→ا
+    normalized = normalize_persian(query)
+    variants.add(normalized)
+
+    # معکوس: ا→آ
+    expanded = normalized.replace('ا', 'آ')
+    variants.add(expanded)
+
+    # حذف نسخه‌های خالی
+    variants.discard('')
+    return variants
+
+
+def build_fuzzy_q(query, fields):
+    """ساخت Q object برای جستجوی هوشمند فارسی در فیلدهای مشخص"""
+    variants = get_search_variants(query)
+    q = Q()
+    for variant in variants:
+        for field in fields:
+            q |= Q(**{f'{field}__icontains': variant})
+    return q
+
+
 def get_filter_list(request, param_name):
     """استخراج لیست فیلترها از GET (چه به صورت کلیدهای تکراری چه به صورت جدا شده با کاما)"""
     raw_list = request.GET.getlist(param_name)
@@ -69,9 +118,7 @@ def product_list_view(request):
 
     if search_query:
         perfumes = perfumes.filter(
-            Q(name__icontains=search_query) |
-            Q(brand__icontains=search_query) |
-            Q(description__icontains=search_query)
+            build_fuzzy_q(search_query, ['name', 'brand', 'description'])
         )
 
     if only_available:
@@ -248,9 +295,7 @@ def search_view(request):
 
     if query:
         perfumes = Perfume.objects.filter(
-            Q(name__icontains=query) |
-            Q(brand__icontains=query) |
-            Q(description__icontains=query),
+            build_fuzzy_q(query, ['name', 'brand', 'description']),
             is_active=True,
         ).prefetch_related('variants', 'images')
 
@@ -259,6 +304,72 @@ def search_view(request):
         'query': query,
     }
     return render(request, 'products/search_results.html', context)
+
+
+def live_search_api(request):
+    """API جستجوی لحظه‌ای (Live Search) — بازگرداندن نتایج JSON"""
+    query = request.GET.get('q', '').strip()
+
+    if not query or len(query) < 2:
+        return JsonResponse({'results': [], 'total': 0})
+
+    search_fields = [
+        'name', 'name_en', 'brand',
+        'perfume_notes__note__name', 'scents__name',
+    ]
+    fuzzy_q = build_fuzzy_q(query, search_fields)
+
+    perfumes = Perfume.objects.filter(
+        fuzzy_q,
+        is_active=True,
+    ).select_related(
+        'gender',
+    ).prefetch_related(
+        'variants', 'images',
+    ).distinct()[:8]
+
+    results = []
+    for perfume in perfumes:
+        # تصویر اصلی
+        primary_img = perfume.primary_image
+        image_url = primary_img.image.url if primary_img else ''
+
+        # واریانت با کمترین قیمت (موجود)
+        variant = perfume.variants.filter(stock__gt=0).order_by('price').first()
+        if not variant:
+            variant = perfume.variants.order_by('price').first()
+
+        price = variant.price if variant else 0
+        final_price = variant.final_price if variant else 0
+        discount_percent = variant.discount_percent if variant else 0
+        has_discount = discount_percent > 0
+
+        results.append({
+            'id': perfume.pk,
+            'name': perfume.name,
+            'brand': perfume.brand,
+            'slug': perfume.slug,
+            'url': perfume.get_absolute_url(),
+            'image_url': image_url,
+            'gender': perfume.gender.name if perfume.gender else '',
+            'price': price,
+            'final_price': final_price,
+            'has_discount': has_discount,
+            'discount_percent': discount_percent,
+            'is_available': perfume.is_available,
+        })
+
+    # تعداد کل نتایج (بدون محدودیت ۸ تایی)
+    total = Perfume.objects.filter(
+        fuzzy_q,
+        is_active=True,
+    ).distinct().count()
+
+    return JsonResponse({
+        'results': results,
+        'total': total,
+        'query': query,
+    })
 
 
 @login_required

@@ -31,16 +31,27 @@
 <body>
     {% include 'partials/_header.html' %}
     
-    <!-- Messages -->
+    <!-- Messages (hidden, converted to toasts via JS) -->
     {% if messages %}
-    <div class="messages-container" id="messages-container">
-        {% for message in messages %}
-        <div class="message message-{{ message.tags }}" role="alert">
-            <span class="message-text">{{ message }}</span>
-            <button class="message-close" onclick="this.parentElement.remove()">&times;</button>
-        </div>
-        {% endfor %}
+    <div class="messages-container" id="messages-container"
+         data-messages='[{% for message in messages %}{"text":"{{ message|escapejs }}","type":"{{ message.tags }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var container = document.getElementById('messages-container');
+        if (!container) return;
+        try {
+            var msgs = JSON.parse(container.getAttribute('data-messages'));
+            var delay = 0;
+            msgs.forEach(function(m) {
+                setTimeout(function() {
+                    showToast(m.text, m.type);
+                }, delay);
+                delay += 150;
+            });
+        } catch(e) {}
+    });
+    </script>
     {% endif %}
     
     <!-- Main Content -->
@@ -52,6 +63,32 @@
     
     <!-- Scripts -->
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/live_search.js' %}"></script>
+    <script src="{% static 'js/cart.js' %}"></script>
     {% block extra_js %}{% endblock %}
+
+    <!-- Cart Add Notification -->
+    <div class="cart-notification" id="cart-notification">
+        <div class="cart-notification-content">
+            <a href="/cart/" class="cart-notification-link">
+                برو به سبد خرید
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                </svg>
+            </a>
+            <div class="cart-notification-right">
+                <span class="cart-notification-text">کالا اضافه شد!</span>
+                <span class="cart-notification-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10B981">
+                        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+                <button class="cart-notification-close" onclick="hideCartNotification()" aria-label="بستن">&times;</button>
+            </div>
+        </div>
+        <div class="cart-notification-progress">
+            <div class="cart-notification-progress-bar" id="cart-notification-progress-bar"></div>
+        </div>
+    </div>
 </body>
 </html>

@@ -556,4 +556,52 @@
         border-radius: 16px !important;
         padding: var(--space-6) 0 !important;
     }
+
+    /* Live Search Responsive — Mobile */
+    .live-search-dropdown {
+        max-height: 360px;
+    }
+
+    .live-search-results {
+        max-height: 280px;
+    }
+
+    .live-search-item {
+        padding: 8px 8px;
+        gap: 10px;
+    }
+
+    .live-search-item-image {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 12px;
+    }
+
+    .live-search-item-title {
+        font-size: 13px;
+    }
+
+    .live-search-item-brand {
+        font-size: 11px;
+    }
+
+    .live-search-final-price {
+        font-size: 12px;
+    }
+
+    .live-search-original-price {
+        font-size: 10px;
+    }
+
+    .live-search-discount-badge {
+        font-size: 9px;
+        padding: 2px 5px;
+    }
+
+    .live-search-item-price {
+        flex-direction: column-reverse;
+        align-items: flex-end;
+        gap: 2px;
+    }
 }

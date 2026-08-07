@@ -20,15 +20,6 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-# هشدار برای SECRET_KEY ناامن در حالت production
-if not DEBUG and 'insecure' in SECRET_KEY:
-    warnings.warn(
-        'SECRET_KEY حاوی کلمه "insecure" است! '
-        'لطفاً یک کلید امن در فایل .env تنظیم کنید.',
-        UserWarning,
-        stacklevel=1,
-    )
-
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
