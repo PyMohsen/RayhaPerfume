@@ -1,6 +1,7 @@
 /**
  * Rayha Perfume — Live Search (Autocomplete)
  * جستجوی لحظه‌ای با تکمیل خودکار
+ * Supports both desktop (glass-search-input) and mobile (mobile-search-input)
  */
 
 (function () {
@@ -15,26 +16,30 @@
     var SEARCH_URL = '/products/search/';
 
     // ==========================================
-    // DOM Elements
+    // Desktop DOM Elements
     // ==========================================
-    var searchInput = document.getElementById('glass-search-input');
-    var dropdown = document.getElementById('live-search-dropdown');
-    var resultsContainer = document.getElementById('live-search-results');
-    var loadingEl = document.getElementById('live-search-loading');
-    var emptyEl = document.getElementById('live-search-empty');
-    var viewAllEl = document.getElementById('live-search-view-all');
-    var totalEl = document.getElementById('live-search-total');
+    var desktopInput = document.getElementById('glass-search-input');
+    var desktopDropdown = document.getElementById('live-search-dropdown');
+    var desktopResults = document.getElementById('live-search-results');
+    var desktopLoading = document.getElementById('live-search-loading');
+    var desktopEmpty = document.getElementById('live-search-empty');
+    var desktopViewAll = document.getElementById('live-search-view-all');
+    var desktopTotal = document.getElementById('live-search-total');
     var searchOverlay = document.getElementById('glass-search-overlay');
 
-    if (!searchInput || !dropdown) return;
+    // ==========================================
+    // Mobile DOM Elements
+    // ==========================================
+    var mobileInput = document.getElementById('mobile-search-input');
+    var mobileDropdown = document.getElementById('mobile-live-search-dropdown');
+    var mobileResults = document.getElementById('mobile-live-search-results');
+    var mobileLoading = document.getElementById('mobile-live-search-loading');
+    var mobileEmpty = document.getElementById('mobile-live-search-empty');
+    var mobileViewAll = document.getElementById('mobile-live-search-view-all');
+    var mobileTotal = document.getElementById('mobile-live-search-total');
 
-    // ==========================================
-    // State
-    // ==========================================
-    var debounceTimer = null;
-    var currentRequest = null;
-    var activeIndex = -1;
-    var currentResults = [];
+    // If neither input exists, bail
+    if (!desktopInput && !mobileInput) return;
 
     // ==========================================
     // Utility: Format Price in Persian
@@ -55,54 +60,90 @@
     }
 
     // ==========================================
-    // Show/Hide Helpers
+    // Create a search context for each mode
     // ==========================================
-    function showDropdown() {
-        dropdown.classList.add('active');
-    }
+    function createSearchContext(input, dropdown, resultsContainer, loadingEl, emptyEl, viewAllEl, totalEl) {
+        if (!input || !dropdown) return null;
 
-    function hideDropdown() {
-        dropdown.classList.remove('active');
-        activeIndex = -1;
-        clearHighlight();
-    }
+        var ctx = {
+            input: input,
+            dropdown: dropdown,
+            resultsContainer: resultsContainer,
+            loadingEl: loadingEl,
+            emptyEl: emptyEl,
+            viewAllEl: viewAllEl,
+            totalEl: totalEl,
+            debounceTimer: null,
+            currentRequest: null,
+            activeIndex: -1,
+            currentResults: []
+        };
 
-    function showLoading() {
-        loadingEl.style.display = 'flex';
-        resultsContainer.style.display = 'none';
-        emptyEl.style.display = 'none';
-        viewAllEl.style.display = 'none';
-        showDropdown();
-    }
+        // Show/Hide Helpers
+        ctx.showDropdown = function () {
+            ctx.dropdown.classList.add('active');
+        };
 
-    function showResults() {
-        loadingEl.style.display = 'none';
-        resultsContainer.style.display = 'block';
-        emptyEl.style.display = 'none';
-        viewAllEl.style.display = 'flex';
-        showDropdown();
-    }
+        ctx.hideDropdown = function () {
+            ctx.dropdown.classList.remove('active');
+            ctx.activeIndex = -1;
+            ctx.clearHighlight();
+        };
 
-    function showEmpty() {
-        loadingEl.style.display = 'none';
-        resultsContainer.style.display = 'none';
-        emptyEl.style.display = 'flex';
-        viewAllEl.style.display = 'none';
-        showDropdown();
-    }
+        ctx.showLoading = function () {
+            ctx.loadingEl.style.display = 'flex';
+            ctx.resultsContainer.style.display = 'none';
+            ctx.emptyEl.style.display = 'none';
+            ctx.viewAllEl.style.display = 'none';
+            ctx.showDropdown();
+        };
 
-    function hideAll() {
-        loadingEl.style.display = 'none';
-        resultsContainer.style.display = 'none';
-        emptyEl.style.display = 'none';
-        viewAllEl.style.display = 'none';
-        hideDropdown();
+        ctx.showResults = function () {
+            ctx.loadingEl.style.display = 'none';
+            ctx.resultsContainer.style.display = 'block';
+            ctx.emptyEl.style.display = 'none';
+            ctx.viewAllEl.style.display = 'flex';
+            ctx.showDropdown();
+        };
+
+        ctx.showEmpty = function () {
+            ctx.loadingEl.style.display = 'none';
+            ctx.resultsContainer.style.display = 'none';
+            ctx.emptyEl.style.display = 'flex';
+            ctx.viewAllEl.style.display = 'none';
+            ctx.showDropdown();
+        };
+
+        ctx.hideAll = function () {
+            ctx.loadingEl.style.display = 'none';
+            ctx.resultsContainer.style.display = 'none';
+            ctx.emptyEl.style.display = 'none';
+            ctx.viewAllEl.style.display = 'none';
+            ctx.hideDropdown();
+        };
+
+        ctx.clearHighlight = function () {
+            var items = ctx.resultsContainer.querySelectorAll('.live-search-item');
+            for (var i = 0; i < items.length; i++) {
+                items[i].classList.remove('active');
+            }
+        };
+
+        ctx.highlightItem = function (index) {
+            var items = ctx.resultsContainer.querySelectorAll('.live-search-item');
+            if (index < 0 || index >= items.length) return;
+            ctx.clearHighlight();
+            items[index].classList.add('active');
+            items[index].scrollIntoView({ block: 'nearest' });
+        };
+
+        return ctx;
     }
 
     // ==========================================
     // Render a Single Result Item
     // ==========================================
-    function renderResultItem(item, index) {
+    function renderResultItem(item, index, ctx) {
         var div = document.createElement('a');
         div.className = 'live-search-item';
         div.href = item.url;
@@ -162,8 +203,8 @@
 
         // Hover events
         div.addEventListener('mouseenter', function () {
-            activeIndex = index;
-            clearHighlight();
+            ctx.activeIndex = index;
+            ctx.clearHighlight();
             div.classList.add('active');
         });
 
@@ -177,40 +218,40 @@
     // ==========================================
     // Render All Results
     // ==========================================
-    function renderResults(data) {
-        resultsContainer.innerHTML = '';
-        currentResults = data.results;
-        activeIndex = -1;
+    function renderResults(data, ctx) {
+        ctx.resultsContainer.innerHTML = '';
+        ctx.currentResults = data.results;
+        ctx.activeIndex = -1;
 
         if (!data.results || data.results.length === 0) {
-            showEmpty();
+            ctx.showEmpty();
             return;
         }
 
         for (var i = 0; i < data.results.length; i++) {
-            resultsContainer.appendChild(renderResultItem(data.results[i], i));
+            ctx.resultsContainer.appendChild(renderResultItem(data.results[i], i, ctx));
         }
 
         // Update total count and view-all link
-        totalEl.textContent = toPersianDigits(data.total);
-        viewAllEl.href = SEARCH_URL + '?q=' + encodeURIComponent(data.query);
+        ctx.totalEl.textContent = toPersianDigits(data.total);
+        ctx.viewAllEl.href = SEARCH_URL + '?q=' + encodeURIComponent(data.query);
 
-        showResults();
+        ctx.showResults();
     }
 
     // ==========================================
     // Fetch Search Results
     // ==========================================
-    function fetchResults(query) {
+    function fetchResults(query, ctx) {
         // Cancel previous request
-        if (currentRequest) {
-            currentRequest.abort();
+        if (ctx.currentRequest) {
+            ctx.currentRequest.abort();
         }
 
-        showLoading();
+        ctx.showLoading();
 
         var controller = new AbortController();
-        currentRequest = controller;
+        ctx.currentRequest = controller;
 
         fetch(API_URL + '?q=' + encodeURIComponent(query), {
             signal: controller.signal,
@@ -220,104 +261,100 @@
                 return response.json();
             })
             .then(function (data) {
-                currentRequest = null;
-                renderResults(data);
+                ctx.currentRequest = null;
+                renderResults(data, ctx);
             })
             .catch(function (err) {
-                currentRequest = null;
+                ctx.currentRequest = null;
                 if (err.name !== 'AbortError') {
-                    hideAll();
+                    ctx.hideAll();
                 }
             });
     }
 
     // ==========================================
-    // Debounce Input Handler
+    // Initialize a search context with event listeners
     // ==========================================
-    searchInput.addEventListener('input', function () {
-        var query = searchInput.value.trim();
+    function initSearchContext(ctx) {
+        if (!ctx) return;
 
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
-        }
+        // Debounced input handler
+        ctx.input.addEventListener('input', function () {
+            var query = ctx.input.value.trim();
 
-        if (query.length < MIN_QUERY_LENGTH) {
-            hideAll();
-            return;
-        }
+            if (ctx.debounceTimer) {
+                clearTimeout(ctx.debounceTimer);
+            }
 
-        debounceTimer = setTimeout(function () {
-            fetchResults(query);
-        }, DEBOUNCE_DELAY);
-    });
+            if (query.length < MIN_QUERY_LENGTH) {
+                ctx.hideAll();
+                return;
+            }
 
-    // ==========================================
-    // Keyboard Navigation
-    // ==========================================
-    function clearHighlight() {
-        var items = resultsContainer.querySelectorAll('.live-search-item');
-        for (var i = 0; i < items.length; i++) {
-            items[i].classList.remove('active');
-        }
-    }
+            ctx.debounceTimer = setTimeout(function () {
+                fetchResults(query, ctx);
+            }, DEBOUNCE_DELAY);
+        });
 
-    function highlightItem(index) {
-        var items = resultsContainer.querySelectorAll('.live-search-item');
-        if (index < 0 || index >= items.length) return;
+        // Keyboard navigation
+        ctx.input.addEventListener('keydown', function (e) {
+            var items = ctx.resultsContainer.querySelectorAll('.live-search-item');
+            if (!ctx.dropdown.classList.contains('active') || items.length === 0) return;
 
-        clearHighlight();
-        items[index].classList.add('active');
-        items[index].scrollIntoView({ block: 'nearest' });
-    }
-
-    searchInput.addEventListener('keydown', function (e) {
-        var items = resultsContainer.querySelectorAll('.live-search-item');
-        if (!dropdown.classList.contains('active') || items.length === 0) return;
-
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                activeIndex = (activeIndex + 1) % items.length;
-                highlightItem(activeIndex);
-                break;
-
-            case 'ArrowUp':
-                e.preventDefault();
-                activeIndex = (activeIndex - 1 + items.length) % items.length;
-                highlightItem(activeIndex);
-                break;
-
-            case 'Enter':
-                if (activeIndex >= 0 && activeIndex < items.length) {
+            switch (e.key) {
+                case 'ArrowDown':
                     e.preventDefault();
-                    window.location.href = items[activeIndex].href;
-                }
-                break;
+                    ctx.activeIndex = (ctx.activeIndex + 1) % items.length;
+                    ctx.highlightItem(ctx.activeIndex);
+                    break;
 
-            case 'Escape':
-                hideAll();
-                break;
-        }
-    });
+                case 'ArrowUp':
+                    e.preventDefault();
+                    ctx.activeIndex = (ctx.activeIndex - 1 + items.length) % items.length;
+                    ctx.highlightItem(ctx.activeIndex);
+                    break;
+
+                case 'Enter':
+                    if (ctx.activeIndex >= 0 && ctx.activeIndex < items.length) {
+                        e.preventDefault();
+                        window.location.href = items[ctx.activeIndex].href;
+                    }
+                    break;
+
+                case 'Escape':
+                    ctx.hideAll();
+                    break;
+            }
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function (e) {
+            if (!ctx.dropdown.contains(e.target) && e.target !== ctx.input) {
+                ctx.hideAll();
+            }
+        });
+
+        // Initialize hidden state
+        ctx.hideAll();
+    }
 
     // ==========================================
-    // Close on outside click
+    // Create and initialize desktop search
     // ==========================================
-    document.addEventListener('click', function (e) {
-        if (!dropdown.contains(e.target) && e.target !== searchInput) {
-            hideAll();
-        }
-    });
+    var desktopCtx = createSearchContext(
+        desktopInput, desktopDropdown, desktopResults,
+        desktopLoading, desktopEmpty, desktopViewAll, desktopTotal
+    );
 
-    // ==========================================
-    // Close dropdown when search overlay closes
-    // ==========================================
-    if (searchOverlay) {
+    initSearchContext(desktopCtx);
+
+    // Close desktop dropdown when search overlay closes
+    if (desktopCtx && searchOverlay) {
         var observer = new MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
                 if (mutation.attributeName === 'class') {
                     if (!searchOverlay.classList.contains('active')) {
-                        hideAll();
+                        desktopCtx.hideAll();
                     }
                 }
             });
@@ -325,7 +362,14 @@
         observer.observe(searchOverlay, { attributes: true });
     }
 
-    // Initialize hidden state
-    hideAll();
+    // ==========================================
+    // Create and initialize mobile search
+    // ==========================================
+    var mobileCtx = createSearchContext(
+        mobileInput, mobileDropdown, mobileResults,
+        mobileLoading, mobileEmpty, mobileViewAll, mobileTotal
+    );
+
+    initSearchContext(mobileCtx);
 
 })();

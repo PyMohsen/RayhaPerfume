@@ -41,6 +41,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
+    // Mobile Inline Search — Auto-focus on tap
+    // ==========================================
+    const mobileSearchInput = document.getElementById('mobile-search-input');
+    const mobileSearchPill = document.querySelector('.glass-pill-mobile-search');
+    
+    if (mobileSearchPill && mobileSearchInput) {
+        // When the search pill area is clicked, focus the input
+        mobileSearchPill.addEventListener('click', function (e) {
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'svg' && e.target.tagName !== 'path' && e.target.tagName !== 'circle') {
+                mobileSearchInput.focus();
+            }
+        });
+
+        // Auto-focus with a slight delay to ensure mobile keyboard opens
+        mobileSearchInput.addEventListener('touchstart', function () {
+            setTimeout(function () {
+                mobileSearchInput.focus();
+            }, 50);
+        }, { passive: true });
+    }
+
+    // ==========================================
     // Glass Mobile Drawer Toggle
     // ==========================================
     const menuToggle = document.getElementById('mobile-menu-toggle');

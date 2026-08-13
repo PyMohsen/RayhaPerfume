@@ -546,6 +546,15 @@ input, textarea, select {
     display: none;
 }
 
+.mobile-user-btn {
+    display: none;
+}
+
+/* Mobile Inline Search Bar — hidden on desktop */
+.glass-pill-mobile-search {
+    display: none;
+}
+
 /* Glass Search Dropdown Overlay */
 .glass-search-overlay {
     position: absolute;

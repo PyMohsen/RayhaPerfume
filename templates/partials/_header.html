@@ -83,12 +83,48 @@
                 </ul>
             </div>
 
-            <!-- 3. Left Pill: Search Icon & Shopping Cart Icon -->
+            <!-- 3. Mobile Inline Search Bar (mobile only) — center in mobile header -->
+            <div class="glass-pill glass-pill-mobile-search">
+                <form action="{% url 'products:search' %}" method="GET" class="mobile-search-form">
+                    <button type="submit" class="mobile-search-icon" aria-label="جستجو">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    </button>
+                    <input type="text" name="q" id="mobile-search-input" class="mobile-search-input" placeholder="جستجوی محصولات..." autocomplete="off">
+                </form>
+
+                <!-- Mobile Live Search Results Dropdown -->
+                <div class="live-search-dropdown mobile-live-search-dropdown" id="mobile-live-search-dropdown">
+                    <div class="live-search-loading" id="mobile-live-search-loading">
+                        <div class="live-search-spinner"></div>
+                        <span>در حال جستجو...</span>
+                    </div>
+                    <div class="live-search-results" id="mobile-live-search-results"></div>
+                    <div class="live-search-empty" id="mobile-live-search-empty">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <span>نتیجه‌ای یافت نشد</span>
+                    </div>
+                    <a href="#" class="live-search-view-all" id="mobile-live-search-view-all">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <span>مشاهده همه نتایج (<span id="mobile-live-search-total">0</span>)</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon"><path d="m15 18-6-6 6-6"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 4. Left Pill (mobile): Hamburger + Cart + User | (desktop): Search + Cart -->
             <div class="glass-pill glass-pill-actions">
-                <!-- Search Button -->
-                <button type="button" class="glass-action-btn" id="search-toggle-btn" aria-label="جستجو" title="جستجوی محصولات">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                </button>
+                <!-- Mobile User Button (mobile only) -->
+                {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}" class="glass-action-btn mobile-user-btn" title="پروفایل کاربری">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </a>
+                {% else %}
+                <a href="{% url 'accounts:login' %}" class="glass-action-btn mobile-user-btn" title="ورود / ثبت‌نام">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </a>
+                {% endif %}
 
                 <!-- Shopping Cart Button -->
                 <a href="{% url 'cart:detail' %}" class="glass-action-btn cart-action" title="سبد خرید">
@@ -97,6 +133,11 @@
                     <span class="glass-cart-badge" id="cart-badge">{{ cart_count }}</span>
                     {% endif %}
                 </a>
+
+                <!-- Search Button (desktop only) -->
+                <button type="button" class="glass-action-btn desktop-search-btn" id="search-toggle-btn" aria-label="جستجو" title="جستجوی محصولات">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                </button>
 
                 <!-- Mobile Menu Toggle Button -->
                 <button class="glass-action-btn mobile-menu-toggle" id="mobile-menu-toggle" aria-label="منو">

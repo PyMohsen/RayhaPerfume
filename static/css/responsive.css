@@ -209,39 +209,143 @@
         padding: 0 10px;
     }
 
-    .glass-pill-main {
-        max-width: none;
-        padding: 0 10px;
-        justify-content: center;
+    /* Mobile header: RTL flex → right-to-left (Logo, Search, Actions) */
+    .floating-navbar-inner {
+        gap: 8px;
     }
 
-    .glass-pill-separator,
-    .glass-nav-menu {
+    .glass-pill-actions {
+        height: 48px;
+        padding: 0 8px;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    .glass-pill-mobile-search {
+        display: flex;
+        flex: 1;
+        height: 48px;
+        border-radius: 9999px;
+        padding: 0 6px 0 12px;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .glass-pill-logo {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+    }
+
+    /* Hide the center pill (user badge + nav links) on mobile */
+    .glass-pill-main {
         display: none;
+    }
+
+    /* Hide desktop search toggle on mobile */
+    .desktop-search-btn {
+        display: none;
+    }
+
+    /* Show mobile user button */
+    .mobile-user-btn {
+        display: flex;
     }
 
     .mobile-menu-toggle {
         display: flex;
     }
 
-    .glass-pill-logo {
-        width: 48px;
-        height: 48px;
-    }
-
-    .glass-pill-main {
-        height: 48px;
-    }
-
-    .glass-pill-actions {
-        height: 48px;
-        padding: 0 8px;
-        gap: 6px;
-    }
-
     .glass-action-btn {
         width: 34px;
         height: 34px;
+    }
+
+    /* Mobile Inline Search Form */
+    .mobile-search-form {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: 6px;
+    }
+
+    .mobile-search-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #2c1836;
+        font-size: 13px;
+        font-family: inherit;
+        font-weight: 600;
+        padding: 8px 4px;
+        outline: none;
+        min-width: 0;
+    }
+
+    .mobile-search-input::placeholder {
+        color: #9185a0;
+        font-weight: 500;
+    }
+
+    .mobile-search-icon {
+        background: rgba(74, 44, 90, 0.08);
+        border: none;
+        color: #4a2c5a;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .mobile-search-icon:hover {
+        background: var(--primary);
+        color: #ffffff;
+    }
+
+    /* Also hide the desktop search overlay on mobile - use inline search */
+    .glass-search-overlay {
+        display: none !important;
+    }
+
+    /* Mobile Live Search Dropdown */
+    .glass-pill-mobile-search {
+        position: relative;
+        overflow: visible;
+    }
+
+    /* Override glass-pill overflow:hidden for search pill on mobile */
+    .glass-pill.glass-pill-mobile-search {
+        overflow: visible;
+    }
+
+    .mobile-live-search-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(28px) saturate(200%);
+        -webkit-backdrop-filter: blur(28px) saturate(200%);
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(74, 44, 90, 0.18), inset 0 1px 2px #ffffff;
+        z-index: 1001;
+        max-height: 400px;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .mobile-live-search-dropdown::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mobile-live-search-dropdown .live-search-results {
+        max-height: 320px;
     }
 
     .user-avatar-circle {
