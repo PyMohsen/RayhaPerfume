@@ -189,6 +189,10 @@ def create_order_view(request):
         reverse('orders:payment_callback')
     )
 
+    print(f"[ORDER DEBUG] final_price: {final_price}")
+    print(f"[ORDER DEBUG] callback_url: {callback_url}")
+    print(f"[ORDER DEBUG] order_number: {order.order_number}")
+
     result = zarinpal.request_payment(
         amount=final_price,
         description=f'سفارش {order.order_number} - فروشگاه عطر رایحا',
@@ -196,6 +200,8 @@ def create_order_view(request):
         mobile=request.user.phone_number,
         email=request.user.email,
     )
+
+    print(f"[ORDER DEBUG] ZarinPal result: {result}")
 
     if result['success']:
         order.payment_authority = result['authority']

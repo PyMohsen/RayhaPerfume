@@ -41,25 +41,71 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
-    // Mobile Inline Search — Auto-focus on tap
+    // Mobile Search Expansion — Full Navbar Takeover
     // ==========================================
     const mobileSearchInput = document.getElementById('mobile-search-input');
     const mobileSearchPill = document.querySelector('.glass-pill-mobile-search');
-    
-    if (mobileSearchPill && mobileSearchInput) {
-        // When the search pill area is clicked, focus the input
-        mobileSearchPill.addEventListener('click', function (e) {
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'svg' && e.target.tagName !== 'path' && e.target.tagName !== 'circle') {
+    const mobileSearchCloseBtn = document.getElementById('mobile-search-close-btn');
+    const navbarInner = document.querySelector('.floating-navbar-inner');
+
+    function isMobileView() {
+        return window.innerWidth <= 768;
+    }
+
+    function expandMobileSearch() {
+        if (!isMobileView() || !navbarInner) return;
+        navbarInner.classList.add('mobile-search-expanded');
+        if (mobileSearchInput) {
+            setTimeout(function () {
                 mobileSearchInput.focus();
+            }, 100);
+        }
+    }
+
+    function collapseMobileSearch() {
+        if (!navbarInner) return;
+        navbarInner.classList.remove('mobile-search-expanded');
+        if (mobileSearchInput) {
+            mobileSearchInput.blur();
+        }
+    }
+
+    if (mobileSearchPill && mobileSearchInput) {
+        // Expand when clicking the search pill area or focusing the input
+        mobileSearchPill.addEventListener('click', function (e) {
+            // Don't expand if clicking the close button
+            if (e.target.closest('.mobile-search-close-btn')) return;
+            expandMobileSearch();
+        });
+
+        mobileSearchInput.addEventListener('focus', function () {
+            expandMobileSearch();
+        });
+
+        // Collapse when clicking the close button
+        if (mobileSearchCloseBtn) {
+            mobileSearchCloseBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                collapseMobileSearch();
+            });
+        }
+
+        // Collapse when clicking outside the search pill
+        document.addEventListener('click', function (e) {
+            if (navbarInner && navbarInner.classList.contains('mobile-search-expanded')) {
+                if (!mobileSearchPill.contains(e.target)) {
+                    collapseMobileSearch();
+                }
             }
         });
 
-        // Auto-focus with a slight delay to ensure mobile keyboard opens
-        mobileSearchInput.addEventListener('touchstart', function () {
-            setTimeout(function () {
-                mobileSearchInput.focus();
-            }, 50);
-        }, { passive: true });
+        // Collapse on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && navbarInner && navbarInner.classList.contains('mobile-search-expanded')) {
+                collapseMobileSearch();
+            }
+        });
     }
 
     // ==========================================

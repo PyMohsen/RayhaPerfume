@@ -487,8 +487,6 @@
     padding: var(--space-8) 0;
 }
 
-.product-gallery {}
-
 .gallery-main {
     border-radius: var(--radius-xl);
     overflow: hidden;
@@ -1886,6 +1884,195 @@
     font-size: var(--font-size-sm);
     color: var(--gray-600);
     margin-bottom: var(--space-2);
+}
+
+/* ---------- Order Progress Tracker ---------- */
+.order-progress-tracker {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    padding: var(--space-8) var(--space-4) var(--space-4);
+    margin-bottom: var(--space-6);
+    background: linear-gradient(135deg, rgba(74, 44, 90, 0.03) 0%, rgba(204, 160, 75, 0.04) 100%);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(74, 44, 90, 0.06);
+}
+
+/* Background line */
+.progress-line-bg {
+    position: absolute;
+    top: calc(var(--space-8) + 22px);
+    right: calc(16.66% + 22px);
+    left: calc(16.66% + 22px);
+    height: 3px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    z-index: 1;
+}
+
+/* Filled line (animated) */
+.progress-line-fill {
+    position: absolute;
+    top: calc(var(--space-8) + 22px);
+    right: calc(16.66% + 22px);
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: var(--radius-full);
+    z-index: 2;
+    width: 0%;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fill width based on status */
+.order-progress-tracker[data-status="paid"] .progress-line-fill,
+.order-progress-tracker[data-status="processing"] .progress-line-fill {
+    width: 0%;
+}
+
+.order-progress-tracker[data-status="shipped"] .progress-line-fill {
+    width: calc(33.33% - 22px);
+}
+
+.order-progress-tracker[data-status="delivered"] .progress-line-fill {
+    width: calc(66.66% - 44px);
+}
+
+/* Step container */
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    z-index: 3;
+    position: relative;
+}
+
+/* Step icon circle */
+.step-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    border: 2.5px solid var(--gray-200);
+    color: var(--gray-400);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.step-icon svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Step label */
+.step-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--gray-400);
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.4s ease;
+}
+
+/* ---- Active step styling ---- */
+
+/* paid / processing → step 1 active */
+.order-progress-tracker[data-status="paid"] .progress-step[data-step="1"] .step-icon,
+.order-progress-tracker[data-status="processing"] .progress-step[data-step="1"] .step-icon {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-color: var(--primary);
+    color: var(--white);
+    box-shadow: 0 0 0 4px rgba(74, 44, 90, 0.12), 0 4px 12px rgba(74, 44, 90, 0.2);
+    animation: stepPulse 2s ease-in-out infinite;
+}
+
+.order-progress-tracker[data-status="paid"] .progress-step[data-step="1"] .step-label,
+.order-progress-tracker[data-status="processing"] .progress-step[data-step="1"] .step-label {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.order-progress-tracker[data-status="paid"] .progress-step[data-step="1"] .step-icon svg,
+.order-progress-tracker[data-status="processing"] .progress-step[data-step="1"] .step-icon svg {
+    transform: scale(1.1);
+}
+
+/* shipped → step 1 completed, step 2 active */
+.order-progress-tracker[data-status="shipped"] .progress-step[data-step="1"] .step-icon {
+    background: linear-gradient(135deg, var(--success) 0%, #34d399 100%);
+    border-color: var(--success);
+    color: var(--white);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.order-progress-tracker[data-status="shipped"] .progress-step[data-step="1"] .step-label {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.order-progress-tracker[data-status="shipped"] .progress-step[data-step="2"] .step-icon {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-color: var(--primary);
+    color: var(--white);
+    box-shadow: 0 0 0 4px rgba(74, 44, 90, 0.12), 0 4px 12px rgba(74, 44, 90, 0.2);
+    animation: stepPulse 2s ease-in-out infinite;
+}
+
+.order-progress-tracker[data-status="shipped"] .progress-step[data-step="2"] .step-label {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.order-progress-tracker[data-status="shipped"] .progress-step[data-step="2"] .step-icon svg {
+    transform: scale(1.1);
+}
+
+/* delivered → all steps completed */
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="1"] .step-icon,
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="2"] .step-icon {
+    background: linear-gradient(135deg, var(--success) 0%, #34d399 100%);
+    border-color: var(--success);
+    color: var(--white);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="1"] .step-label,
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="2"] .step-label {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="3"] .step-icon {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    border-color: var(--accent);
+    color: var(--white);
+    box-shadow: 0 0 0 4px rgba(204, 160, 75, 0.15), 0 4px 12px rgba(204, 160, 75, 0.25);
+}
+
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="3"] .step-label {
+    color: var(--accent-dark);
+    font-weight: 700;
+}
+
+.order-progress-tracker[data-status="delivered"] .progress-step[data-step="3"] .step-icon svg {
+    transform: scale(1.15);
+}
+
+/* Pulse animation for active step */
+@keyframes stepPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(74, 44, 90, 0.12), 0 4px 12px rgba(74, 44, 90, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(74, 44, 90, 0.06), 0 4px 16px rgba(74, 44, 90, 0.25);
+    }
 }
 
 .ref-id {

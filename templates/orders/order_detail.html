@@ -17,6 +17,48 @@
                         <span class="order-status {{ order.status_display_class }}">{{ order.get_status_display }}</span>
                         {% if order.tracking_code %}<span>کد پیگیری پستی: {{ order.tracking_code }}</span>{% endif %}
                     </div>
+
+                    {% if order.status != 'cancelled' and order.status != 'refunded' and order.status != 'pending' %}
+                    <!-- Order Progress Tracker -->
+                    <div class="order-progress-tracker" data-status="{{ order.status }}">
+                        <div class="progress-line-bg"></div>
+                        <div class="progress-line-fill"></div>
+
+                        <!-- مرحله ۱: آماده‌سازی -->
+                        <div class="progress-step" data-step="1">
+                            <div class="step-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                    <path d="M11.644 1.59a.75.75 0 01.712 0l9.75 5.25a.75.75 0 010 1.32l-9.75 5.25a.75.75 0 01-.712 0l-9.75-5.25a.75.75 0 010-1.32l9.75-5.25z"/>
+                                    <path d="M3.265 10.602l7.668 4.129a2.25 2.25 0 002.134 0l7.668-4.13 1.37.739a.75.75 0 010 1.32l-9.75 5.25a.75.75 0 01-.71 0l-9.75-5.25a.75.75 0 010-1.32l1.37-.738z"/>
+                                    <path d="M3.265 15.602l7.668 4.129a2.25 2.25 0 002.134 0l7.668-4.13 1.37.739a.75.75 0 010 1.32l-9.75 5.25a.75.75 0 01-.71 0l-9.75-5.25a.75.75 0 010-1.32l1.37-.738z"/>
+                                </svg>
+                            </div>
+                            <span class="step-label">آماده‌سازی سفارش</span>
+                        </div>
+
+                        <!-- مرحله ۲: ارسال -->
+                        <div class="progress-step" data-step="2">
+                            <div class="step-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                    <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h1.218c.415-1.16 1.527-2 2.832-2 1.305 0 2.417.84 2.832 2H13.5V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25zM13.5 15h-2.618c-.415 1.16-1.527 2-2.832 2-1.305 0-2.417-.84-2.832-2H3.375A1.875 1.875 0 011.5 13.125V13.5h-.375A1.125 1.125 0 010 12.375v0c0-.621.504-1.125 1.125-1.125H1.5V6.375A3.375 3.375 0 014.875 3h6.75a3.375 3.375 0 013.375 3.375V15zM8.05 12.5a1.95 1.95 0 100 3.9 1.95 1.95 0 000-3.9z"/>
+                                    <path d="M15.75 6.75v8.25h1.618c.415-1.16 1.527-2 2.832-2 1.305 0 2.417.84 2.832 2H24V10.5l-2.25-3.75H15.75zm4.45 5.75a1.95 1.95 0 100 3.9 1.95 1.95 0 000-3.9z"/>
+                                </svg>
+                            </div>
+                            <span class="step-label">در حال ارسال</span>
+                        </div>
+
+                        <!-- مرحله ۳: تحویل -->
+                        <div class="progress-step" data-step="3">
+                            <div class="step-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                    <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <span class="step-label">تحویل به مشتری</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <h3>آیتم‌های سفارش</h3>
                     <div class="order-items-list">
                         {% for item in items %}

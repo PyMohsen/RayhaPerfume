@@ -52,11 +52,18 @@ class ZarinPalService:
             data['metadata'] = metadata
 
         try:
+            print(f"[ZarinPal DEBUG] Sending request to: {self.request_url}")
+            print(f"[ZarinPal DEBUG] Data: {data}")
+            
             response = requests.post(
                 self.request_url,
                 json=data,
                 timeout=10
             )
+            
+            print(f"[ZarinPal DEBUG] Status Code: {response.status_code}")
+            print(f"[ZarinPal DEBUG] Response: {response.text}")
+            
             result = response.json()
 
             if result.get('data', {}).get('code') == 100:
@@ -68,9 +75,11 @@ class ZarinPalService:
                 }
             else:
                 errors = result.get('errors', {})
+                error_msg = str(errors.get('message', 'خطای ناشناخته'))
+                print(f"[ZarinPal DEBUG] API Error: {errors}")
                 return {
                     'success': False,
-                    'error': str(errors.get('message', 'خطای ناشناخته')),
+                    'error': error_msg,
                 }
 
         except requests.RequestException as e:

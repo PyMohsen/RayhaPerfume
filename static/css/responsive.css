@@ -178,6 +178,33 @@
         position: static;
     }
 
+    /* Order Progress Tracker responsive */
+    .order-progress-tracker {
+        padding: var(--space-6) var(--space-2) var(--space-3);
+    }
+
+    .step-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .step-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .step-label {
+        font-size: 0.68rem;
+    }
+
+    .progress-line-bg {
+        top: calc(var(--space-6) + 19px);
+    }
+
+    .progress-line-fill {
+        top: calc(var(--space-6) + 19px);
+    }
+
     /* Footer */
     .footer-grid {
         grid-template-columns: 1fr 1fr;
@@ -212,6 +239,10 @@
     /* Mobile header: RTL flex → right-to-left (Logo, Search, Actions) */
     .floating-navbar-inner {
         gap: 8px;
+    }
+
+    .floating-navbar-inner.mobile-search-expanded {
+        gap: 0;
     }
 
     .glass-pill-actions {
@@ -322,6 +353,12 @@
         overflow: visible;
     }
 
+    /* Hide decorative pseudo-elements on search pill (they leak out due to overflow:visible) */
+    .glass-pill-mobile-search::before,
+    .glass-pill-mobile-search::after {
+        display: none;
+    }
+
     .mobile-live-search-dropdown {
         position: absolute;
         top: calc(100% + 8px);
@@ -346,6 +383,101 @@
 
     .mobile-live-search-dropdown .live-search-results {
         max-height: 320px;
+    }
+
+    /* ---- Mobile Search Expansion Animation ---- */
+    .glass-pill-logo {
+        will-change: transform, opacity;
+        transition: transform 0.3s ease, opacity 0.3s ease,
+                    width 0.3s ease, padding 0.3s ease,
+                    margin 0.3s ease, border-width 0.3s ease;
+    }
+
+    .glass-pill-actions {
+        will-change: transform, opacity;
+        transition: transform 0.3s ease, opacity 0.3s ease,
+                    width 0.3s ease, padding 0.3s ease,
+                    margin 0.3s ease, border-width 0.3s ease;
+    }
+
+    /* When expanded: hide logo & actions */
+    .floating-navbar-inner.mobile-search-expanded .glass-pill-logo {
+        transform: scale(0);
+        opacity: 0;
+        width: 0 !important;
+        height: 0;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border-width: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .floating-navbar-inner.mobile-search-expanded .glass-pill-actions {
+        transform: scale(0);
+        opacity: 0;
+        width: 0 !important;
+        height: 0;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border-width: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    /* Hide glass pseudo-elements (gradient sheen & shimmer) when expanded */
+    .floating-navbar-inner.mobile-search-expanded .glass-pill::before,
+    .floating-navbar-inner.mobile-search-expanded .glass-pill::after {
+        display: none;
+    }
+
+    /* When expanded: search pill takes full width */
+    .floating-navbar-inner.mobile-search-expanded .glass-pill-mobile-search {
+        flex: 1 1 100%;
+    }
+
+    /* Mobile search close (cancel) button */
+    .mobile-search-close-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(74, 44, 90, 0.1);
+        color: #4a2c5a;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+        flex-shrink: 0;
+        padding: 0;
+        margin-left: 2px;
+    }
+
+    .mobile-search-close-btn:hover,
+    .mobile-search-close-btn:active {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+    }
+
+    /* Show close button only when expanded */
+    .floating-navbar-inner.mobile-search-expanded .mobile-search-close-btn {
+        display: flex;
+        animation: mobileSearchCloseFadeIn 0.25s ease 0.1s both;
+    }
+
+    @keyframes mobileSearchCloseFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.5) rotate(-90deg);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
     }
 
     .user-avatar-circle {
