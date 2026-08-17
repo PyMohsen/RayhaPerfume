@@ -113,6 +113,15 @@ class Order(models.Model):
         return f'RP-{uuid.uuid4().hex[:8].upper()}'
 
     @property
+    def can_cancel(self):
+        """آیا سفارش قابل لغو است (فقط قبل از ارسال)"""
+        return self.status in [
+            self.Status.PENDING,
+            self.Status.PAID,
+            self.Status.PROCESSING,
+        ]
+
+    @property
     def status_display_class(self):
         """کلاس CSS مناسب وضعیت"""
         classes = {

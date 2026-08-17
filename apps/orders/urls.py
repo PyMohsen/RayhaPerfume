@@ -9,5 +9,6 @@ urlpatterns = [
     path('coupon/apply/', views.apply_coupon_view, name='apply_coupon'),
     path('coupon/remove/', views.remove_coupon_view, name='remove_coupon'),
     path('payment/callback/', views.payment_callback_view, name='payment_callback'),
+    path('<str:order_number>/cancel/', views.cancel_order_view, name='cancel'),
     path('<str:order_number>/', views.order_detail_view, name='detail'),
 ]

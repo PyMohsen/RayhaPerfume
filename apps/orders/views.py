@@ -303,3 +303,38 @@ def order_detail_view(request, order_number):
         'items': items,
     }
     return render(request, 'orders/order_detail.html', context)
+
+
+@login_required
+@require_POST
+def cancel_order_view(request, order_number):
+    """لغو سفارش توسط کاربر"""
+    order = get_object_or_404(
+        Order,
+        order_number=order_number,
+        user=request.user,
+    )
+
+    if not order.can_cancel:
+        messages.error(request, 'این سفارش قابل لغو نیست.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    # بازگرداندن موجودی کالاها (اگر پرداخت شده بود)
+    if order.status in [Order.Status.PAID, Order.Status.PROCESSING]:
+        for item in order.items.select_related('variant').all():
+            if item.variant:
+                PerfumeVariant = item.variant.__class__
+                PerfumeVariant.objects.filter(
+                    pk=item.variant.pk,
+                ).update(stock=F('stock') + item.quantity)
+
+        # بازگرداندن تعداد استفاده کد تخفیف
+        if order.coupon and order.coupon.used_count > 0:
+            order.coupon.used_count -= 1
+            order.coupon.save()
+
+    order.status = Order.Status.CANCELLED
+    order.save()
+
+    messages.success(request, 'سفارش شما با موفقیت لغو شد.')
+    return redirect('orders:detail', order_number=order.order_number)
