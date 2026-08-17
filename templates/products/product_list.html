@@ -16,121 +16,275 @@
         {% endif %}
     </div>
 
+    <!-- Mobile Filter & Sort Toolbar (Visible on screens <= 900px) -->
+    <div class="mobile-filter-bar">
+        <div class="mobile-filter-main-row">
+            <!-- Filter Trigger Button -->
+            <button type="button" class="mobile-filter-trigger-btn" id="open-filter-drawer-btn" onclick="openFilterDrawer()">
+                <svg class="filter-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                <span class="trigger-label">فیلترها</span>
+                <span class="filter-count-badge" id="filter-count-badge" {% if not active_chips %}style="display: none;"{% endif %}>{{ active_chips|length }}</span>
+            </button>
+
+            <!-- Sort Dropdown on Mobile -->
+            <div class="mobile-sort-wrapper">
+                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/>
+                </svg>
+                <select class="mobile-sort-select" onchange="changeSort(this.value)">
+                    <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>جدیدترین</option>
+                    <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>محبوب‌ترین</option>
+                    <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>ارزان‌ترین</option>
+                    <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>گران‌ترین</option>
+                </select>
+            </div>
+
+            <!-- Product Count Badge on Mobile -->
+            <div class="mobile-products-count-badge">
+                <span id="mobile-products-count">{{ perfumes|length }}</span> عطر
+            </div>
+        </div>
+
+        <!-- Quick Filter Horizon Scroll Carousel -->
+        <div class="quick-filters-carousel" id="quick-filters-carousel">
+            <button type="button" class="quick-filter-pill {% if only_available %}active{% endif %}" data-name="available" data-value="1" onclick="toggleQuickFilter('available', '1')">
+                <span class="quick-pill-dot"></span>
+                <span>فقط موجود</span>
+            </button>
+            <button type="button" class="quick-filter-pill {% if only_discount %}active{% endif %}" data-name="discount" data-value="1" onclick="toggleQuickFilter('discount', '1')">
+                <span class="quick-pill-dot"></span>
+                <span>تخفیف‌دار</span>
+            </button>
+            {% if genders %}
+                {% for g in genders %}
+                <button type="button" class="quick-filter-pill {% if g.slug in selected_genders %}active{% endif %}" data-name="gender" data-value="{{ g.slug }}" onclick="toggleQuickFilter('gender', '{{ g.slug }}')">
+                    <span>{{ g.name }}</span>
+                </button>
+                {% endfor %}
+            {% endif %}
+            {% if natures %}
+                {% for n in natures %}
+                <button type="button" class="quick-filter-pill {% if n.slug in selected_natures %}active{% endif %}" data-name="nature" data-value="{{ n.slug }}" onclick="toggleQuickFilter('nature', '{{ n.slug }}')">
+                    <span>طبع {{ n.name }}</span>
+                </button>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Backdrop for Mobile Filter Drawer -->
+    <div class="filter-drawer-backdrop" id="filter-drawer-backdrop" onclick="closeFilterDrawer()"></div>
+
     <div class="shop-layout">
-        <!-- Sidebar Filters -->
-        <aside class="shop-sidebar">
+        <!-- Sidebar Filters (Desktop Sticky Sidebar & Mobile Bottom-Sheet Drawer) -->
+        <aside class="shop-sidebar" id="shop-sidebar">
+            <!-- Mobile Drawer Drag Handle -->
+            <div class="drawer-drag-handle" onclick="closeFilterDrawer()">
+                <span class="handle-bar"></span>
+            </div>
+
             <form id="filter-form" method="GET" action="{% url 'products:list' %}" onsubmit="event.preventDefault(); applyFilters();">
                 {% if search_query %}
                 <input type="hidden" name="q" value="{{ search_query }}">
                 {% endif %}
                 <input type="hidden" name="sort" id="sort-hidden-input" value="{{ current_sort }}">
 
+                <!-- Header Box -->
                 <div class="sidebar-header-box">
-                    <h3 class="sidebar-main-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                        فیلترها
-                    </h3>
-                    {% if has_active_filters %}
-                    <a href="{% url 'products:list' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="clear-all-filters-btn" onclick="clearAllFilters(event)">پاک‌سازی همه</a>
+                    <div class="sidebar-title-wrapper">
+                        <h3 class="sidebar-main-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            <span>فیلترها</span>
+                        </h3>
+                        <span class="sidebar-active-counter" id="sidebar-active-counter" {% if not active_chips %}style="display: none;"{% endif %}>{{ active_chips|length }} فعال</span>
+                    </div>
+
+                    <div class="sidebar-header-actions">
+                        <a href="{% url 'products:list' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="clear-all-filters-btn" id="sidebar-clear-btn" {% if not has_active_filters %}style="display: none;"{% endif %} onclick="clearAllFilters(event)">پاک‌سازی همه</a>
+                        <!-- Close button for mobile drawer -->
+                        <button type="button" class="drawer-close-btn" onclick="closeFilterDrawer()" aria-label="بستن">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Body inside Drawer / Sidebar -->
+                <div class="sidebar-scrollable-body">
+                    <!-- وضعیت کالا -->
+                    <div class="filter-section is-open" data-filter-group="status">
+                        <div class="filter-section-header" onclick="toggleFilterAccordion(this)">
+                            <h4 class="filter-title">وضعیت کالا</h4>
+                            <span class="accordion-chevron">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="filter-options-content">
+                            <div class="filter-options">
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="available" value="1" {% if only_available %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">فقط کالاهای موجود</span>
+                                </label>
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="discount" value="1" {% if only_discount %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">فقط تخفیف‌دار</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- جنسیت -->
+                    {% if genders %}
+                    <div class="filter-section is-open" data-filter-group="gender">
+                        <div class="filter-section-header" onclick="toggleFilterAccordion(this)">
+                            <div class="filter-title-wrapper">
+                                <h4 class="filter-title">جنسیت</h4>
+                                <span class="group-count-badge" id="badge-gender" {% if not selected_genders %}style="display: none;"{% endif %}>{{ selected_genders|length }}</span>
+                            </div>
+                            <span class="accordion-chevron">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="filter-options-content">
+                            <div class="filter-options">
+                                {% for gender in genders %}
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="gender" value="{{ gender.slug }}" {% if gender.slug in selected_genders %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">{{ gender.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- طبع -->
+                    {% if natures %}
+                    <div class="filter-section is-open" data-filter-group="nature">
+                        <div class="filter-section-header" onclick="toggleFilterAccordion(this)">
+                            <div class="filter-title-wrapper">
+                                <h4 class="filter-title">طبع</h4>
+                                <span class="group-count-badge" id="badge-nature" {% if not selected_natures %}style="display: none;"{% endif %}>{{ selected_natures|length }}</span>
+                            </div>
+                            <span class="accordion-chevron">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="filter-options-content">
+                            <div class="filter-options">
+                                {% for nature in natures %}
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="nature" value="{{ nature.slug }}" {% if nature.slug in selected_natures %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">{{ nature.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- طعم -->
+                    {% if tastes %}
+                    <div class="filter-section is-open" data-filter-group="taste">
+                        <div class="filter-section-header" onclick="toggleFilterAccordion(this)">
+                            <div class="filter-title-wrapper">
+                                <h4 class="filter-title">طعم</h4>
+                                <span class="group-count-badge" id="badge-taste" {% if not selected_tastes %}style="display: none;"{% endif %}>{{ selected_tastes|length }}</span>
+                            </div>
+                            <span class="accordion-chevron">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="filter-options-content">
+                            <div class="filter-options">
+                                {% for taste in tastes %}
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="taste" value="{{ taste.slug }}" {% if taste.slug in selected_tastes %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">{{ taste.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- گروه بویایی -->
+                    {% if scent_families %}
+                    <div class="filter-section is-open" data-filter-group="scent_family">
+                        <div class="filter-section-header" onclick="toggleFilterAccordion(this)">
+                            <div class="filter-title-wrapper">
+                                <h4 class="filter-title">گروه بویایی</h4>
+                                <span class="group-count-badge" id="badge-scent_family" {% if not selected_scent_families %}style="display: none;"{% endif %}>{{ selected_scent_families|length }}</span>
+                            </div>
+                            <span class="accordion-chevron">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="filter-options-content">
+                            <div class="filter-options">
+                                {% for sf in scent_families %}
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="scent_family" value="{{ sf.slug }}" {% if sf.slug in selected_scent_families %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">{{ sf.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- فصل -->
+                    {% if seasons %}
+                    <div class="filter-section is-open" data-filter-group="season">
+                        <div class="filter-section-header" onclick="toggleFilterAccordion(this)">
+                            <div class="filter-title-wrapper">
+                                <h4 class="filter-title">فصل</h4>
+                                <span class="group-count-badge" id="badge-season" {% if not selected_seasons %}style="display: none;"{% endif %}>{{ selected_seasons|length }}</span>
+                            </div>
+                            <span class="accordion-chevron">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="filter-options-content">
+                            <div class="filter-options">
+                                {% for season in seasons %}
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" name="season" value="{{ season.slug }}" {% if season.slug in selected_seasons %}checked{% endif %} onchange="applyFilters()">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="filter-label-text">{{ season.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
 
-                <!-- وضعیت کالا -->
-                <div class="filter-section">
-                    <h3 class="filter-title">وضعیت کالا</h3>
-                    <div class="filter-options">
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="available" value="1" {% if only_available %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">فقط کالاهای موجود</span>
-                        </label>
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="discount" value="1" {% if only_discount %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">فقط تخفیف‌دار</span>
-                        </label>
-                    </div>
+                <!-- Sticky Mobile Drawer Footer Actions -->
+                <div class="drawer-sticky-footer">
+                    <button type="button" class="drawer-apply-btn" onclick="closeFilterDrawer()">
+                        <span class="btn-text">مشاهده نتایج</span>
+                        <span class="btn-counter" id="drawer-apply-counter">({{ perfumes|length }} عطر)</span>
+                    </button>
+                    <button type="button" class="drawer-reset-btn" id="drawer-reset-btn" {% if not has_active_filters %}style="display: none;"{% endif %} onclick="clearAllFilters(event)">
+                        پاک کردن
+                    </button>
                 </div>
-
-                <!-- جنسیت -->
-                {% if genders %}
-                <div class="filter-section">
-                    <h3 class="filter-title">جنسیت</h3>
-                    <div class="filter-options">
-                        {% for gender in genders %}
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="gender" value="{{ gender.slug }}" {% if gender.slug in selected_genders %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">{{ gender.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- طبع -->
-                {% if natures %}
-                <div class="filter-section">
-                    <h3 class="filter-title">طبع</h3>
-                    <div class="filter-options">
-                        {% for nature in natures %}
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="nature" value="{{ nature.slug }}" {% if nature.slug in selected_natures %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">{{ nature.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- طعم -->
-                {% if tastes %}
-                <div class="filter-section">
-                    <h3 class="filter-title">طعم</h3>
-                    <div class="filter-options">
-                        {% for taste in tastes %}
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="taste" value="{{ taste.slug }}" {% if taste.slug in selected_tastes %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">{{ taste.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- گروه بویایی -->
-                {% if scent_families %}
-                <div class="filter-section">
-                    <h3 class="filter-title">گروه بویایی</h3>
-                    <div class="filter-options">
-                        {% for sf in scent_families %}
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="scent_family" value="{{ sf.slug }}" {% if sf.slug in selected_scent_families %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">{{ sf.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- فصل -->
-                {% if seasons %}
-                <div class="filter-section">
-                    <h3 class="filter-title">فصل</h3>
-                    <div class="filter-options">
-                        {% for season in seasons %}
-                        <label class="filter-checkbox-label">
-                            <input type="checkbox" name="season" value="{{ season.slug }}" {% if season.slug in selected_seasons %}checked{% endif %} onchange="applyFilters()">
-                            <span class="custom-checkbox"></span>
-                            <span class="filter-label-text">{{ season.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
             </form>
         </aside>
 
@@ -152,8 +306,8 @@
             </div>
             {% endif %}
 
-            <div class="shop-toolbar">
-                <span class="results-count">{{ perfumes|length }} عطر یافت شد</span>
+            <div class="shop-toolbar desktop-only-toolbar">
+                <span class="results-count" id="desktop-results-count">{{ perfumes|length }} عطر یافت شد</span>
                 <div class="sort-select">
                     <select id="sort-select" onchange="changeSort(this.value)">
                         <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>جدیدترین</option>
@@ -183,9 +337,131 @@
 </div>
 
 <script>
+// ==========================================
+// Mobile Drawer & Filter Interactions
+// ==========================================
+function openFilterDrawer() {
+    const sidebar = document.getElementById('shop-sidebar');
+    const backdrop = document.getElementById('filter-drawer-backdrop');
+    if (sidebar && backdrop) {
+        sidebar.classList.add('active');
+        backdrop.classList.add('active');
+        document.body.classList.add('drawer-open');
+    }
+}
+
+function closeFilterDrawer() {
+    const sidebar = document.getElementById('shop-sidebar');
+    const backdrop = document.getElementById('filter-drawer-backdrop');
+    if (sidebar && backdrop) {
+        sidebar.classList.remove('active');
+        backdrop.classList.remove('active');
+        document.body.classList.remove('drawer-open');
+    }
+}
+
+function toggleFilterAccordion(headerEl) {
+    const section = headerEl.closest('.filter-section');
+    if (section) {
+        section.classList.toggle('is-open');
+    }
+}
+
+function toggleQuickFilter(name, value) {
+    const form = document.getElementById('filter-form');
+    if (!form) return;
+
+    if (name === 'available' || name === 'discount') {
+        const checkbox = form.querySelector(`input[name="${name}"]`);
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+    } else {
+        const checkbox = form.querySelector(`input[name="${name}"][value="${value}"]`);
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+    }
+    applyFilters();
+}
+
+function syncUIState() {
+    const form = document.getElementById('filter-form');
+    if (!form) return;
+
+    // 1. Sync quick filter pills active state
+    const quickPills = document.querySelectorAll('.quick-filter-pill');
+    quickPills.forEach(pill => {
+        const name = pill.getAttribute('data-name');
+        const val = pill.getAttribute('data-value');
+        let isChecked = false;
+        if (name === 'available' || name === 'discount') {
+            const cb = form.querySelector(`input[name="${name}"]`);
+            isChecked = cb && cb.checked;
+        } else {
+            const cb = form.querySelector(`input[name="${name}"][value="${val}"]`);
+            isChecked = cb && cb.checked;
+        }
+        if (isChecked) {
+            pill.classList.add('active');
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+
+    // 2. Count checked items total and per group
+    let totalActive = 0;
+    const groups = ['gender', 'nature', 'taste', 'scent_family', 'season'];
+    
+    // Status checkboxes
+    const availCb = form.querySelector('input[name="available"]');
+    const discCb = form.querySelector('input[name="discount"]');
+    if (availCb && availCb.checked) totalActive++;
+    if (discCb && discCb.checked) totalActive++;
+
+    groups.forEach(group => {
+        const checkedGroup = form.querySelectorAll(`input[name="${group}"]:checked`);
+        const count = checkedGroup.length;
+        totalActive += count;
+        const badge = document.getElementById(`badge-${group}`);
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+    });
+
+    // 3. Update main trigger badge and header counters
+    const filterBadge = document.getElementById('filter-count-badge');
+    if (filterBadge) {
+        filterBadge.textContent = totalActive;
+        filterBadge.style.display = totalActive > 0 ? 'inline-flex' : 'none';
+    }
+
+    const sidebarActiveCounter = document.getElementById('sidebar-active-counter');
+    if (sidebarActiveCounter) {
+        sidebarActiveCounter.textContent = `${totalActive} فعال`;
+        sidebarActiveCounter.style.display = totalActive > 0 ? 'inline-block' : 'none';
+    }
+
+    const sidebarClearBtn = document.getElementById('sidebar-clear-btn');
+    if (sidebarClearBtn) {
+        sidebarClearBtn.style.display = totalActive > 0 ? 'inline-block' : 'none';
+    }
+
+    const drawerResetBtn = document.getElementById('drawer-reset-btn');
+    if (drawerResetBtn) {
+        drawerResetBtn.style.display = totalActive > 0 ? 'inline-block' : 'none';
+    }
+}
+
+// ==========================================
+// AJAX Filter Request
+// ==========================================
 function applyFilters(updateUrl = true) {
     const form = document.getElementById('filter-form');
     if (!form) return;
+
+    syncUIState();
 
     const formData = new FormData(form);
     const params = new URLSearchParams();
@@ -205,7 +481,7 @@ function applyFilters(updateUrl = true) {
 
     const shopContent = document.querySelector('.shop-content');
     if (shopContent) {
-        shopContent.style.opacity = '0.5';
+        shopContent.style.opacity = '0.4';
         shopContent.style.pointerEvents = 'none';
         shopContent.style.transition = 'opacity 0.2s ease';
     }
@@ -220,18 +496,21 @@ function applyFilters(updateUrl = true) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
-        // Update shop content without reloading page or changing scroll position
+        // Update shop content
         const newShopContent = doc.querySelector('.shop-content');
         if (shopContent && newShopContent) {
             shopContent.innerHTML = newShopContent.innerHTML;
         }
 
-        // Update sidebar clear button
-        const sidebarHeader = document.querySelector('.sidebar-header-box');
-        const newSidebarHeader = doc.querySelector('.sidebar-header-box');
-        if (sidebarHeader && newSidebarHeader) {
-            sidebarHeader.innerHTML = newSidebarHeader.innerHTML;
-        }
+        // Update product counts
+        const newCountEl = doc.getElementById('desktop-results-count') || doc.querySelector('.results-count');
+        const countText = newCountEl ? (newCountEl.textContent.match(/\d+/) ? newCountEl.textContent.match(/\d+/)[0] : '0') : '0';
+        
+        const mobileCount = document.getElementById('mobile-products-count');
+        if (mobileCount) mobileCount.textContent = countText;
+
+        const drawerCounter = document.getElementById('drawer-apply-counter');
+        if (drawerCounter) drawerCounter.textContent = `(${countText} عطر)`;
     })
     .catch(err => {
         console.error('Error applying filters:', err);
@@ -241,6 +520,7 @@ function applyFilters(updateUrl = true) {
             shopContent.style.opacity = '1';
             shopContent.style.pointerEvents = 'auto';
         }
+        syncUIState();
     });
 }
 
@@ -274,11 +554,29 @@ function changeSort(sortVal) {
     if (sortInput) {
         sortInput.value = sortVal;
     }
+    // Sync both desktop and mobile selects
+    const desktopSort = document.getElementById('sort-select');
+    const mobileSort = document.querySelector('.mobile-sort-select');
+    if (desktopSort && desktopSort.value !== sortVal) desktopSort.value = sortVal;
+    if (mobileSort && mobileSort.value !== sortVal) mobileSort.value = sortVal;
+
     applyFilters();
 }
 
 window.addEventListener('popstate', function() {
     window.location.reload();
+});
+
+// Close drawer on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFilterDrawer();
+    }
+});
+
+// Initial UI synchronization
+document.addEventListener('DOMContentLoaded', function() {
+    syncUIState();
 });
 </script>
 {% endblock %}

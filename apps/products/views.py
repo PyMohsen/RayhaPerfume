@@ -1,5 +1,5 @@
 from urllib.parse import unquote
-from django.db.models import Q, Min, Count, Exists, OuterRef
+from django.db.models import Q, Min, Max, Count, Exists, OuterRef
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -130,12 +130,12 @@ def product_list_view(request):
     # مرتب‌سازی
     if sort == 'price_low':
         perfumes = perfumes.annotate(
-            min_price=Min('variants__price')
-        ).order_by('min_price')
+            sort_price=Min('variants__price')
+        ).order_by('sort_price')
     elif sort == 'price_high':
         perfumes = perfumes.annotate(
-            min_price=Min('variants__price')
-        ).order_by('-min_price')
+            sort_price=Max('variants__price')
+        ).order_by('-sort_price')
     elif sort == 'popular':
         perfumes = perfumes.order_by('-views_count')
     elif sort == 'oldest':
