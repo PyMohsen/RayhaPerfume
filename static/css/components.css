@@ -1653,13 +1653,20 @@
 }
 
 .profile-nav-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
     padding: var(--space-3) var(--space-5);
     color: var(--gray-600);
     font-size: var(--font-size-sm);
     border-bottom: 1px solid var(--gray-100);
     transition: var(--transition-fast);
 }
+
+.profile-nav-link svg {
+    flex-shrink: 0;
+}
+
 
 .profile-nav-link:last-child { border-bottom: none; }
 

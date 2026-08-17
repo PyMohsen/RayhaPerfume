@@ -10,13 +10,31 @@
     <p class="profile-phone" dir="ltr">{{ user.phone_number }}</p>
 </div>
 <nav class="profile-nav">
-    <a href="{% url 'accounts:profile' %}" class="profile-nav-link {% if active_tab == 'dashboard' %}active{% endif %}">داشبورد</a>
-    <a href="{% url 'accounts:profile_update' %}" class="profile-nav-link {% if active_tab == 'edit' %}active{% endif %}">ویرایش اطلاعات</a>
-    <a href="{% url 'accounts:address_list' %}" class="profile-nav-link {% if active_tab == 'addresses' %}active{% endif %}">آدرس‌ها</a>
-    <a href="{% url 'accounts:order_history' %}" class="profile-nav-link {% if active_tab == 'orders' %}active{% endif %}">سفارشات</a>
-    <a href="{% url 'products:wishlist' %}" class="profile-nav-link {% if active_tab == 'wishlist' %}active{% endif %}">علاقه‌مندی‌ها</a>
+    <a href="{% url 'accounts:profile' %}" class="profile-nav-link {% if active_tab == 'dashboard' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        داشبورد
+    </a>
+    <a href="{% url 'accounts:profile_update' %}" class="profile-nav-link {% if active_tab == 'edit' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        ویرایش اطلاعات
+    </a>
+    <a href="{% url 'accounts:address_list' %}" class="profile-nav-link {% if active_tab == 'addresses' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        آدرس‌ها
+    </a>
+    <a href="{% url 'accounts:order_history' %}" class="profile-nav-link {% if active_tab == 'orders' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        سفارشات
+    </a>
+    <a href="{% url 'products:wishlist' %}" class="profile-nav-link {% if active_tab == 'wishlist' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        علاقه‌مندی‌ها
+    </a>
     <form method="POST" action="{% url 'accounts:logout' %}">
         {% csrf_token %}
-        <button type="submit" class="profile-nav-link logout-link" style="width:100%; text-align:right; cursor:pointer;">خروج</button>
+        <button type="submit" class="profile-nav-link logout-link" style="width:100%; text-align:right; cursor:pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            خروج
+        </button>
     </form>
 </nav>
