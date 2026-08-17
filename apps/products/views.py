@@ -1,6 +1,10 @@
 from urllib.parse import unquote
-from django.db.models import Q, Min, Max, Count, Exists, OuterRef
 from django.http import JsonResponse
+from django.db.models import (
+    Q, Min, Max, Count, Exists, OuterRef,
+    Subquery, F, ExpressionWrapper, IntegerField, Case, When,
+)
+from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -128,14 +132,37 @@ def product_list_view(request):
         perfumes = perfumes.filter(variants__discount_percent__gt=0)
 
     # مرتب‌سازی
-    if sort == 'price_low':
+    if sort in ('price_low', 'price_high'):
+        effective_price = Case(
+            When(
+                discount_percent__gt=0,
+                then=ExpressionWrapper(
+                    F('price') - (F('price') * F('discount_percent') / 100),
+                    output_field=IntegerField()
+                )
+            ),
+            default=F('price'),
+            output_field=IntegerField()
+        )
+        v50_price = PerfumeVariant.objects.filter(
+            perfume=OuterRef('pk'),
+            size=50
+        ).annotate(eff_price=effective_price).values('eff_price')[:1]
+
+        fallback_price = PerfumeVariant.objects.filter(
+            perfume=OuterRef('pk')
+        ).order_by('size').annotate(eff_price=effective_price).values('eff_price')[:1]
+
         perfumes = perfumes.annotate(
-            sort_price=Min('variants__price')
-        ).order_by('sort_price')
-    elif sort == 'price_high':
-        perfumes = perfumes.annotate(
-            sort_price=Max('variants__price')
-        ).order_by('-sort_price')
+            sort_price=Coalesce(
+                Subquery(v50_price),
+                Subquery(fallback_price)
+            )
+        )
+        if sort == 'price_low':
+            perfumes = perfumes.order_by('sort_price')
+        else:
+            perfumes = perfumes.order_by('-sort_price')
     elif sort == 'popular':
         perfumes = perfumes.order_by('-views_count')
     elif sort == 'oldest':
@@ -334,10 +361,8 @@ def live_search_api(request):
         primary_img = perfume.primary_image
         image_url = primary_img.image.url if primary_img else ''
 
-        # واریانت با کمترین قیمت (موجود)
-        variant = perfume.variants.filter(stock__gt=0).order_by('price').first()
-        if not variant:
-            variant = perfume.variants.order_by('price').first()
+        # واریانت ۵۰ میل
+        variant = perfume.variant_50
 
         price = variant.price if variant else 0
         final_price = variant.final_price if variant else 0

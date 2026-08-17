@@ -411,6 +411,15 @@ class Perfume(models.Model):
         return variant.discount_percent if variant else 0
 
     @property
+    def variant_50(self):
+        """واریانت ۵۰ میل محصول، یا در صورت عدم وجود، اولین واریانت"""
+        variants = list(self.variants.all())
+        for v in variants:
+            if v.size == 50:
+                return v
+        return variants[0] if variants else None
+
+    @property
     def is_available(self):
         """آیا موجود است؟"""
         return self.variants.filter(stock__gt=0).exists()

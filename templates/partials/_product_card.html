@@ -18,9 +18,13 @@
             {% endif %}
 
             <!-- Top Right Discount Badge -->
-            {% if perfume.has_discount %}
+            {% with variant=perfume.variant_50 %}
+            {% if variant and variant.discount_percent > 0 %}
+            <span class="product-badge discount-badge">-{{ variant.discount_percent|persian_digits }}٪</span>
+            {% elif perfume.has_discount %}
             <span class="product-badge discount-badge">-{{ perfume.max_discount|persian_digits }}٪</span>
             {% endif %}
+            {% endwith %}
 
             <!-- Out of Stock Badge -->
             {% if not perfume.is_available %}
@@ -50,12 +54,16 @@
             <!-- Price -->
             <div class="product-card-price">
                 {% if perfume.is_available %}
-                    {% with variant=perfume.variants.first %}
-                    {% if variant.discount_percent > 0 %}
-                    <span class="price-original">{{ variant.price|price_format }} تومان</span>
-                    <span class="price-final">{{ variant.final_price|price_format }} تومان</span>
+                    {% with variant=perfume.variant_50 %}
+                    {% if variant %}
+                        {% if variant.discount_percent > 0 %}
+                        <span class="price-original">{{ variant.price|price_format }} تومان</span>
+                        <span class="price-final">{{ variant.final_price|price_format }} تومان</span>
+                        {% else %}
+                        <span class="price-final">{{ variant.price|price_format }} تومان</span>
+                        {% endif %}
                     {% else %}
-                    <span class="price-final">{{ variant.price|price_format }} تومان</span>
+                        <span class="price-unavailable">ناموجود</span>
                     {% endif %}
                     {% endwith %}
                 {% else %}
