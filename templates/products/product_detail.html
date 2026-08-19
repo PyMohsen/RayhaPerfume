@@ -3,7 +3,7 @@
 {% load product_tags %}
 
 {% block title %}{{ perfume.name }}{% endblock %}
-{% block meta_description %}{{ perfume.short_description|default:perfume.description|truncatewords:25 }}{% endblock %}
+{% block meta_description %}{{ perfume.short_description|default:perfume.description|striptags|truncatewords:25 }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -356,7 +356,7 @@
         <!-- Description Tab -->
         <div class="tab-content" id="tab-description">
             <div class="product-description">
-                {{ perfume.description|linebreaks }}
+                {{ perfume.description|safe }}
             </div>
         </div>
 

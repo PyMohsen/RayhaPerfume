@@ -17,6 +17,7 @@ urlpatterns = [
     path('products/', include('apps.products.urls')),
     path('cart/', include('apps.cart.urls')),
     path('orders/', include('apps.orders.urls')),
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
     
     # مسیرهای فاویکون برای روت اصلی سایت
     path('favicon-96x96.png', RedirectView.as_view(url=settings.STATIC_URL + 'images/favicon-96x96.png', permanent=True)),

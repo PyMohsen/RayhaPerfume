@@ -3,6 +3,7 @@ from urllib.parse import unquote
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django_ckeditor_5.fields import CKEditor5Field
 
 
 class Gender(models.Model):
@@ -257,7 +258,7 @@ class Perfume(models.Model):
         verbose_name='اسلاگ'
     )
     brand = models.CharField(max_length=200, verbose_name='برند')
-    description = models.TextField(verbose_name='توضیحات')
+    description = CKEditor5Field(verbose_name='توضیحات', config_name='extends')
     short_description = models.CharField(
         max_length=300,
         blank=True,

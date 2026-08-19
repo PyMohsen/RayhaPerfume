@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 
     # Third party
     'django_jalali',
+    'django_ckeditor_5',
 
     # Local apps
     'apps.accounts',
@@ -198,5 +199,93 @@ SMS_TEMPLATE_ID = os.getenv('SMS_TEMPLATE_ID', '')
 
 # Shipping Settings
 SHIPPING_COST = 98000  # هزینه ارسال به تومان
+
+
+# ============================================
+# CKEditor 5 Rich Text Editor Settings
+# ============================================
+
+CKEDITOR_5_CUSTOM_CSS = 'css/ckeditor5-custom.css'
+
+CKEDITOR_5_CUSTOM_COLOR_PALETTE = [
+    {'color': '#111827', 'label': 'مشکی اصلی'},
+    {'color': '#374151', 'label': 'خاکستری تیره'},
+    {'color': '#6B7280', 'label': 'خاکستری متوسط'},
+    {'color': '#9CA3AF', 'label': 'خاکستری روشن'},
+    {'color': '#C5A880', 'label': 'طلایی ملایم'},
+    {'color': '#8B5E34', 'label': 'قهوه‌ای عطری'},
+    {'color': '#DC2626', 'label': 'قرمز'},
+    {'color': '#2563EB', 'label': 'آبی'},
+    {'color': '#059669', 'label': 'سبز'},
+    {'color': '#D97706', 'label': 'نارنجی'},
+    {'color': '#7C3AED', 'label': 'بنفش'},
+    {'color': '#FFFFFF', 'label': 'سفید'},
+]
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|', 'bold', 'italic', 'link',
+            'bulletedList', 'numberedList', 'blockQuote',
+        ],
+        'language': 'fa',
+    },
+    'extends': {
+        'blockToolbar': [
+            'paragraph', 'heading1', 'heading2', 'heading3',
+            '|',
+            'bulletedList', 'numberedList',
+            '|',
+            'blockQuote',
+        ],
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', 'highlight', '|',
+            'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+            'alignment', '|',
+            'link', 'bulletedList', 'numberedList', 'todoList', '|',
+            'outdent', 'indent', '|',
+            'blockQuote', 'insertTable', 'horizontalLine', '|',
+            'removeFormat', 'sourceEditing', '|',
+            'undo', 'redo',
+        ],
+        'heading': {
+            'options': [
+                {'model': 'paragraph', 'title': 'پاراگراف', 'class': 'ck-heading_paragraph'},
+                {'model': 'heading1', 'view': 'h1', 'title': 'تیتر ۱ (H1)', 'class': 'ck-heading_heading1'},
+                {'model': 'heading2', 'view': 'h2', 'title': 'تیتر ۲ (H2)', 'class': 'ck-heading_heading2'},
+                {'model': 'heading3', 'view': 'h3', 'title': 'تیتر ۳ (H3)', 'class': 'ck-heading_heading3'},
+                {'model': 'heading4', 'view': 'h4', 'title': 'تیتر ۴ (H4)', 'class': 'ck-heading_heading4'},
+            ]
+        },
+        'table': {
+            'contentToolbar': [
+                'tableColumn', 'tableRow', 'mergeTableCells',
+                'tableProperties', 'tableCellProperties',
+            ],
+            'tableProperties': {
+                'borderColors': CKEDITOR_5_CUSTOM_COLOR_PALETTE,
+                'backgroundColors': CKEDITOR_5_CUSTOM_COLOR_PALETTE,
+            },
+            'tableCellProperties': {
+                'borderColors': CKEDITOR_5_CUSTOM_COLOR_PALETTE,
+                'backgroundColors': CKEDITOR_5_CUSTOM_COLOR_PALETTE,
+            }
+        },
+        'fontColor': {
+            'colors': CKEDITOR_5_CUSTOM_COLOR_PALETTE,
+            'columns': 6,
+        },
+        'fontBackgroundColor': {
+            'colors': CKEDITOR_5_CUSTOM_COLOR_PALETTE,
+            'columns': 6,
+        },
+        'link': {
+            'addTargetToExternalLinks': True,
+            'defaultProtocol': 'https://',
+        },
+        'language': 'fa',
+    }
+}
 
 
