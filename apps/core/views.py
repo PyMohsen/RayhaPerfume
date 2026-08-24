@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.views.decorators.clickjacking import xframe_options_exempt
 
@@ -35,6 +36,22 @@ def home_view(request):
         variants__discount_percent__gt=0,
     ).prefetch_related('variants', 'images').distinct()[:8]
 
+    # عطرهای مردانه: شامل عطرهایی که مردانه یا زنانه-و-مردانه هستند
+    men_perfumes = Perfume.objects.filter(
+        is_active=True
+    ).filter(
+        Q(gender__slug='مردانه') |
+        Q(gender__slug='زنانه-و-مردانه')
+    ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
+
+    # عطرهای زنانه: شامل عطرهایی که زنانه یا زنانه-و-مردانه هستند
+    women_perfumes = Perfume.objects.filter(
+        is_active=True
+    ).filter(
+        Q(gender__slug='زنانه') |
+        Q(gender__slug='زنانه-و-مردانه')
+    ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
+
     context = {
         'sliders': sliders,
         'featured_perfumes': featured_perfumes,
@@ -45,6 +62,8 @@ def home_view(request):
         'natures': natures,
         'tastes': tastes,
         'seasons': seasons,
+        'men_perfumes': men_perfumes,
+        'women_perfumes': women_perfumes,
     }
     return render(request, 'core/home.html', context)
 

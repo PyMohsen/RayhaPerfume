@@ -150,10 +150,10 @@
                     <td>{{ perfume.nature.name }}</td>
                 </tr>
                 {% endif %}
-                {% if perfume.scent_family %}
+                {% if perfume.scent_families.all %}
                 <tr>
                     <th>گروه بویایی</th>
-                    <td>{{ perfume.scent_family.name }}</td>
+                    <td>{% for sf in perfume.scent_families.all %}{{ sf.name }}{% if not forloop.last %}، {% endif %}{% endfor %}</td>
                 </tr>
                 {% endif %}
                 {% if perfume.gender %}

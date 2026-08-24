@@ -279,13 +279,11 @@ class Perfume(models.Model):
         related_name='perfumes',
         verbose_name='فصل‌ها'
     )
-    scent_family = models.ForeignKey(
+    scent_families = models.ManyToManyField(
         ScentFamily,
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name='perfumes',
-        verbose_name='گروه بویایی'
+        verbose_name='گروه‌های بویایی'
     )
     nature = models.ForeignKey(
         Nature,

@@ -84,8 +84,8 @@ def get_filter_list(request, param_name):
 def product_list_view(request):
     """لیست محصولات با فیلترهای چندتایی"""
     perfumes = Perfume.objects.filter(is_active=True).select_related(
-        'gender', 'nature', 'scent_family'
-    ).prefetch_related('variants', 'images', 'seasons', 'tastes')
+        'gender', 'nature'
+    ).prefetch_related('variants', 'images', 'seasons', 'tastes', 'scent_families')
 
     # دسته‌بندی‌ها برای سایدبار
     genders = Gender.objects.all()
@@ -118,7 +118,7 @@ def product_list_view(request):
         perfumes = perfumes.filter(seasons__slug__in=selected_seasons)
 
     if selected_scent_families:
-        perfumes = perfumes.filter(scent_family__slug__in=selected_scent_families)
+        perfumes = perfumes.filter(scent_families__slug__in=selected_scent_families)
 
     if search_query:
         perfumes = perfumes.filter(
@@ -223,10 +223,10 @@ def product_detail_view(request, slug):
     slug = unquote(slug)
     perfume = get_object_or_404(
         Perfume.objects.select_related(
-            'gender', 'nature', 'scent_family'
+            'gender', 'nature'
         ).prefetch_related(
             'variants', 'images', 'seasons', 'tastes', 'scents',
-            'perfume_notes__note',
+            'scent_families', 'perfume_notes__note',
         ),
         slug=slug,
         is_active=True,

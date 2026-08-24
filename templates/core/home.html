@@ -90,10 +90,10 @@
             <a href="{% url 'products:list' %}?gender=مردانه" class="themed-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
-            {% for perfume in latest_perfumes %}
-                {% if perfume.gender.slug == 'مردانه' or perfume.gender.slug == 'mordane' %}
-                    {% include 'partials/_product_card.html' with perfume=perfume %}
-                {% endif %}
+            {% for perfume in men_perfumes %}
+                {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% empty %}
+                <p style="color: var(--text-muted); padding: 1rem;">عطری در این دسته یافت نشد.</p>
             {% endfor %}
         </div>
     </div>
@@ -112,10 +112,10 @@
             <a href="{% url 'products:list' %}?gender=زنانه" class="themed-shelf-btn-all">همه</a>
         </div>
         <div class="products-grid">
-            {% for perfume in latest_perfumes %}
-                {% if perfume.gender.slug == 'زنانه' or perfume.gender.slug == 'zanane' %}
-                    {% include 'partials/_product_card.html' with perfume=perfume %}
-                {% endif %}
+            {% for perfume in women_perfumes %}
+                {% include 'partials/_product_card.html' with perfume=perfume %}
+            {% empty %}
+                <p style="color: var(--text-muted); padding: 1rem;">عطری در این دسته یافت نشد.</p>
             {% endfor %}
         </div>
     </div>
