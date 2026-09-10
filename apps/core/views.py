@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.clickjacking import xframe_options_exempt
 
@@ -102,3 +103,23 @@ def terms_view(request):
     """قوانین و مقررات"""
     settings_obj = SiteSettings.get_settings()
     return render(request, 'core/terms.html', {'site_settings': settings_obj})
+
+
+def robots_txt_view(request):
+    """فایل راهنمای موتورهای جستجو (robots.txt)"""
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /cart/",
+        "Disallow: /orders/",
+        "Disallow: /accounts/",
+        "Disallow: /products/search/",
+        "Disallow: /products/api/",
+        "Disallow: /products/wishlist/",
+        "Disallow: /*?sort=*",
+        "Disallow: /*?*next=*",
+        "Allow: /",
+        "",
+        "Sitemap: https://rayhaperfume.ir/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
