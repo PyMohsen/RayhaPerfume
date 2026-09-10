@@ -4,26 +4,30 @@
 <header class="liquid-header-wrapper">
     <div class="floating-navbar-container">
         <div class="floating-navbar-inner">
-            
+
             <!-- 1. Right Circle: Logo Pill -->
             <div class="glass-pill glass-pill-logo" title="صفحه اصلی">
                 <a href="{% url 'core:home' %}" class="glass-logo-link">
                     {% if site_settings.logo %}
-                        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="glass-logo-img">
+                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="glass-logo-img">
                     {% else %}
-                        <div class="glass-logo-badge">
-                            <svg class="glass-logo-icon" width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M50 5C25 5 15 25 15 50C15 75 35 95 50 95C65 95 85 75 85 50C85 25 75 5 50 5Z" stroke="#dfbc73" stroke-width="6" stroke-linejoin="round"/>
-                                <path d="M50 20C40 35 30 50 30 62C30 75 39 82 50 82C61 82 70 75 70 62C70 50 60 35 50 20Z" fill="url(#gold-grad-logo)"/>
-                                <path d="M50 35C45 45 38 55 38 62C38 70 43 74 50 74C57 74 62 70 62 62C62 55 55 45 50 35Z" fill="#ffffff"/>
-                                <defs>
-                                    <linearGradient id="gold-grad-logo" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#cca04b" />
-                                        <stop offset="100%" stop-color="#dfbc73" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                        </div>
+                    <div class="glass-logo-badge">
+                        <svg class="glass-logo-icon" width="28" height="28" viewBox="0 0 100 100" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M50 5C25 5 15 25 15 50C15 75 35 95 50 95C65 95 85 75 85 50C85 25 75 5 50 5Z"
+                                stroke="#dfbc73" stroke-width="6" stroke-linejoin="round" />
+                            <path d="M50 20C40 35 30 50 30 62C30 75 39 82 50 82C61 82 70 75 70 62C70 50 60 35 50 20Z"
+                                fill="url(#gold-grad-logo)" />
+                            <path d="M50 35C45 45 38 55 38 62C38 70 43 74 50 74C57 74 62 70 62 62C62 55 55 45 50 35Z"
+                                fill="#ffffff" />
+                            <defs>
+                                <linearGradient id="gold-grad-logo" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#cca04b" />
+                                    <stop offset="100%" stop-color="#dfbc73" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
                     {% endif %}
                 </a>
             </div>
@@ -36,23 +40,32 @@
                     <a href="{% url 'accounts:profile' %}" class="glass-user-badge" title="پروفایل کاربری">
                         <span class="user-avatar-circle">
                             {% if user.avatar %}
-                                <img src="{{ user.avatar.url }}" alt="{{ user.full_name|default:user.phone_number }}" class="user-avatar-img">
+                            <img src="{{ user.avatar.url }}" alt="{{ user.full_name|default:user.phone_number }}"
+                                class="user-avatar-img">
                             {% else %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
                             {% endif %}
                         </span>
                         <span class="user-name-text">
                             {% if user.full_name %}
-                                {{ user.full_name }}
+                            {{ user.full_name }}
                             {% else %}
-                                {{ user.phone_number|persian_digits }}
+                            {{ user.phone_number|persian_digits }}
                             {% endif %}
                         </span>
                     </a>
                     {% else %}
                     <a href="{% url 'accounts:login' %}" class="glass-user-badge login-badge" title="ورود / ثبت‌نام">
                         <span class="user-avatar-circle">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
                         </span>
                         <span class="user-name-text">ورود / ثبت نام</span>
                     </a>
@@ -69,18 +82,12 @@
                     <li class="glass-nav-item">
                         <a href="{% url 'products:list' %}" class="glass-nav-link">همه عطرها</a>
                     </li>
-                    {% for gender in nav_genders %}
-                    <li class="glass-nav-item">
-                        <a href="{% url 'products:list' %}?gender={{ gender.slug }}" class="glass-nav-link">عطر {{ gender.name }}</a>
-                    </li>
-                    {% empty %}
                     <li class="glass-nav-item">
                         <a href="{% url 'products:list' %}?gender=مردانه" class="glass-nav-link">عطر مردانه</a>
                     </li>
                     <li class="glass-nav-item">
                         <a href="{% url 'products:list' %}?gender=زنانه" class="glass-nav-link">عطر زنانه</a>
                     </li>
-                    {% endfor %}
                     <li class="glass-nav-item">
                         <a href="{% url 'core:about' %}" class="glass-nav-link">مجله عطر</a>
                     </li>
@@ -91,11 +98,21 @@
             <div class="glass-pill glass-pill-mobile-search">
                 <form action="{% url 'products:search' %}" method="GET" class="mobile-search-form">
                     <button type="submit" class="mobile-search-icon" aria-label="جستجو">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
+                        </svg>
                     </button>
-                    <input type="text" name="q" id="mobile-search-input" class="mobile-search-input" placeholder="جستجوی محصولات..." autocomplete="off">
-                    <button type="button" class="mobile-search-close-btn" id="mobile-search-close-btn" aria-label="بستن جستجو">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <input type="text" name="q" id="mobile-search-input" class="mobile-search-input"
+                        placeholder="جستجوی محصولات..." autocomplete="off">
+                    <button type="button" class="mobile-search-close-btn" id="mobile-search-close-btn"
+                        aria-label="بستن جستجو">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
                     </button>
                 </form>
 
@@ -107,15 +124,24 @@
                     </div>
                     <div class="live-search-results" id="mobile-live-search-results"></div>
                     <div class="live-search-empty" id="mobile-live-search-empty">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" opacity="0.4">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
                         </svg>
                         <span>نتیجه‌ای یافت نشد</span>
                     </div>
                     <a href="#" class="live-search-view-all" id="mobile-live-search-view-all">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
+                        </svg>
                         <span>مشاهده همه نتایج (<span id="mobile-live-search-total">0</span>)</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon"><path d="m15 18-6-6 6-6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" class="arrow-icon">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
                     </a>
                 </div>
             </div>
@@ -126,36 +152,56 @@
                 {% if user.is_authenticated %}
                 <a href="{% url 'accounts:profile' %}" class="glass-action-btn mobile-user-btn" title="پروفایل کاربری">
                     {% if user.avatar %}
-                        <img src="{{ user.avatar.url }}" alt="{{ user.full_name|default:user.phone_number }}" class="user-avatar-img user-avatar-img--sm">
+                    <img src="{{ user.avatar.url }}" alt="{{ user.full_name|default:user.phone_number }}"
+                        class="user-avatar-img user-avatar-img--sm">
                     {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
                     {% endif %}
                 </a>
                 {% else %}
                 <a href="{% url 'accounts:login' %}" class="glass-action-btn mobile-user-btn" title="ورود / ثبت‌نام">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
                 </a>
                 {% endif %}
 
                 <!-- Shopping Cart Button -->
                 <a href="{% url 'cart:detail' %}" class="glass-action-btn cart-action" title="سبد خرید">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <circle cx="9" cy="21" r="1" />
+                        <circle cx="20" cy="21" r="1" />
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
                     {% if cart_count %}
                     <span class="glass-cart-badge" id="cart-badge">{{ cart_count }}</span>
                     {% endif %}
                 </a>
 
                 <!-- Search Button (desktop only) -->
-                <button type="button" class="glass-action-btn desktop-search-btn" id="search-toggle-btn" aria-label="جستجو" title="جستجوی محصولات">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <button type="button" class="glass-action-btn desktop-search-btn" id="search-toggle-btn"
+                    aria-label="جستجو" title="جستجوی محصولات">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
                 </button>
 
                 <!-- Mobile Menu Toggle Button -->
                 <button class="glass-action-btn mobile-menu-toggle" id="mobile-menu-toggle" aria-label="منو">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="3" y1="6" x2="21" y2="6"/>
-                        <line x1="3" y1="12" x2="21" y2="12"/>
-                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
                 </button>
             </div>
@@ -166,12 +212,22 @@
         <div class="glass-search-overlay" id="glass-search-overlay">
             <div class="glass-search-box">
                 <form action="{% url 'products:search' %}" method="GET" class="glass-search-form">
-                    <input type="text" name="q" id="glass-search-input" class="glass-search-input" placeholder="جستجوی محصولات، عطرها و برندها..." value="{{ request.GET.q|default:'' }}" autocomplete="off">
+                    <input type="text" name="q" id="glass-search-input" class="glass-search-input"
+                        placeholder="جستجوی محصولات، عطرها و برندها..." value="{{ request.GET.q|default:'' }}"
+                        autocomplete="off">
                     <button type="submit" class="glass-search-submit" title="جستجو">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
+                        </svg>
                     </button>
                     <button type="button" class="glass-search-close" id="glass-search-close" aria-label="بستن">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
                     </button>
                 </form>
 
@@ -188,17 +244,26 @@
 
                     <!-- Empty State -->
                     <div class="live-search-empty" id="live-search-empty">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" opacity="0.4">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
                         </svg>
                         <span>نتیجه‌ای یافت نشد</span>
                     </div>
 
                     <!-- View All Link -->
                     <a href="#" class="live-search-view-all" id="live-search-view-all">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
+                        </svg>
                         <span>مشاهده همه نتایج (<span id="live-search-total">0</span>)</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon"><path d="m15 18-6-6 6-6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" class="arrow-icon">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
                     </a>
                 </div>
             </div>
@@ -219,9 +284,14 @@
                 <a href="{% url 'accounts:profile' %}" class="mobile-user-link">
                     <div class="user-avatar-circle">
                         {% if user.avatar %}
-                            <img src="{{ user.avatar.url }}" alt="{{ user.full_name|default:user.phone_number }}" class="user-avatar-img">
+                        <img src="{{ user.avatar.url }}" alt="{{ user.full_name|default:user.phone_number }}"
+                            class="user-avatar-img">
                         {% else %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
                         {% endif %}
                     </div>
                     <span>{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.phone_number|persian_digits }}{% endif %}</span>
@@ -229,7 +299,11 @@
                 {% else %}
                 <a href="{% url 'accounts:login' %}" class="mobile-user-link">
                     <div class="user-avatar-circle">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
                     </div>
                     <span>ورود / ثبت نام</span>
                 </a>
@@ -239,12 +313,8 @@
             <ul class="mobile-menu-links">
                 <li><a href="{% url 'core:home' %}">صفحه اصلی</a></li>
                 <li><a href="{% url 'products:list' %}">همه عطرها</a></li>
-                {% for gender in nav_genders %}
-                <li><a href="{% url 'products:list' %}?gender={{ gender.slug }}">عطر {{ gender.name }}</a></li>
-                {% empty %}
                 <li><a href="{% url 'products:list' %}?gender=مردانه">عطر مردانه</a></li>
                 <li><a href="{% url 'products:list' %}?gender=زنانه">عطر زنانه</a></li>
-                {% endfor %}
                 <li><a href="{% url 'core:about' %}">مجله عطر</a></li>
                 <li><a href="{% url 'cart:detail' %}">سبد خرید</a></li>
                 <li><a href="{% url 'core:about' %}">درباره ما</a></li>
