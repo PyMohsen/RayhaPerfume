@@ -27,6 +27,7 @@ urlpatterns = [
     path('products/', include('apps.products.urls')),
     path('cart/', include('apps.cart.urls')),
     path('orders/', include('apps.orders.urls')),
+    path('ai/', include('apps.ai_assistant.urls', namespace='ai')),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
 
     # سئو: نقشه سایت و ربات‌ها

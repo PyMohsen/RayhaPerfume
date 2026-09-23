@@ -1,0 +1,102 @@
+{% load static %}
+<!-- AI Perfume Advisor Floating Widget -->
+<div id="ai-advisor-root" class="ai-advisor-root">
+    
+    <!-- Floating Trigger Button -->
+    <button id="ai-advisor-trigger" class="ai-advisor-trigger" type="button" aria-label="مشاور هوشمند عطر رایحا">
+        <span class="ai-trigger-pulse"></span>
+        <span class="ai-trigger-glow"></span>
+        <span class="ai-trigger-icon-wrap">
+            <!-- AI Sparkle & Perfume Bottle SVG -->
+            <svg class="ai-trigger-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L13.8 7.2L19 9L13.8 10.8L12 16L10.2 10.8L5 9L10.2 7.2L12 2Z" fill="url(#aiGradient1)"/>
+                <path d="M19 15L20 18L23 19L20 20L19 23L18 20L15 19L18 18L19 15Z" fill="url(#aiGradient2)"/>
+                <path d="M6 16L6.8 18.2L9 19L6.8 19.8L6 22L5.2 19.8L3 19L5.2 18.2L6 16Z" fill="#FDE047"/>
+                <defs>
+                    <linearGradient id="aiGradient1" x1="5" y1="2" x2="19" y2="16" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#FFFFFF"/>
+                        <stop offset="1" stop-color="#E9D5FF"/>
+                    </linearGradient>
+                    <linearGradient id="aiGradient2" x1="15" y1="15" x2="23" y2="23" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#FDE047"/>
+                        <stop offset="1" stop-color="#F59E0B"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </span>
+        <span class="ai-trigger-badge">مشاور هوشمند</span>
+    </button>
+
+    <!-- Chat Window Container -->
+    <div id="ai-chat-window" class="ai-chat-window" aria-hidden="true">
+        <!-- Header -->
+        <div class="ai-chat-header">
+            <div class="ai-header-info">
+                <div class="ai-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" class="ai-avatar-icon">
+                        <path d="M12 2L13.8 7.2L19 9L13.8 10.8L12 16L10.2 10.8L5 9L10.2 7.2L12 2Z" fill="currentColor"/>
+                        <circle cx="18" cy="18" r="2.5" fill="#FDE047"/>
+                    </svg>
+                    <span class="ai-status-dot" title="آنلاین و آماده گفتگو"></span>
+                </div>
+                <div class="ai-title-wrap">
+                    <h3 class="ai-title">مشاور هوشمند رایحا</h3>
+                    <span class="ai-subtitle">راهنمای تخصصی انتخاب عطر</span>
+                </div>
+            </div>
+            <div class="ai-header-actions">
+                <button id="ai-reset-btn" class="ai-btn-icon" type="button" title="شروع مجدد گفتگو">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                </button>
+                <button id="ai-close-btn" class="ai-btn-icon" type="button" title="بستن">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="ai-messages-container" class="ai-messages-container">
+            <!-- Messages and starter suggestions rendered dynamically by JS -->
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="ai-typing-indicator" class="ai-typing-indicator" style="display: none;">
+            <div class="ai-typing-bubble">
+                <span class="ai-typing-dot"></span>
+                <span class="ai-typing-dot"></span>
+                <span class="ai-typing-dot"></span>
+            </div>
+            <span class="ai-typing-text">مشاور در حال بررسی عطرها...</span>
+        </div>
+
+        <!-- Input Bar -->
+        <form id="ai-chat-form" class="ai-chat-form">
+            {% csrf_token %}
+            <div class="ai-input-wrap">
+                <input 
+                    type="text" 
+                    id="ai-user-input" 
+                    class="ai-user-input" 
+                    placeholder="سلیقه یا عطر مورد نظرتان را بنویسید..." 
+                    autocomplete="off" 
+                    maxlength="300"
+                />
+                <button type="submit" id="ai-send-btn" class="ai-send-btn" aria-label="ارسال پیام">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="ai-form-footer">
+                <span>پیشنهادات بر اساس موجودی واقعی فروشگاه رایحا</span>
+            </div>
+        </form>
+    </div>
+</div>

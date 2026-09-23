@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ai_advisor.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -65,6 +66,7 @@
     <script src="{% static 'js/main.js' %}"></script>
     <script src="{% static 'js/live_search.js' %}"></script>
     <script src="{% static 'js/cart.js' %}"></script>
+    <script src="{% static 'js/ai_advisor.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
     <!-- Cart Add Notification -->
@@ -90,5 +92,8 @@
             <div class="cart-notification-progress-bar" id="cart-notification-progress-bar"></div>
         </div>
     </div>
+
+    <!-- AI Perfume Advisor Partial -->
+    {% include 'partials/_ai_advisor.html' %}
 </body>
 </html>
