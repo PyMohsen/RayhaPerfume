@@ -147,7 +147,6 @@ class GeminiAdvisorService:
 
         self.api_key = getattr(settings, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
         self.base_url = (getattr(settings, 'GEMINI_BASE_URL', '') or os.getenv('GEMINI_BASE_URL', '') or 'https://generativelanguage.googleapis.com').rstrip('/')
-        self.proxy = getattr(settings, 'GEMINI_PROXY', '') or os.getenv('GEMINI_PROXY', '')
         # مدل پیش‌فرض انتخابی یا مدل درخواستی
         self.primary_model = getattr(settings, 'GEMINI_MODEL', '') or os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
         # لیست مدل‌های پشتیبان به ترتیب سرعت و در دسترس بودن
@@ -210,18 +209,12 @@ class GeminiAdvisorService:
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
-        proxies = None
-        if self.proxy:
-            proxy_str = self.proxy.strip()
-            if not any(proxy_str.startswith(p) for p in ('http://', 'https://', 'socks5://', 'socks5h://')):
-                proxy_str = f"http://{proxy_str}"
-            proxies = {'http': proxy_str, 'https': proxy_str}
 
         last_error = None
         for model in models_to_try:
             try:
                 url = f"{self.base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
-                resp = requests.post(url, json=payload, headers=headers, proxies=proxies, timeout=25)
+                resp = requests.post(url, json=payload, headers=headers, timeout=25)
 
                 if resp.status_code == 200:
                     data = resp.json()
