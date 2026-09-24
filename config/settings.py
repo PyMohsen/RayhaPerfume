@@ -8,11 +8,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# بارگذاری متغیرهای محیطی
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# بارگذاری متغیرهای محیطی
+load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
@@ -293,6 +293,8 @@ CKEDITOR_5_CONFIGS = {
 
 # Google Gemini AI Settings
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
+GEMINI_PROXY = os.getenv('GEMINI_PROXY', '')
+GEMINI_BASE_URL = os.getenv('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com')
 
 

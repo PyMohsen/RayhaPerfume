@@ -72,6 +72,8 @@ def chat_api_view(request):
         # فقط ۴ پیام آخر (۲ تبادل) نگه‌داری می‌شود تا در مراجعات بعدی توکن هدر نرود
         request.session['ai_chat_history'] = history[-4:]
         request.session.modified = True
+    else:
+        print(f"[AI Chat Error Debug]: {result.get('error_detail')}")
 
     return JsonResponse(result)
 
