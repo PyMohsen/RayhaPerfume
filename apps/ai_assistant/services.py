@@ -319,7 +319,7 @@ class GeminiAdvisorService:
             return cached
 
         # ۲. پیشنهاد هوشمند محلی بدون AI
-        return self._local_smart_fallback(user_message)
+        return self._local_smart_fallback(user_message, last_error)
 
     def _handle_missing_key(self, user_message: str) -> Dict:
         """
@@ -342,7 +342,7 @@ class GeminiAdvisorService:
             'model_used': 'mock-preview'
         }
 
-    def _local_smart_fallback(self, user_message: str) -> Dict:
+    def _local_smart_fallback(self, user_message: str, debug_error: str = None) -> Dict:
         """
         فال‌بک هوشمند محلی: وقتی هیچ مدل AI در دسترس نیست،
         بر اساس کلمات کلیدی پیام کاربر از دیتابیس عطر پیشنهاد می‌دهد.
@@ -413,5 +413,9 @@ class GeminiAdvisorService:
             'status': 'success',
             'reply': reply,
             'recommended_perfumes': cards,
-            'model_used': 'local-fallback'
+            'model_used': 'local-fallback',
+            'debug_info': {
+                'last_error': debug_error,
+                'base_urls': [u[:50] for u in self.base_urls],
+            }
         }
