@@ -150,11 +150,11 @@ class GeminiAdvisorService:
         load_dotenv(base_dir / '.env', override=True)
 
         self.api_key = getattr(settings, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
-        # آدرس اصلی از تنظیمات
-        configured_url = (getattr(settings, 'GEMINI_BASE_URL', '') or os.getenv('GEMINI_BASE_URL', '') or '').rstrip('/')
-        # لیست آدرس‌های پایه: اول Worker پروکسی (برای سرورهای ایران)، بعد مستقیم Google
+        # آدرس‌های پایه: اولویت قطعی با Worker پروکسی جهت دور زدن تحریم گوگل در ایران
         worker_url = 'https://gemini.sm-mirhafez86.workers.dev'
+        configured_url = (getattr(settings, 'GEMINI_BASE_URL', '') or os.getenv('GEMINI_BASE_URL', '') or worker_url).rstrip('/')
         google_url = 'https://generativelanguage.googleapis.com'
+
         self.base_urls = []
         if configured_url:
             self.base_urls.append(configured_url)
@@ -164,15 +164,14 @@ class GeminiAdvisorService:
             self.base_urls.append(google_url)
 
         self.primary_model = getattr(settings, 'GEMINI_MODEL', '') or os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
+        # مدل‌های معتبر و فعال تایید شده روی ورکر (با وضعیت 200 OK)
         self.fallback_models = [
             'gemini-3.5-flash-lite',
-            'gemini-3.5-flash',
-            'gemini-2.5-flash',
+            'gemini-flash-lite-latest',
+            'gemini-3.1-flash-lite',
         ]
-        # تنظیمات retry و timeout
         self.max_retries_per_model = 2
-        self.base_timeout = (15, 90)  # (connect, read) — تایم‌اوت بالاتر برای Worker کند
-        # ساخت session با connection pooling
+        self.base_timeout = (10, 45)
         self.session = requests.Session()
         adapter = HTTPAdapter(max_retries=Retry(total=0), pool_connections=5, pool_maxsize=5)
         self.session.mount('https://', adapter)
@@ -180,14 +179,14 @@ class GeminiAdvisorService:
 
     def ask(self, user_message: str, conversation_history: Optional[List[Dict]] = None) -> Dict:
         """
-        ارسال پیام به همراه تاریخچه کوتاه (حداکثر ۲-۳ پیام اخیر) به Gemini
+        ارسال پیام به همراه تاریخچه کوتاه به Gemini با اولویت ورکر و فال‌بک خودکار
         """
         if not self.api_key:
             return self._handle_missing_key(user_message)
 
         system_instruction = get_system_instruction()
 
-        # ساخت محتوای پیام‌ها با پنجره لغزان تاریخچه (حداکثر ۳ تبادل اخیر)
+        # ساخت محتوای پیام‌ها با پنجره لغزان تاریخچه (حداکثر ۴ پیام اخیر)
         contents = []
         if conversation_history:
             recent_history = conversation_history[-4:]
@@ -212,42 +211,29 @@ class GeminiAdvisorService:
             },
             'contents': contents,
             'generationConfig': {
-                # سقف توکن خروجی برای پیشگیری از پرحرفی و کاهش هزینه/سهمیه
                 'maxOutputTokens': 350,
                 'temperature': 0.7,
                 'topP': 0.9,
             }
         }
 
-        # کلید کش برای پاسخ‌های موفق قبلی
         cache_key = 'ai_resp_' + hashlib.md5(user_message.encode()).hexdigest()[:12]
 
-        # تلاش برای فراخوانی با مدل‌ها
         models_to_try = [self.primary_model]
         for fb in self.fallback_models:
             if fb not in models_to_try:
                 models_to_try.append(fb)
 
         headers = {'Content-Type': 'application/json'}
-
+        attempt_trace = []
         last_error = None
-        # حلقه روی آدرس‌های پایه: اول Worker، بعد مستقیم
+
         for base_url in self.base_urls:
-            # اگر این آدرس اخیراً کلاً fail شده رد شو
-            base_cb = f'ai_cb_base_{hashlib.md5(base_url.encode()).hexdigest()[:8]}'
-            if cache.get(base_cb):
-                logger.info(f"Circuit breaker active for base URL {base_url[:40]}, skipping")
+            # اگر مستقیم گوگل هست و قبلاً در این سرور مشخص شده مسدوده (۴۰۳)، رد شو
+            if 'googleapis.com' in base_url and cache.get('ai_google_blocked_iran'):
                 continue
 
-            base_failed_all = True
-            base_conn_error = False
             for model in models_to_try:
-                # Circuit breaker: ترکیب آدرس + مدل (نه فقط مدل)
-                url_hash = hashlib.md5(base_url.encode()).hexdigest()[:6]
-                cb_key = f'ai_cb_{url_hash}_{model}'
-                if cache.get(cb_key):
-                    continue
-
                 for attempt in range(self.max_retries_per_model):
                     try:
                         url = f"{base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
@@ -258,8 +244,16 @@ class GeminiAdvisorService:
                             candidates = data.get('candidates', [])
                             if candidates and 'content' in candidates[0]:
                                 parts = candidates[0]['content'].get('parts', [])
-                                if parts:
-                                    raw_reply = parts[0].get('text', '')
+                                # استخراج تمام بخش‌های متنی (صرف‌نظر از بخش‌های thought در مدل‌های thinking)
+                                text_parts = [
+                                    p.get('text', '') for p in parts
+                                    if not p.get('thought', False) and p.get('text')
+                                ]
+                                if not text_parts:
+                                    text_parts = [p.get('text', '') for p in parts if p.get('text')]
+                                raw_reply = "\n".join(text_parts).strip()
+
+                                if raw_reply:
                                     clean_reply, recommended_slugs = extract_recommended_slugs(raw_reply)
                                     perfume_cards = enrich_perfumes(recommended_slugs)
                                     result = {
@@ -273,53 +267,45 @@ class GeminiAdvisorService:
                                     return result
 
                         status = resp.status_code
-                        logger.warning(f"Gemini {base_url[:30]}|{model} attempt {attempt+1} status {status}: {resp.text[:150]}")
-                        last_error = f"Error {status}"
+                        host_tag = 'worker' if 'workers.dev' in base_url else ('google' if 'googleapis.com' in base_url else 'custom')
+                        attempt_trace.append(f"{host_tag}|{model}: {status}")
+                        last_error = f"{host_tag}|{model}: Error {status}"
 
-                        if status in (404, 403, 400):
-                            cache.set(cb_key, True, 300)
+                        if status == 403 and 'googleapis.com' in base_url:
+                            # گوگل مستقیم در ایران تحریم است، برای ۱۰ دقیقه از این آدرس رد شو
+                            cache.set('ai_google_blocked_iran', True, 600)
+                            break
+                        if status in (404, 400):
                             break
                         if status in (503, 429, 500):
-                            wait = (attempt + 1) * 3
-                            time.sleep(wait)
+                            time.sleep(1)
                             continue
                         break
 
                     except requests.exceptions.Timeout:
-                        logger.warning(f"Timeout {base_url[:30]}|{model} attempt {attempt+1}")
-                        last_error = 'timeout'
-                        time.sleep((attempt + 1) * 2)
+                        host_tag = 'worker' if 'workers.dev' in base_url else 'other'
+                        attempt_trace.append(f"{host_tag}|{model}: timeout")
+                        last_error = f"{host_tag}|{model}: timeout"
+                        time.sleep(1)
                     except requests.exceptions.ConnectionError:
-                        logger.warning(f"ConnErr {base_url[:30]}|{model} attempt {attempt+1}")
-                        last_error = 'connection_error'
-                        base_conn_error = True
+                        host_tag = 'worker' if 'workers.dev' in base_url else 'other'
+                        attempt_trace.append(f"{host_tag}|{model}: conn_err")
+                        last_error = f"{host_tag}|{model}: connection_error"
                         break
                     except Exception as e:
-                        logger.error(f"Unexpected error {base_url[:30]}|{model}: {e}")
-                        last_error = str(e)
+                        host_tag = 'worker' if 'workers.dev' in base_url else 'other'
+                        err_name = type(e).__name__
+                        attempt_trace.append(f"{host_tag}|{model}: {err_name}")
+                        last_error = f"{host_tag}|{model}: {e}"
                         break
 
-                # اگر ConnectionError بود، کل base_url بلاکه — مدل بعدی رو امتحان نکن
-                if base_conn_error:
-                    break
-                base_failed_all = False
-
-            # اگر همه مدل‌ها روی این base_url با ConnectionError فیل شدند
-            if base_failed_all and last_error == 'connection_error':
-                cache.set(base_cb, True, 180)  # ۳ دقیقه این آدرس رو رد کن
-                logger.warning(f"Base URL {base_url[:40]} blocked, circuit breaker set")
-                continue
-
-        # ===== فال‌بک: هرگز ارور به کاربر نشان نده =====
-
-        # ۱. پاسخ کش‌شده قبلی
+        # ===== فال‌بک در صورت عدم دسترسی به هوش مصنوعی =====
         cached = cache.get(cache_key)
         if cached:
             cached['reply'] += '\n(پاسخ از حافظه مشاور)'
             return cached
 
-        # ۲. پیشنهاد هوشمند محلی بدون AI
-        return self._local_smart_fallback(user_message, last_error)
+        return self._local_smart_fallback(user_message, last_error, attempt_trace)
 
     def _handle_missing_key(self, user_message: str) -> Dict:
         """
@@ -342,7 +328,7 @@ class GeminiAdvisorService:
             'model_used': 'mock-preview'
         }
 
-    def _local_smart_fallback(self, user_message: str, debug_error: str = None) -> Dict:
+    def _local_smart_fallback(self, user_message: str, debug_error: str = None, attempt_trace: list = None) -> Dict:
         """
         فال‌بک هوشمند محلی: وقتی هیچ مدل AI در دسترس نیست،
         بر اساس کلمات کلیدی پیام کاربر از دیتابیس عطر پیشنهاد می‌دهد.
@@ -416,6 +402,7 @@ class GeminiAdvisorService:
             'model_used': 'local-fallback',
             'debug_info': {
                 'last_error': debug_error,
+                'trace': attempt_trace or [],
                 'base_urls': [u[:50] for u in self.base_urls],
             }
         }

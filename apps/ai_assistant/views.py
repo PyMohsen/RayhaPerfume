@@ -81,26 +81,32 @@ def chat_api_view(request):
 @require_http_methods(["POST"])
 def reset_chat_view(request):
     """
-    پاک‌سازی تاریخچه مکالمه مشاور در سشن
+    پاک‌سازی تاریخچه مکالمه مشاور در سشن و کش موقت
     """
+    from django.core.cache import cache
     if 'ai_chat_history' in request.session:
         del request.session['ai_chat_history']
         request.session.modified = True
+    cache.delete('ai_google_blocked_iran')
+    cache.delete('ai_compact_catalog')
     return JsonResponse({'status': 'success', 'message': 'تاریخچه گفتگو پاک شد.'})
 
 
 @require_http_methods(["GET"])
 def diagnose_api_view(request):
     """
-    تست اتصال به هر آدرس Gemini API از سرور — فقط برای دیباگ
+    تست اتصال به هر آدرس Gemini API از سرور و بررسی وضعیت مدل‌ها
     """
     import time
     import requests as req
+    from django.core.cache import cache
+
+    if request.GET.get('clear_cache'):
+        cache.clear()
 
     service = GeminiAdvisorService()
     results = []
 
-    # پیلود تست ساده و سبک
     test_payload = {
         'contents': [{'role': 'user', 'parts': [{'text': 'سلام'}]}],
         'generationConfig': {'maxOutputTokens': 20}
@@ -127,17 +133,28 @@ def diagnose_api_view(request):
         post_url = f"{base_url}/v1beta/models/{model}:generateContent?key={service.api_key}"
         start = time.time()
         try:
-            resp = req.post(post_url, json=test_payload, headers={'Content-Type': 'application/json'}, timeout=(10, 60))
+            resp = req.post(post_url, json=test_payload, headers={'Content-Type': 'application/json'}, timeout=(10, 30))
             entry['post_status'] = resp.status_code
             entry['post_time'] = round(time.time() - start, 2)
             entry['post_ok'] = resp.status_code == 200
-            entry['post_body'] = resp.text[:300]
+            entry['post_body'] = resp.text[:200]
         except Exception as e:
             entry['post_status'] = type(e).__name__
             entry['post_time'] = round(time.time() - start, 2)
             entry['post_ok'] = False
-            entry['post_error'] = str(e)[:300]
+            entry['post_error'] = str(e)[:200]
 
         results.append(entry)
 
-    return JsonResponse({'results': results, 'primary_model': service.primary_model})
+    # تست فراخوانی کامل سرویس ask
+    ask_sample = service.ask('سلام')
+
+    return JsonResponse({
+        'results': results,
+        'primary_model': service.primary_model,
+        'fallback_models': service.fallback_models,
+        'ask_sample_status': ask_sample.get('status'),
+        'ask_sample_model': ask_sample.get('model_used'),
+        'ask_sample_reply': ask_sample.get('reply')[:150] if ask_sample.get('reply') else '',
+        'ask_sample_debug': ask_sample.get('debug_info'),
+    })
