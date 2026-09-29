@@ -100,24 +100,44 @@ def diagnose_api_view(request):
     service = GeminiAdvisorService()
     results = []
 
+    # پیلود تست ساده و سبک
+    test_payload = {
+        'contents': [{'role': 'user', 'parts': [{'text': 'سلام'}]}],
+        'generationConfig': {'maxOutputTokens': 20}
+    }
+
     for base_url in service.base_urls:
-        test_url = f"{base_url}/v1beta/models?key={service.api_key}"
+        entry = {'url': base_url[:50]}
+
+        # تست GET (لیست مدل‌ها)
+        get_url = f"{base_url}/v1beta/models?key={service.api_key}"
         start = time.time()
         try:
-            resp = req.get(test_url, timeout=(10, 30))
-            elapsed = round(time.time() - start, 2)
-            results.append({
-                'url': base_url[:50],
-                'status': resp.status_code,
-                'time_sec': elapsed,
-                'ok': resp.status_code == 200,
-                'body_preview': resp.text[:200] if resp.status_code != 200 else f'{len(resp.json().get("models", []))} models found',
-            })
-        except req.exceptions.Timeout:
-            results.append({'url': base_url[:50], 'status': 'TIMEOUT', 'time_sec': round(time.time() - start, 2), 'ok': False})
-        except req.exceptions.ConnectionError as e:
-            results.append({'url': base_url[:50], 'status': 'CONNECTION_ERROR', 'time_sec': round(time.time() - start, 2), 'ok': False, 'error': str(e)[:200]})
+            resp = req.get(get_url, timeout=(10, 30))
+            entry['get_status'] = resp.status_code
+            entry['get_time'] = round(time.time() - start, 2)
+            entry['get_ok'] = resp.status_code == 200
         except Exception as e:
-            results.append({'url': base_url[:50], 'status': 'ERROR', 'time_sec': round(time.time() - start, 2), 'ok': False, 'error': str(e)[:200]})
+            entry['get_status'] = type(e).__name__
+            entry['get_time'] = round(time.time() - start, 2)
+            entry['get_ok'] = False
 
-    return JsonResponse({'results': results})
+        # تست POST (generateContent واقعی)
+        model = service.primary_model
+        post_url = f"{base_url}/v1beta/models/{model}:generateContent?key={service.api_key}"
+        start = time.time()
+        try:
+            resp = req.post(post_url, json=test_payload, headers={'Content-Type': 'application/json'}, timeout=(10, 60))
+            entry['post_status'] = resp.status_code
+            entry['post_time'] = round(time.time() - start, 2)
+            entry['post_ok'] = resp.status_code == 200
+            entry['post_body'] = resp.text[:300]
+        except Exception as e:
+            entry['post_status'] = type(e).__name__
+            entry['post_time'] = round(time.time() - start, 2)
+            entry['post_ok'] = False
+            entry['post_error'] = str(e)[:300]
+
+        results.append(entry)
+
+    return JsonResponse({'results': results, 'primary_model': service.primary_model})
