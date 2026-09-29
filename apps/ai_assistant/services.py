@@ -1,9 +1,13 @@
+import hashlib
 import logging
 import os
 import re
+import time
 from typing import Dict, List, Optional, Tuple
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from django.conf import settings
 from django.core.cache import cache
 from apps.products.models import Perfume
@@ -147,16 +151,20 @@ class GeminiAdvisorService:
 
         self.api_key = getattr(settings, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
         self.base_url = (getattr(settings, 'GEMINI_BASE_URL', '') or os.getenv('GEMINI_BASE_URL', '') or 'https://generativelanguage.googleapis.com').rstrip('/')
-        # مدل پیش‌فرض انتخابی یا مدل درخواستی
         self.primary_model = getattr(settings, 'GEMINI_MODEL', '') or os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
-        # لیست مدل‌های پشتیبان به ترتیب سرعت و در دسترس بودن
         self.fallback_models = [
             'gemini-3.5-flash-lite',
-            'gemini-flash-lite-latest',
             'gemini-3.5-flash',
-            'gemini-3.6-flash',
             'gemini-2.5-flash',
         ]
+        # تنظیمات retry و timeout
+        self.max_retries_per_model = 2
+        self.base_timeout = (10, 45)  # (connect, read)
+        # ساخت session با connection pooling
+        self.session = requests.Session()
+        adapter = HTTPAdapter(max_retries=Retry(total=0), pool_connections=5, pool_maxsize=5)
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
 
     def ask(self, user_message: str, conversation_history: Optional[List[Dict]] = None) -> Dict:
         """
@@ -199,62 +207,87 @@ class GeminiAdvisorService:
             }
         }
 
-        # تلاش برای فراخوانی با مدل مشخص شده و در صورت نیاز فال‌بک خودکار
+        # کلید کش برای پاسخ‌های موفق قبلی
+        cache_key = 'ai_resp_' + hashlib.md5(user_message.encode()).hexdigest()[:12]
+
+        # تلاش برای فراخوانی با مدل‌ها
         models_to_try = [self.primary_model]
         for fb in self.fallback_models:
             if fb not in models_to_try:
                 models_to_try.append(fb)
 
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        }
+        headers = {'Content-Type': 'application/json'}
 
         last_error = None
         for model in models_to_try:
-            try:
-                url = f"{self.base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
-                resp = requests.post(url, json=payload, headers=headers, timeout=25)
+            # Circuit breaker: اگر مدل اخیراً خراب بوده رد شو
+            cb_key = f'ai_cb_{model}'
+            if cache.get(cb_key):
+                logger.info(f"Circuit breaker active for {model}, skipping")
+                continue
 
-                if resp.status_code == 200:
-                    data = resp.json()
-                    candidates = data.get('candidates', [])
-                    if candidates and 'content' in candidates[0]:
-                        parts = candidates[0]['content'].get('parts', [])
-                        if parts:
-                            raw_reply = parts[0].get('text', '')
-                            clean_reply, recommended_slugs = extract_recommended_slugs(raw_reply)
-                            perfume_cards = enrich_perfumes(recommended_slugs)
-                            return {
-                                'status': 'success',
-                                'reply': clean_reply,
-                                'recommended_perfumes': perfume_cards,
-                                'model_used': model
-                            }
+            for attempt in range(self.max_retries_per_model):
+                try:
+                    url = f"{self.base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
+                    resp = self.session.post(url, json=payload, headers=headers, timeout=self.base_timeout)
 
-                # ثبت لاگ خطا در کنسول جهت مشاهده در ترمینال
-                error_msg = resp.text
-                print(f"[Gemini API Warning] Model {model} status {resp.status_code}: {error_msg[:200]}")
-                logger.warning(f"Gemini API model {model} returned status {resp.status_code}: {error_msg}")
-                last_error = f"Error {resp.status_code}: {error_msg}"
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        candidates = data.get('candidates', [])
+                        if candidates and 'content' in candidates[0]:
+                            parts = candidates[0]['content'].get('parts', [])
+                            if parts:
+                                raw_reply = parts[0].get('text', '')
+                                clean_reply, recommended_slugs = extract_recommended_slugs(raw_reply)
+                                perfume_cards = enrich_perfumes(recommended_slugs)
+                                result = {
+                                    'status': 'success',
+                                    'reply': clean_reply,
+                                    'recommended_perfumes': perfume_cards,
+                                    'model_used': model
+                                }
+                                # کش کردن پاسخ موفق برای ۱۵ دقیقه
+                                cache.set(cache_key, result, 900)
+                                return result
 
-                # اگر مدل در دسترس نبود (503 high demand)، پیدا نشد (404)، سهمیه پر شد (429) یا خطای سرور (500)
-                # بلافاصله مدل پشتیبان بعدی را امتحان کن
-                if resp.status_code in (404, 503, 429, 500):
-                    continue
-                else:
-                    # برای خطاهای دائمی مثل 400 یا 403 شکستن حلقه
+                    status = resp.status_code
+                    logger.warning(f"Gemini {model} attempt {attempt+1} status {status}: {resp.text[:200]}")
+                    last_error = f"Error {status}"
+
+                    if status in (404, 403, 400):
+                        # خطای دائمی: مدل رو circuit break کن و برو مدل بعدی
+                        cache.set(cb_key, True, 300)
+                        break
+                    if status in (503, 429, 500):
+                        # خطای موقت: صبر کن و retry
+                        wait = (attempt + 1) * 3
+                        time.sleep(wait)
+                        continue
                     break
-            except Exception as e:
-                logger.error(f"Error calling Gemini API on {model}: {e}")
-                last_error = str(e)
 
-        return {
-            'status': 'error',
-            'reply': 'متأسفانه در برقراری ارتباط با سرویس هوش مصنوعی مشکلی رخ داد. لطفاً بعداً دوباره امتحان کنید.',
-            'error_detail': last_error,
-            'recommended_perfumes': []
-        }
+                except requests.exceptions.Timeout:
+                    logger.warning(f"Timeout on {model} attempt {attempt+1}")
+                    last_error = 'timeout'
+                    time.sleep((attempt + 1) * 2)
+                except requests.exceptions.ConnectionError:
+                    logger.warning(f"ConnectionError on {model} attempt {attempt+1}")
+                    last_error = 'connection_error'
+                    time.sleep((attempt + 1) * 2)
+                except Exception as e:
+                    logger.error(f"Unexpected error on {model}: {e}")
+                    last_error = str(e)
+                    break
+
+        # ===== فال‌بک: هرگز ارور به کاربر نشان نده =====
+
+        # ۱. پاسخ کش‌شده قبلی
+        cached = cache.get(cache_key)
+        if cached:
+            cached['reply'] += '\n(پاسخ از حافظه مشاور)'
+            return cached
+
+        # ۲. پیشنهاد هوشمند محلی بدون AI
+        return self._local_smart_fallback(user_message)
 
     def _handle_missing_key(self, user_message: str) -> Dict:
         """
@@ -275,4 +308,78 @@ class GeminiAdvisorService:
             ),
             'recommended_perfumes': cards,
             'model_used': 'mock-preview'
+        }
+
+    def _local_smart_fallback(self, user_message: str) -> Dict:
+        """
+        فال‌بک هوشمند محلی: وقتی هیچ مدل AI در دسترس نیست،
+        بر اساس کلمات کلیدی پیام کاربر از دیتابیس عطر پیشنهاد می‌دهد.
+        کاربر هرگز پیام خطا نمی‌بیند.
+        """
+        msg = user_message.lower()
+
+        # نگاشت کلمات کلیدی به فیلترهای دیتابیس
+        filters = {'is_active': True}
+
+        # تشخیص جنسیت
+        if any(w in msg for w in ['مردانه', 'مردونه', 'آقایان', 'مرد']):
+            filters['gender__name__icontains'] = 'مردانه'
+        elif any(w in msg for w in ['زنانه', 'زنونه', 'خانم', 'زن']):
+            filters['gender__name__icontains'] = 'زنانه'
+
+        # تشخیص فصل
+        season_map = {
+            'بهار': 'بهار', 'تابستان': 'تابستان', 'تابستون': 'تابستان',
+            'پاییز': 'پاییز', 'پائیز': 'پاییز', 'زمستان': 'زمستان',
+            'زمستون': 'زمستان', 'سرد': 'زمستان', 'گرم': 'تابستان',
+            'خنک': 'بهار',
+        }
+        for keyword, season in season_map.items():
+            if keyword in msg:
+                filters['seasons__name__icontains'] = season
+                break
+
+        # تشخیص طبع
+        nature_map = {
+            'شیرین': 'شیرین', 'تلخ': 'تلخ', 'خنک': 'خنک',
+            'گرم': 'گرم', 'تند': 'تند', 'ملایم': 'ملایم',
+        }
+        for keyword, nature in nature_map.items():
+            if keyword in msg:
+                filters['nature__name__icontains'] = nature
+                break
+
+        try:
+            perfumes = (
+                Perfume.objects.filter(**filters)
+                .select_related('gender', 'nature')
+                .order_by('-is_featured', '-views_count')[:3]
+            )
+
+            if not perfumes.exists():
+                perfumes = (
+                    Perfume.objects.filter(is_active=True)
+                    .order_by('-is_featured', '-views_count')[:3]
+                )
+
+            slugs = [p.slug for p in perfumes]
+            cards = enrich_perfumes(slugs)
+
+            names = '، '.join([p.name for p in perfumes[:2]])
+            reply = (
+                f"بر اساس درخواست شما، این عطرها رو پیشنهاد میدم: {names} 🌸\n"
+                "برای مشاوره دقیق‌تر، لطفاً کمی بعد دوباره امتحان کنید."
+            )
+        except Exception:
+            cards = []
+            reply = (
+                "ممنون از صبرتون! 🌸 الان سرویس مشاوره شلوغه.\n"
+                "پیشنهاد میکنم عطرهای پرفروش سایت رو ببینید یا چند دقیقه بعد دوباره امتحان کنید."
+            )
+
+        return {
+            'status': 'success',
+            'reply': reply,
+            'recommended_perfumes': cards,
+            'model_used': 'local-fallback'
         }
