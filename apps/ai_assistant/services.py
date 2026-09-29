@@ -240,9 +240,11 @@ class GeminiAdvisorService:
                 continue
 
             base_failed_all = True
+            base_conn_error = False
             for model in models_to_try:
-                # Circuit breaker مدل
-                cb_key = f'ai_cb_{model}'
+                # Circuit breaker: ترکیب آدرس + مدل (نه فقط مدل)
+                url_hash = hashlib.md5(base_url.encode()).hexdigest()[:6]
+                cb_key = f'ai_cb_{url_hash}_{model}'
                 if cache.get(cb_key):
                     continue
 
@@ -290,13 +292,16 @@ class GeminiAdvisorService:
                     except requests.exceptions.ConnectionError:
                         logger.warning(f"ConnErr {base_url[:30]}|{model} attempt {attempt+1}")
                         last_error = 'connection_error'
-                        # ConnectionError = احتمالاً کل base_url بلاکه، سریع برو بعدی
+                        base_conn_error = True
                         break
                     except Exception as e:
                         logger.error(f"Unexpected error {base_url[:30]}|{model}: {e}")
                         last_error = str(e)
                         break
-            else:
+
+                # اگر ConnectionError بود، کل base_url بلاکه — مدل بعدی رو امتحان نکن
+                if base_conn_error:
+                    break
                 base_failed_all = False
 
             # اگر همه مدل‌ها روی این base_url با ConnectionError فیل شدند
