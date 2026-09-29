@@ -146,11 +146,36 @@ def diagnose_api_view(request):
 
         results.append(entry)
 
+    # تست با پیلود واقعی حاوی سیستم‌پرامپت و کاتالوگ
+    from .services import get_system_instruction
+    sys_inst = get_system_instruction()
+    full_payload = {
+        'system_instruction': {'parts': [{'text': sys_inst}]},
+        'contents': [{'role': 'user', 'parts': [{'text': 'سلام'}]}],
+        'generationConfig': {'maxOutputTokens': 150}
+    }
+    worker_url = service.base_urls[0] if service.base_urls else ''
+    full_test = {'catalog_length': len(sys_inst)}
+    if worker_url:
+        full_post_url = f"{worker_url}/v1beta/models/{service.primary_model}:generateContent?key={service.api_key}"
+        st = time.time()
+        try:
+            r_full = req.post(full_post_url, json=full_payload, headers={'Content-Type': 'application/json'}, timeout=(10, 30))
+            full_test['status'] = r_full.status_code
+            full_test['time'] = round(time.time() - st, 2)
+            full_test['ok'] = r_full.status_code == 200
+            full_test['body_preview'] = r_full.text[:200]
+        except Exception as e:
+            full_test['status'] = f"{type(e).__name__}: {e}"
+            full_test['time'] = round(time.time() - st, 2)
+            full_test['ok'] = False
+
     # تست فراخوانی کامل سرویس ask
     ask_sample = service.ask('سلام')
 
     return JsonResponse({
         'results': results,
+        'full_payload_test': full_test,
         'primary_model': service.primary_model,
         'fallback_models': service.fallback_models,
         'ask_sample_status': ask_sample.get('status'),

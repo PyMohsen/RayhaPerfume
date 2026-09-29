@@ -29,7 +29,7 @@ def build_compact_catalog() -> str:
         Perfume.objects.filter(is_active=True)
         .select_related('gender', 'nature')
         .prefetch_related('seasons', 'scent_families', 'tastes', 'perfume_notes__note', 'variants')
-        .order_by('-is_featured', '-views_count')[:150]
+        .order_by('-is_featured', '-views_count')[:60]
     )
 
     lines = []
@@ -172,10 +172,6 @@ class GeminiAdvisorService:
         ]
         self.max_retries_per_model = 2
         self.base_timeout = (10, 45)
-        self.session = requests.Session()
-        adapter = HTTPAdapter(max_retries=Retry(total=0), pool_connections=5, pool_maxsize=5)
-        self.session.mount('https://', adapter)
-        self.session.mount('http://', adapter)
 
     def ask(self, user_message: str, conversation_history: Optional[List[Dict]] = None) -> Dict:
         """
@@ -237,7 +233,7 @@ class GeminiAdvisorService:
                 for attempt in range(self.max_retries_per_model):
                     try:
                         url = f"{base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
-                        resp = self.session.post(url, json=payload, headers=headers, timeout=self.base_timeout)
+                        resp = requests.post(url, json=payload, headers=headers, timeout=self.base_timeout)
 
                         if resp.status_code == 200:
                             data = resp.json()
@@ -287,16 +283,17 @@ class GeminiAdvisorService:
                         attempt_trace.append(f"{host_tag}|{model}: timeout")
                         last_error = f"{host_tag}|{model}: timeout"
                         time.sleep(1)
-                    except requests.exceptions.ConnectionError:
+                    except requests.exceptions.ConnectionError as e:
                         host_tag = 'worker' if 'workers.dev' in base_url else 'other'
-                        attempt_trace.append(f"{host_tag}|{model}: conn_err")
-                        last_error = f"{host_tag}|{model}: connection_error"
-                        break
+                        err_str = f"{type(e).__name__}: {str(e)[:80]}"
+                        attempt_trace.append(f"{host_tag}|{model}: conn_err({err_str})")
+                        last_error = f"{host_tag}|{model}: conn_err({err_str})"
+                        time.sleep(1)
                     except Exception as e:
                         host_tag = 'worker' if 'workers.dev' in base_url else 'other'
-                        err_name = type(e).__name__
-                        attempt_trace.append(f"{host_tag}|{model}: {err_name}")
-                        last_error = f"{host_tag}|{model}: {e}"
+                        err_str = f"{type(e).__name__}: {str(e)[:80]}"
+                        attempt_trace.append(f"{host_tag}|{model}: {err_str}")
+                        last_error = f"{host_tag}|{model}: {err_str}"
                         break
 
         # ===== فال‌بک در صورت عدم دسترسی به هوش مصنوعی =====
