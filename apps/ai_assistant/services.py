@@ -150,7 +150,19 @@ class GeminiAdvisorService:
         load_dotenv(base_dir / '.env', override=True)
 
         self.api_key = getattr(settings, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
-        self.base_url = (getattr(settings, 'GEMINI_BASE_URL', '') or os.getenv('GEMINI_BASE_URL', '') or 'https://generativelanguage.googleapis.com').rstrip('/')
+        # آدرس اصلی از تنظیمات
+        configured_url = (getattr(settings, 'GEMINI_BASE_URL', '') or os.getenv('GEMINI_BASE_URL', '') or '').rstrip('/')
+        # لیست آدرس‌های پایه: اول Worker پروکسی (برای سرورهای ایران)، بعد مستقیم Google
+        worker_url = 'https://gemini.sm-mirhafez86.workers.dev'
+        google_url = 'https://generativelanguage.googleapis.com'
+        self.base_urls = []
+        if configured_url:
+            self.base_urls.append(configured_url)
+        if worker_url not in self.base_urls:
+            self.base_urls.append(worker_url)
+        if google_url not in self.base_urls:
+            self.base_urls.append(google_url)
+
         self.primary_model = getattr(settings, 'GEMINI_MODEL', '') or os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
         self.fallback_models = [
             'gemini-3.5-flash-lite',
@@ -159,7 +171,7 @@ class GeminiAdvisorService:
         ]
         # تنظیمات retry و timeout
         self.max_retries_per_model = 2
-        self.base_timeout = (10, 45)  # (connect, read)
+        self.base_timeout = (15, 90)  # (connect, read) — تایم‌اوت بالاتر برای Worker کند
         # ساخت session با connection pooling
         self.session = requests.Session()
         adapter = HTTPAdapter(max_retries=Retry(total=0), pool_connections=5, pool_maxsize=5)
@@ -219,64 +231,79 @@ class GeminiAdvisorService:
         headers = {'Content-Type': 'application/json'}
 
         last_error = None
-        for model in models_to_try:
-            # Circuit breaker: اگر مدل اخیراً خراب بوده رد شو
-            cb_key = f'ai_cb_{model}'
-            if cache.get(cb_key):
-                logger.info(f"Circuit breaker active for {model}, skipping")
+        # حلقه روی آدرس‌های پایه: اول Worker، بعد مستقیم
+        for base_url in self.base_urls:
+            # اگر این آدرس اخیراً کلاً fail شده رد شو
+            base_cb = f'ai_cb_base_{hashlib.md5(base_url.encode()).hexdigest()[:8]}'
+            if cache.get(base_cb):
+                logger.info(f"Circuit breaker active for base URL {base_url[:40]}, skipping")
                 continue
 
-            for attempt in range(self.max_retries_per_model):
-                try:
-                    url = f"{self.base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
-                    resp = self.session.post(url, json=payload, headers=headers, timeout=self.base_timeout)
+            base_failed_all = True
+            for model in models_to_try:
+                # Circuit breaker مدل
+                cb_key = f'ai_cb_{model}'
+                if cache.get(cb_key):
+                    continue
 
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        candidates = data.get('candidates', [])
-                        if candidates and 'content' in candidates[0]:
-                            parts = candidates[0]['content'].get('parts', [])
-                            if parts:
-                                raw_reply = parts[0].get('text', '')
-                                clean_reply, recommended_slugs = extract_recommended_slugs(raw_reply)
-                                perfume_cards = enrich_perfumes(recommended_slugs)
-                                result = {
-                                    'status': 'success',
-                                    'reply': clean_reply,
-                                    'recommended_perfumes': perfume_cards,
-                                    'model_used': model
-                                }
-                                # کش کردن پاسخ موفق برای ۱۵ دقیقه
-                                cache.set(cache_key, result, 900)
-                                return result
+                for attempt in range(self.max_retries_per_model):
+                    try:
+                        url = f"{base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
+                        resp = self.session.post(url, json=payload, headers=headers, timeout=self.base_timeout)
 
-                    status = resp.status_code
-                    logger.warning(f"Gemini {model} attempt {attempt+1} status {status}: {resp.text[:200]}")
-                    last_error = f"Error {status}"
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            candidates = data.get('candidates', [])
+                            if candidates and 'content' in candidates[0]:
+                                parts = candidates[0]['content'].get('parts', [])
+                                if parts:
+                                    raw_reply = parts[0].get('text', '')
+                                    clean_reply, recommended_slugs = extract_recommended_slugs(raw_reply)
+                                    perfume_cards = enrich_perfumes(recommended_slugs)
+                                    result = {
+                                        'status': 'success',
+                                        'reply': clean_reply,
+                                        'recommended_perfumes': perfume_cards,
+                                        'model_used': model
+                                    }
+                                    # کش کردن پاسخ موفق برای ۱۵ دقیقه
+                                    cache.set(cache_key, result, 900)
+                                    return result
 
-                    if status in (404, 403, 400):
-                        # خطای دائمی: مدل رو circuit break کن و برو مدل بعدی
-                        cache.set(cb_key, True, 300)
+                        status = resp.status_code
+                        logger.warning(f"Gemini {base_url[:30]}|{model} attempt {attempt+1} status {status}: {resp.text[:150]}")
+                        last_error = f"Error {status}"
+
+                        if status in (404, 403, 400):
+                            cache.set(cb_key, True, 300)
+                            break
+                        if status in (503, 429, 500):
+                            wait = (attempt + 1) * 3
+                            time.sleep(wait)
+                            continue
                         break
-                    if status in (503, 429, 500):
-                        # خطای موقت: صبر کن و retry
-                        wait = (attempt + 1) * 3
-                        time.sleep(wait)
-                        continue
-                    break
 
-                except requests.exceptions.Timeout:
-                    logger.warning(f"Timeout on {model} attempt {attempt+1}")
-                    last_error = 'timeout'
-                    time.sleep((attempt + 1) * 2)
-                except requests.exceptions.ConnectionError:
-                    logger.warning(f"ConnectionError on {model} attempt {attempt+1}")
-                    last_error = 'connection_error'
-                    time.sleep((attempt + 1) * 2)
-                except Exception as e:
-                    logger.error(f"Unexpected error on {model}: {e}")
-                    last_error = str(e)
-                    break
+                    except requests.exceptions.Timeout:
+                        logger.warning(f"Timeout {base_url[:30]}|{model} attempt {attempt+1}")
+                        last_error = 'timeout'
+                        time.sleep((attempt + 1) * 2)
+                    except requests.exceptions.ConnectionError:
+                        logger.warning(f"ConnErr {base_url[:30]}|{model} attempt {attempt+1}")
+                        last_error = 'connection_error'
+                        # ConnectionError = احتمالاً کل base_url بلاکه، سریع برو بعدی
+                        break
+                    except Exception as e:
+                        logger.error(f"Unexpected error {base_url[:30]}|{model}: {e}")
+                        last_error = str(e)
+                        break
+            else:
+                base_failed_all = False
+
+            # اگر همه مدل‌ها روی این base_url با ConnectionError فیل شدند
+            if base_failed_all and last_error == 'connection_error':
+                cache.set(base_cb, True, 180)  # ۳ دقیقه این آدرس رو رد کن
+                logger.warning(f"Base URL {base_url[:40]} blocked, circuit breaker set")
+                continue
 
         # ===== فال‌بک: هرگز ارور به کاربر نشان نده =====
 
