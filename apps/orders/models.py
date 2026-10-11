@@ -55,10 +55,17 @@ class Order(models.Model):
     )
 
     # اطلاعات پرداخت
-    payment_authority = models.CharField(
+    payment_token = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='کد Authority'
+        verbose_name='توکن پرداخت سپ'
+    )
+    payment_ref_num = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name='رسید دیجیتال SEP'
     )
     ref_id = models.CharField(
         max_length=50,

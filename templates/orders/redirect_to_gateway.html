@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 {% load product_tags %}
-{% block title %}انتقال به درگاه پرداخت زرین‌پال{% endblock %}
+{% block title %}انتقال به درگاه پرداخت سپ{% endblock %}
 
 {% block content %}
 <div class="container" style="max-width: 600px; margin: 3rem auto; text-align: center;">
     <div class="checkout-section" style="padding: 2.5rem; border-radius: 12px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
         <div class="spinner" style="width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem auto;"></div>
         
-        <h2 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1.4rem;">در حال انتقال به درگاه پرداخت زرین‌پال...</h2>
+        <h2 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1.4rem;">در حال انتقال به درگاه پرداخت سپ...</h2>
         <p style="color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.6;">
-            لطفاً چند لحظه شکیبا باشید. شما در حال هدایت به درگاه امن پرداخت زرین‌پال برای سفارش شماره <strong>{{ order.order_number }}</strong> هستید.
+            لطفاً چند لحظه شکیبا باشید. شما در حال هدایت به درگاه امن پرداخت سپ برای سفارش شماره <strong>{{ order.order_number }}</strong> هستید.
         </p>
 
         <div style="background: #f9f9f9; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
@@ -18,9 +18,10 @@
         </div>
 
         <div style="margin-top: 1.5rem;">
-            <a href="{{ gateway_url }}" id="gateway-link" rel="referrer" class="btn btn-primary btn-block btn-lg" style="text-decoration: none;">
-                انتقال مستقیم به درگاه پرداخت
-            </a>
+            <form action="{{ gateway_url }}" method="post" id="sep-payment-form">
+                <input type="hidden" name="Token" value="{{ payment_token }}">
+                <button type="submit" class="btn btn-primary btn-block btn-lg">انتقال مستقیم به درگاه پرداخت</button>
+            </form>
         </div>
     </div>
 </div>
@@ -36,13 +37,7 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // انتقال از سمت فرانت/جاوااسکریپت درون دامنه پذیرنده برای حفظ ریفرر (Referer) و جلوگیری از مرور خرید (صفحه میان‌پی)
-        var gatewayUrl = "{{ gateway_url|escapejs }}";
-        if (gatewayUrl) {
-            setTimeout(function() {
-                window.location.href = gatewayUrl;
-            }, 300);
-        }
+        document.getElementById('sep-payment-form').submit();
     });
 </script>
 {% endblock %}

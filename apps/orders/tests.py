@@ -71,8 +71,8 @@ class OrderCreateAddressValidationTests(TestCase):
 
     from unittest.mock import patch
 
-    @patch('apps.orders.views.ZarinPalService')
-    def test_create_order_success_renders_gateway_redirect(self, mock_zarinpal_cls):
+    @patch('apps.orders.views.SepPaymentService')
+    def test_create_order_success_renders_gateway_redirect(self, mock_sep_cls):
         from apps.accounts.models import UserAddress
         address = UserAddress.objects.create(
             user=self.user,
@@ -86,11 +86,11 @@ class OrderCreateAddressValidationTests(TestCase):
             is_default=True
         )
 
-        mock_instance = mock_zarinpal_cls.return_value
+        mock_instance = mock_sep_cls.return_value
         mock_instance.request_payment.return_value = {
             'success': True,
-            'authority': 'A0000000000000000000000000000000000',
-            'url': 'https://sandbox.zarinpal.com/pg/StartPay/A0000000000000000000000000000000000'
+            'token': 'sep-token',
+            'url': 'https://sep.shaparak.ir/OnlinePG/OnlinePG'
         }
 
         response = self.client.post(self.create_url, {'address_id': address.id})
@@ -99,7 +99,7 @@ class OrderCreateAddressValidationTests(TestCase):
         self.assertIn('gateway_url', response.context)
         self.assertEqual(
             response.context['gateway_url'],
-            'https://sandbox.zarinpal.com/pg/StartPay/A0000000000000000000000000000000000'
+            'https://sep.shaparak.ir/OnlinePG/OnlinePG'
         )
 
         from apps.orders.models import Order

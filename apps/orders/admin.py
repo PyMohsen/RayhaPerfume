@@ -19,7 +19,7 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ('order_number', 'full_name', 'phone_number', 'ref_id')
     readonly_fields = (
         'order_number', 'user', 'total_price', 'discount_amount',
-        'coupon_discount', 'final_price', 'payment_authority',
+        'coupon_discount', 'final_price', 'payment_token', 'payment_ref_num',
         'ref_id', 'paid_at', 'created_at', 'updated_at'
     )
     raw_id_fields = ('user', 'coupon')
@@ -39,7 +39,7 @@ class OrderAdmin(admin.ModelAdmin):
             )
         }),
         ('پرداخت', {
-            'fields': ('payment_authority', 'ref_id', 'paid_at')
+            'fields': ('payment_token', 'payment_ref_num', 'ref_id', 'paid_at')
         }),
         ('ارسال', {
             'fields': ('tracking_code',)

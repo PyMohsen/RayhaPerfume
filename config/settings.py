@@ -169,7 +169,7 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# تنظیمات Referrer-Policy برای درگاه‌های پرداخت خارج از دامنه (زرین‌پال)
+# تنظیمات Referrer-Policy برای درگاه پرداخت SEP
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # تنظیمات امنیتی مخصوص Production (فقط وقتی DEBUG=False)
@@ -187,10 +187,8 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 
-# ZarinPal settings
-
-ZARINPAL_MERCHANT_ID = os.getenv('ZARINPAL_MERCHANT_ID', 'test-merchant-id')
-ZARINPAL_SANDBOX = os.getenv('ZARINPAL_SANDBOX', 'True').lower() in ('true', '1', 'yes')
+# SEP settings. دریافت ترمینال واقعی از SEP و ثبت IP سرور نزد پذیرنده الزامی است.
+SEP_TERMINAL_ID = os.getenv('SEP_TERMINAL_ID', '').strip()
 
 
 # SMS.ir Settings

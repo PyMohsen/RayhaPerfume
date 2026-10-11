@@ -1,17 +1,24 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db import IntegrityError
 from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.accounts.models import UserAddress
 from apps.cart.cart import Cart
 from .models import Order, OrderItem, CouponCode
-from .zarinpal import ZarinPalService
+from .sep import SepPaymentService
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -184,107 +191,114 @@ def create_order_view(request):
         )
 
     # درخواست پرداخت
-    zarinpal = ZarinPalService()
+    sep = SepPaymentService()
     callback_url = request.build_absolute_uri(
         reverse('orders:payment_callback')
     )
 
-    print(f"[ORDER DEBUG] final_price: {final_price}")
-    print(f"[ORDER DEBUG] callback_url: {callback_url}")
-    print(f"[ORDER DEBUG] order_number: {order.order_number}")
-
-    result = zarinpal.request_payment(
+    result = sep.request_payment(
         amount=final_price,
-        description=f'سفارش {order.order_number} - فروشگاه عطر رایحا',
+        res_num=order.order_number,
         callback_url=callback_url,
         mobile=request.user.phone_number,
-        email=request.user.email,
     )
 
-    print(f"[ORDER DEBUG] ZarinPal result: {result}")
-
     if result['success']:
-        order.payment_authority = result['authority']
+        order.payment_token = result['token']
         order.save()
         return render(request, 'orders/redirect_to_gateway.html', {
             'gateway_url': result['url'],
+            'payment_token': result['token'],
             'order': order,
         })
     else:
-        messages.error(request, 'خطا در اتصال به درگاه پرداخت. لطفاً دوباره تلاش کنید.')
+        logger.error(
+            'SEP token request failed for order %s: %s',
+            order.order_number,
+            result.get('error', 'unknown error'),
+        )
+        if settings.DEBUG:
+            messages.error(
+                request,
+                f'خطا در اتصال به درگاه پرداخت: {result.get("error", "خطای نامشخص")}',
+            )
+        else:
+            messages.error(request, 'خطا در اتصال به درگاه پرداخت. لطفاً دوباره تلاش کنید.')
         order.status = Order.Status.CANCELLED
         order.save()
         return redirect('cart:detail')
 
 
-@login_required
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
 def payment_callback_view(request):
-    """بازگشت از درگاه پرداخت"""
-    authority = request.GET.get('Authority')
-    status = request.GET.get('Status')
+    """دریافت نتیجه SEP و تأیید سمت سرور؛ درگاه نتیجه را با POST می‌فرستد."""
+    callback_data = request.POST if request.method == 'POST' else request.GET
+    res_num = callback_data.get('ResNum')
+    state = callback_data.get('State', '').strip().upper()
+    ref_num = callback_data.get('RefNum')
 
-    try:
-        order = Order.objects.get(
-            payment_authority=authority,
-            user=request.user,
-        )
-    except Order.DoesNotExist:
+    order = Order.objects.filter(order_number=res_num).first() if res_num else None
+    if order is None:
         messages.error(request, 'سفارش یافت نشد.')
         return redirect('core:home')
 
-    if status == 'OK':
-        zarinpal = ZarinPalService()
-        result = zarinpal.verify_payment(
-            authority=authority,
-            amount=order.final_price,
-        )
+    if order.status == Order.Status.PAID:
+        return render(request, 'orders/payment_result.html', {'order': order, 'success': True})
 
-        if result['success']:
-            # پرداخت موفق
-            order.status = Order.Status.PAID
-            order.ref_id = result['ref_id']
-            order.paid_at = timezone.now()
-            order.save()
-
-            # کاهش موجودی (اتمیک برای جلوگیری از race condition)
-            for item in order.items.select_related('variant').all():
-                if item.variant:
-                    PerfumeVariant = item.variant.__class__
-                    PerfumeVariant.objects.filter(
-                        pk=item.variant.pk,
-                        stock__gte=item.quantity,
-                    ).update(stock=F('stock') - item.quantity)
-
-            # افزایش استفاده کد تخفیف
-            if order.coupon:
-                order.coupon.used_count += 1
-                order.coupon.save()
-
-            # خالی کردن سبد خرید
-            cart = Cart(request)
-            cart.clear()
-
-            # پاک کردن کد تخفیف از session
-            if 'coupon_code' in request.session:
-                del request.session['coupon_code']
-
-            messages.success(request, 'پرداخت با موفقیت انجام شد!')
-            return render(request, 'orders/payment_result.html', {
-                'order': order,
-                'success': True,
-            })
-        else:
-            order.status = Order.Status.CANCELLED
-            order.save()
-            messages.error(request, 'پرداخت ناموفق بود.')
-    else:
+    if state != 'OK' or not ref_num:
         order.status = Order.Status.CANCELLED
         order.save()
         messages.error(request, 'پرداخت توسط کاربر لغو شد.')
+        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+
+    callback_terminal = callback_data.get('TerminalId')
+    if callback_terminal and str(callback_terminal) != str(settings.SEP_TERMINAL_ID):
+        messages.error(request, 'اطلاعات ترمینال پرداخت معتبر نیست.')
+        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+
+    result = SepPaymentService().verify_payment(ref_num=ref_num, amount=order.final_price)
+    if not result['success']:
+        # در خطای شبکه وضعیت را باز نگه می‌داریم تا تأیید مجدد ممکن باشد.
+        messages.error(request, 'پرداخت هنوز از طرف درگاه تأیید نشده است. لطفاً وضعیت سفارش را بررسی کنید.')
+        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if order.status != Order.Status.PAID:
+                if Order.objects.filter(payment_ref_num=result['payment_ref_num']).exclude(pk=order.pk).exists():
+                    raise IntegrityError('SEP RefNum was already used for another order.')
+
+                order.status = Order.Status.PAID
+                order.payment_ref_num = result['payment_ref_num']
+                order.ref_id = result['ref_id']
+                order.paid_at = timezone.now()
+                order.save(update_fields=[
+                    'status', 'payment_ref_num', 'ref_id', 'paid_at', 'updated_at'
+                ])
+
+                for item in order.items.select_related('variant').all():
+                    if item.variant_id:
+                        item.variant.__class__.objects.filter(
+                            pk=item.variant_id,
+                            stock__gte=item.quantity,
+                        ).update(stock=F('stock') - item.quantity)
+
+                if order.coupon:
+                    type(order.coupon).objects.filter(pk=order.coupon_id).update(used_count=F('used_count') + 1)
+    except IntegrityError:
+        messages.error(request, 'رسید پرداخت قبلاً برای سفارش دیگری استفاده شده است.')
+        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+
+    cart = Cart(request)
+    cart.clear()
+    request.session.pop('coupon_code', None)
+    messages.success(request, 'پرداخت با موفقیت انجام شد!')
 
     return render(request, 'orders/payment_result.html', {
         'order': order,
-        'success': False,
+        'success': True,
     })
 
 
