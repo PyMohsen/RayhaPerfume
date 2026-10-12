@@ -179,6 +179,9 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
+    # SEP returns to the merchant with a cross-site POST. Lax cookies are
+    # omitted on that request, which can replace the authenticated session.
+    SESSION_COOKIE_SAMESITE = 'None'
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
