@@ -1,8 +1,21 @@
+from types import SimpleNamespace
+
+from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
 
-class StaticViewSitemap(Sitemap):
+class CanonicalSitemap(Sitemap):
+    """تمام URLهای sitemap را روی دامنهٔ اصلی و HTTPS نگه می‌دارد."""
+
+    protocol = 'https'
+
+    def get_urls(self, page=1, site=None, protocol=None):
+        canonical_site = SimpleNamespace(domain=settings.SITE_DOMAIN)
+        return super().get_urls(page=page, site=canonical_site, protocol='https')
+
+
+class StaticViewSitemap(CanonicalSitemap):
     """نقشه سایت صفحات مهم و ثابت وب‌سایت"""
     protocol = 'https'
 

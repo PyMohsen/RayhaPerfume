@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.views.decorators.clickjacking import xframe_options_exempt
 
@@ -120,6 +121,6 @@ def robots_txt_view(request):
         "Disallow: /*?*next=*",
         "Allow: /",
         "",
-        "Sitemap: https://rayhaperfume.ir/sitemap.xml",
+        f"Sitemap: https://{settings.SITE_DOMAIN}/sitemap.xml",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")

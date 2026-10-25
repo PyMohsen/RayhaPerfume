@@ -12,8 +12,8 @@
       {% for img in url.item.images.all %}
         {% if img.image %}
         <image:image>
-          <image:loc>https://{{ request.get_host }}{{ img.image.url }}</image:loc>
-          <image:title>{{ url.item.name }}</image:title>
+          <image:loc>https://{{ site_domain }}{{ img.image.url }}</image:loc>
+          <image:title>{% if img.alt_text %}{{ img.alt_text }}{% else %}{{ url.item.name }}{% endif %}</image:title>
         </image:image>
 
         {% endif %}

@@ -22,6 +22,10 @@ DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# دامنهٔ اصلی برای لینک sitemap و robots.txt؛ در استقرارهای دیگر با env عوض شود.
+SITE_DOMAIN = os.getenv('SITE_DOMAIN', 'rayhaperfume.ir').strip()
+SITE_DOMAIN = SITE_DOMAIN.removeprefix('https://').removeprefix('http://').rstrip('/')
+
 
 # Application definition
 
