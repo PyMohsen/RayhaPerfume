@@ -13,21 +13,25 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'order_number', 'user', 'full_name', 'final_price',
-        'status', 'ref_id', 'created_at'
+        'status', 'payment_method', 'ref_id', 'created_at'
     )
-    list_filter = ('status', 'created_at', 'province')
-    search_fields = ('order_number', 'full_name', 'phone_number', 'ref_id')
+    list_filter = ('status', 'payment_method', 'created_at', 'province')
+    search_fields = (
+        'order_number', 'full_name', 'phone_number', 'ref_id',
+        'torob_transaction_id',
+    )
     readonly_fields = (
         'order_number', 'user', 'total_price', 'discount_amount',
         'coupon_discount', 'final_price', 'payment_token', 'payment_ref_num',
-        'ref_id', 'paid_at', 'created_at', 'updated_at'
+        'ref_id', 'torob_payment_token', 'torob_transaction_id',
+        'paid_at', 'created_at', 'updated_at'
     )
     raw_id_fields = ('user', 'coupon')
     inlines = [OrderItemInline]
 
     fieldsets = (
         ('اطلاعات سفارش', {
-            'fields': ('order_number', 'user', 'status', 'note', 'admin_note')
+            'fields': ('order_number', 'user', 'status', 'payment_method', 'note', 'admin_note')
         }),
         ('اطلاعات گیرنده', {
             'fields': ('full_name', 'phone_number', 'province', 'city', 'address', 'postal_code')
@@ -39,7 +43,10 @@ class OrderAdmin(admin.ModelAdmin):
             )
         }),
         ('پرداخت', {
-            'fields': ('payment_token', 'payment_ref_num', 'ref_id', 'paid_at')
+            'fields': (
+                'payment_token', 'payment_ref_num', 'torob_payment_token',
+                'torob_transaction_id', 'ref_id', 'paid_at'
+            )
         }),
         ('ارسال', {
             'fields': ('tracking_code',)

@@ -14,8 +14,8 @@
                 {% if addresses %}
                 <div class="address-select-grid">
                     {% for address in addresses %}
-                    <label class="address-select-card {% if address.is_default %}selected{% endif %}">
-                        <input type="radio" name="address_id" value="{{ address.pk }}" {% if address.is_default %}checked{% endif %}>
+                    <label class="address-select-card {% if default_address.pk == address.pk %}selected{% endif %}">
+                        <input type="radio" name="address_id" value="{{ address.pk }}" {% if default_address.pk == address.pk %}checked{% endif %}>
                         <h4>{{ address.title }}</h4>
                         <p>{{ address.full_name }} - {{ address.phone_number }}</p>
                         <p>{{ address.province }}، {{ address.city }}</p>
@@ -78,7 +78,30 @@
             {% endif %}
             <div class="cart-summary-row"><span>هزینه ارسال:</span><span>{% if shipping_cost > 0 %}{{ shipping_cost|price_format }} تومان{% else %}رایگان{% endif %}</span></div>
             <div class="cart-summary-row total"><span>مبلغ قابل پرداخت:</span><span id="final-price">{{ final_price|price_format }} تومان</span></div>
-            <button type="submit" class="btn btn-primary btn-block btn-lg" {% if not addresses %}disabled{% endif %}>پرداخت و ثبت سفارش</button>
+            <div class="checkout-payment-methods">
+                <h3 class="checkout-section-title">روش پرداخت</h3>
+                <div class="payment-method-options">
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment_method" value="sep" checked>
+                        <span class="payment-method-copy">
+                            <span class="payment-method-title">پرداخت آنلاین با کارت بانکی</span>
+                            <span class="payment-method-description">پرداخت از طریق درگاه امن بانکی سپ</span>
+                        </span>
+                        <img class="payment-method-logo payment-method-logo-sep" src="{% static 'images/SepLogo.png' %}" alt="لوگوی پرداخت الکترونیک سامان">
+                    </label>
+                    {% if torobpay_eligible %}
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment_method" value="torobpay">
+                        <span class="payment-method-copy">
+                            <span class="payment-method-title">پرداخت اعتباری ترب‌پی</span>
+                            <span class="payment-method-description">خرید اقساطی چهارماهه، بدون سود و ضامن</span>
+                        </span>
+                        <img class="payment-method-logo payment-method-logo-torob" src="{% static 'images/TorobLogo.png' %}" alt="لوگوی ترب‌پی">
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" {% if not addresses %}disabled{% endif %}>ثبت سفارش و ادامه پرداخت</button>
         </div>
     </form>
 </div>

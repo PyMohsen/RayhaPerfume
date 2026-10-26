@@ -61,6 +61,15 @@ def multiply(value, arg):
         return 0
 
 
+@register.filter
+def divide_by_four(value):
+    """Display a whole-toman installment estimate, rounded to the nearest toman."""
+    try:
+        return (int(value) + 2) // 4
+    except (ValueError, TypeError):
+        return 0
+
+
 @register.simple_tag
 def query_transform(request, **kwargs):
     """به‌روزرسانی query string"""

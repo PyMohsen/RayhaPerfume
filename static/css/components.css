@@ -3471,3 +3471,119 @@ body.drawer-open {
     }
 }
 
+/* Checkout payment method choices */
+.checkout-payment-methods {
+    margin: 1.25rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.payment-method-options {
+    display: flex;
+    flex-direction: column;
+}
+
+.payment-method-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 88px;
+    padding: 1rem .5rem;
+    border-bottom: 1px solid var(--gray-200);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.payment-method-option:last-child {
+    border-bottom: 0;
+}
+
+.payment-method-option:has(input:checked) {
+    color: var(--primary);
+}
+
+.payment-method-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    margin: 0;
+    accent-color: var(--primary);
+}
+
+.payment-method-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 0;
+}
+
+.payment-method-title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.payment-method-description {
+    color: var(--gray-500);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.payment-method-logo {
+    width: 58px;
+    height: 52px;
+    flex: 0 0 58px;
+    object-fit: contain;
+}
+
+.payment-method-logo-torob {
+    width: 48px;
+    flex-basis: 48px;
+}
+
+@media (max-width: 480px) {
+    .payment-method-option { gap: .65rem; min-height: 78px; padding: .8rem 0; }
+    .payment-method-logo { width: 48px; height: 44px; flex-basis: 48px; }
+    .payment-method-logo-torob { width: 42px; flex-basis: 42px; }
+    .payment-method-title { font-size: var(--font-size-sm); }
+    .payment-method-description { font-size: 10px; }
+}
+
+/* TorobPay installment information on the product page */
+.torob-installment-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    min-height: 112px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    background: #fff;
+}
+
+.torob-installment-mark {
+    width: 68px;
+    height: 68px;
+    flex: 0 0 68px;
+    object-fit: contain;
+}
+
+.torob-installment-copy p {
+    margin: .25rem 0;
+    font-size: 1.1rem;
+}
+
+.torob-installment-copy p:first-child {
+    font-size: 1.2rem;
+}
+
+@media (max-width: 480px) {
+    .torob-installment-card { gap: .85rem; padding: 1rem; }
+    .torob-installment-mark { width: 54px; height: 54px; flex-basis: 54px; }
+    .torob-installment-copy p, .torob-installment-copy p:first-child { font-size: .95rem; }
+}

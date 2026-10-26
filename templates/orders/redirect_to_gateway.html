@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 {% load product_tags %}
-{% block title %}انتقال به درگاه پرداخت سپ{% endblock %}
+{% block title %}انتقال به درگاه پرداخت{% endblock %}
 
 {% block content %}
 <div class="container" style="max-width: 600px; margin: 3rem auto; text-align: center;">
     <div class="checkout-section" style="padding: 2.5rem; border-radius: 12px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
         <div class="spinner" style="width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem auto;"></div>
         
-        <h2 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1.4rem;">در حال انتقال به درگاه پرداخت سپ...</h2>
+        <h2 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1.4rem;">در حال انتقال به {% if payment_provider == 'torobpay' %}ترب‌پی{% else %}درگاه پرداخت سپ{% endif %}...</h2>
         <p style="color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.6;">
-            لطفاً چند لحظه شکیبا باشید. شما در حال هدایت به درگاه امن پرداخت سپ برای سفارش شماره <strong>{{ order.order_number }}</strong> هستید.
+            لطفاً چند لحظه شکیبا باشید. شما در حال هدایت به درگاه {% if payment_provider == 'torobpay' %}پرداخت اعتباری ترب‌پی{% else %}امن پرداخت سپ{% endif %} برای سفارش شماره <strong>{{ order.order_number }}</strong> هستید.
         </p>
 
         <div style="background: #f9f9f9; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
@@ -18,10 +18,14 @@
         </div>
 
         <div style="margin-top: 1.5rem;">
+            {% if payment_provider == 'torobpay' %}
+            <a href="{{ gateway_url }}" id="torob-payment-link" class="btn btn-primary btn-block btn-lg">انتقال به ترب‌پی</a>
+            {% else %}
             <form action="{{ gateway_url }}" method="post" id="sep-payment-form">
                 <input type="hidden" name="Token" value="{{ payment_token }}">
                 <button type="submit" class="btn btn-primary btn-block btn-lg">انتقال مستقیم به درگاه پرداخت</button>
             </form>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -37,7 +41,10 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('sep-payment-form').submit();
+        var sepForm = document.getElementById('sep-payment-form');
+        var torobLink = document.getElementById('torob-payment-link');
+        if (sepForm) sepForm.submit();
+        if (torobLink) window.location.assign(torobLink.href);
     });
 </script>
 {% endblock %}

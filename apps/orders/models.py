@@ -10,6 +10,10 @@ from apps.products.models import PerfumeVariant
 class Order(models.Model):
     """مدل سفارش"""
 
+    class PaymentMethod(models.TextChoices):
+        SEP = 'sep', 'درگاه بانکی سپ'
+        TOROBPAY = 'torobpay', 'ترب‌پی (پرداخت اعتباری)'
+
     class Status(models.TextChoices):
         PENDING = 'pending', 'در انتظار پرداخت'
         PAID = 'paid', 'پرداخت شده'
@@ -54,11 +58,28 @@ class Order(models.Model):
         verbose_name='وضعیت'
     )
 
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.SEP,
+        verbose_name='روش پرداخت',
+    )
+
     # اطلاعات پرداخت
     payment_token = models.CharField(
         max_length=50,
         blank=True,
         verbose_name='توکن پرداخت سپ'
+    )
+    torob_payment_token = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='توکن پرداخت ترب‌پی',
+    )
+    torob_transaction_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='شناسه تراکنش ترب‌پی',
     )
     payment_ref_num = models.CharField(
         max_length=50,

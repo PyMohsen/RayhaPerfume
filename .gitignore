@@ -33,7 +33,4 @@ htmlcov/
 .coverage
 .coverage.*
 
-# Images
-images/
-
 deploy_package/

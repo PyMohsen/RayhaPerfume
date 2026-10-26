@@ -197,6 +197,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 # SEP settings. دریافت ترمینال واقعی از SEP و ثبت IP سرور نزد پذیرنده الزامی است.
 SEP_TERMINAL_ID = os.getenv('SEP_TERMINAL_ID', '').strip()
 
+# TorobPay CPG credentials (leave empty to keep credit payment unavailable).
+TOROBPAY_CLIENT_ID = os.getenv('TOROBPAY_CLIENT_ID', '').strip()
+TOROBPAY_CLIENT_SECRET = os.getenv('TOROBPAY_CLIENT_SECRET', '').strip()
+TOROBPAY_USERNAME = os.getenv('TOROBPAY_USERNAME', '').strip()
+TOROBPAY_PASSWORD = os.getenv('TOROBPAY_PASSWORD', '').strip()
+
 
 # SMS.ir Settings
 SMS_API_KEY = os.getenv('SMS_API_KEY', '')
