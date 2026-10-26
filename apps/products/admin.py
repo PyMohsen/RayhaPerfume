@@ -1,4 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.db import transaction
+from django.utils.html import format_html
+from uuid import uuid4
 
 from .models import (
     Gender, Season, ScentFamily, Nature, Taste, Scent,
@@ -74,8 +77,11 @@ class PerfumeImageInline(admin.TabularInline):
 
 @admin.register(Perfume)
 class PerfumeAdmin(admin.ModelAdmin):
+    change_list_template = 'admin/products/perfume/change_list.html'
     list_display = (
         'name', 'brand', 'gender', 'nature',
+        'variant_50_price_input', 'variant_50_stock_input',
+        'variant_100_price_input', 'variant_100_stock_input',
         'is_active', 'is_featured', 'views_count', 'created_at'
     )
     list_filter = (
@@ -88,6 +94,104 @@ class PerfumeAdmin(admin.ModelAdmin):
     readonly_fields = ('views_count', 'created_at', 'updated_at')
 
     inlines = [PerfumeVariantInline, PerfumeImageInline, PerfumeNoteInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('variants')
+
+    def _variant_input(self, perfume, size, field, label):
+        variant = next((item for item in perfume.variants.all() if item.size == size), None)
+        return format_html(
+            '<input type="number" min="0" step="1" name="variant_{}_{}_{}" '
+            'value="{}" aria-label="{} {}" style="width: 7.5em">',
+            size, field, perfume.pk, getattr(variant, field, ''), label, perfume.name,
+        )
+
+    @admin.display(description='قیمت ۵۰ میل')
+    def variant_50_price_input(self, obj):
+        return self._variant_input(obj, 50, 'price', 'قیمت ۵۰ میل')
+
+    @admin.display(description='موجودی ۵۰ میل')
+    def variant_50_stock_input(self, obj):
+        return self._variant_input(obj, 50, 'stock', 'موجودی ۵۰ میل')
+
+    @admin.display(description='قیمت ۱۰۰ میل')
+    def variant_100_price_input(self, obj):
+        return self._variant_input(obj, 100, 'price', 'قیمت ۱۰۰ میل')
+
+    @admin.display(description='موجودی ۱۰۰ میل')
+    def variant_100_stock_input(self, obj):
+        return self._variant_input(obj, 100, 'stock', 'موجودی ۱۰۰ میل')
+
+    def changelist_view(self, request, extra_context=None):
+        if request.method == 'POST' and '_save_variant_values' in request.POST:
+            self._save_variant_values(request)
+            from django.http import HttpResponseRedirect
+            from django.utils.http import urlencode
+
+            query = urlencode(request.GET, doseq=True)
+            return HttpResponseRedirect(f'{request.path}?{query}' if query else request.path)
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def _save_variant_values(self, request):
+        values_by_variant = {}
+        fields = {'price': 'قیمت', 'stock': 'موجودی'}
+        for key, raw_value in request.POST.items():
+            if not key.startswith('variant_'):
+                continue
+            try:
+                _, size, field, perfume_id = key.split('_')
+                size, perfume_id = int(size), int(perfume_id)
+                if size not in (50, 100) or field not in fields:
+                    continue
+                values_by_variant.setdefault((perfume_id, size), {})[field] = raw_value.strip()
+            except (ValueError, TypeError):
+                continue
+
+        invalid = any(
+            value and not value.isdigit()
+            for values in values_by_variant.values()
+            for value in values.values()
+        )
+        if invalid:
+            self.message_user(
+                request,
+                'مقدار قیمت و موجودی باید عدد صحیحِ صفر یا بیشتر باشد؛ هیچ تغییری ذخیره نشد.',
+                level=messages.ERROR,
+            )
+            return
+
+        created_count = updated_count = deleted_count = 0
+        with transaction.atomic():
+            for (perfume_id, size), values in values_by_variant.items():
+                price = values.get('price', '')
+                stock = values.get('stock', '')
+                variant = PerfumeVariant.objects.filter(perfume_id=perfume_id, size=size).first()
+
+                if variant and (not price or not stock):
+                    variant.delete()
+                    deleted_count += 1
+                elif price and stock:
+                    if variant:
+                        variant.price = int(price)
+                        variant.stock = int(stock)
+                        variant.save(update_fields=['price', 'stock'])
+                        updated_count += 1
+                    else:
+                        PerfumeVariant.objects.create(
+                            perfume_id=perfume_id,
+                            size=size,
+                            price=int(price),
+                            stock=int(stock),
+                            sku=f'P{perfume_id}-{size}-{uuid4().hex[:12]}',
+                        )
+                        created_count += 1
+
+        self.message_user(
+            request,
+            f'{created_count} واریانت ساخته شد، {updated_count} واریانت ویرایش شد و '
+            f'{deleted_count} واریانت حذف شد.',
+            level=messages.SUCCESS,
+        )
 
     fieldsets = (
         ('اطلاعات اصلی', {
