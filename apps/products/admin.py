@@ -78,6 +78,8 @@ class PerfumeImageInline(admin.TabularInline):
 @admin.register(Perfume)
 class PerfumeAdmin(admin.ModelAdmin):
     change_list_template = 'admin/products/perfume/change_list.html'
+    # Keep recently edited perfumes at the bottom of the admin list.
+    ordering = ('updated_at', 'pk')
     list_display = (
         'name', # 'brand', 'gender', 
         'variant_50_price_input', 'variant_50_stock_input',
