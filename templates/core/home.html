@@ -29,6 +29,9 @@
                     {% if slider.link %}
                     </a>
                     {% endif %}
+                    {% if not slider.title %}
+                    <h1 class="visually-hidden">خرید عطر اصل از فروشگاه عطر رایحا</h1>
+                    {% endif %}
                 {% endwith %}
             {% else %}
                 <a href="{% url 'products:list' %}?gender=زنانه" class="hero-main-banner-link">

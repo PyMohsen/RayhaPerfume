@@ -22,6 +22,81 @@ from .torobpay import TorobPayError, TorobPayService
 logger = logging.getLogger(__name__)
 
 
+def _verify_and_finalize_torobpay_order(order):
+    """Confirm the provider's current state, settle if needed, and fulfill once."""
+    service = TorobPayService()
+
+    def settled_transaction(status):
+        try:
+            amount_matches = int(status.get('amount')) == int(order.final_price) * 10
+        except (TypeError, ValueError):
+            amount_matches = False
+        transaction_id = str(status.get('transactionId') or '')
+        if status.get('status') != 'SETTLE' or not amount_matches or not transaction_id:
+            raise TorobPayError('وضعیت نهایی یا مبلغ سفارش در ترب‌پی تأیید نشد.')
+        return transaction_id
+
+    try:
+        status = service.get_status(order.torob_payment_token)
+        try:
+            status_amount_matches = int(status.get('amount')) == int(order.final_price) * 10
+        except (TypeError, ValueError):
+            status_amount_matches = False
+        if not status_amount_matches:
+            raise TorobPayError('مبلغ سفارش با وضعیت ترب‌پی مطابقت ندارد.')
+
+        state = status.get('status')
+        if state == 'SETTLE':
+            transaction_id = settled_transaction(status)
+        elif state == 'PENDING':
+            verification = service.verify(order.torob_payment_token)
+            verified_transaction_id = str(verification.get('transactionId') or '')
+            if not verified_transaction_id:
+                raise TorobPayError('پاسخ تأیید ترب‌پی شناسه تراکنش ندارد.')
+            settlement = service.settle(order.torob_payment_token)
+            transaction_id = str(settlement.get('transactionId') or '')
+            if transaction_id != verified_transaction_id:
+                raise TorobPayError('شناسه تراکنش در تأیید و تسویه ترب‌پی یکسان نیست.')
+        elif state == 'VERIFY':
+            settlement = service.settle(order.torob_payment_token)
+            transaction_id = str(settlement.get('transactionId') or '')
+            if not transaction_id:
+                raise TorobPayError('پاسخ تسویه ترب‌پی شناسه تراکنش ندارد.')
+        else:
+            raise TorobPayError('سفارش در وضعیت قابل تأیید ترب‌پی نیست.')
+    except TorobPayError as payment_error:
+        # Recover from a timeout or a previously processed callback if settlement
+        # completed at TorobPay but the merchant did not receive its response.
+        settled_status = service.get_status(order.torob_payment_token)
+        try:
+            transaction_id = settled_transaction(settled_status)
+        except TorobPayError:
+            raise payment_error
+
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order.pk)
+        if order.status != Order.Status.PAID:
+            for item in order.items.select_related('variant').all():
+                if item.variant_id:
+                    variant = item.variant.__class__.objects.select_for_update().get(pk=item.variant_id)
+                    if variant.stock < item.quantity:
+                        raise TorobPayError('موجودی سفارش تأییدشده کافی نیست؛ سفارش نیازمند بررسی است.')
+                    variant.stock -= item.quantity
+                    variant.save(update_fields=['stock'])
+            order.status = Order.Status.PAID
+            order.torob_transaction_id = transaction_id
+            order.ref_id = transaction_id
+            order.paid_at = timezone.now()
+            order.save(update_fields=[
+                'status', 'torob_transaction_id', 'ref_id', 'paid_at', 'updated_at'
+            ])
+            if order.coupon:
+                type(order.coupon).objects.filter(pk=order.coupon_id).update(
+                    used_count=F('used_count') + 1
+                )
+    return order
+
+
 @login_required
 def checkout_view(request):
     """صفحه تکمیل سفارش"""
@@ -272,20 +347,26 @@ def create_order_view(request):
 def payment_callback_view(request):
     """دریافت نتیجه SEP و تأیید سمت سرور؛ درگاه نتیجه را با POST می‌فرستد."""
     callback_data = request.POST if request.method == 'POST' else request.GET
-    res_num = callback_data.get('ResNum')
+    # SEP returns ResNum; TorobPay returns the merchant transactionId.
+    res_num = (callback_data.get('ResNum') or '').strip()
+    torob_transaction_id = (callback_data.get('transactionId') or '').strip()
     state = callback_data.get('State', '').strip().upper()
     ref_num = callback_data.get('RefNum')
 
-    order = Order.objects.filter(order_number=res_num).first() if res_num else None
+    order_number = torob_transaction_id or res_num
+    order = Order.objects.filter(order_number=order_number).first() if order_number else None
     if order is None:
-        messages.error(request, 'سفارش یافت نشد.')
+        logger.warning(
+            'Payment callback order not found (provider identifier present: %s).',
+            bool(order_number),
+        )
         return redirect('core:home')
 
     if order.status == Order.Status.PAID:
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': True})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
     if order.payment_method == Order.PaymentMethod.TOROBPAY:
-        transaction_id = callback_data.get('transactionId', '').strip()
+        transaction_id = torob_transaction_id
         state = callback_data.get('state', '').strip().upper()
         amount = callback_data.get('amount', '').strip()
         try:
@@ -302,88 +383,35 @@ def payment_callback_view(request):
             or not amount_matches
             or not order.torob_payment_token
         ):
-            messages.error(request, 'پرداخت ترب‌پی انجام نشد یا اطلاعات بازگشتی معتبر نیست.')
-            return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+            return redirect('orders:payment_result', order_number=order.order_number)
 
-        torobpay = TorobPayService()
         try:
-            try:
-                verification = torobpay.verify(order.torob_payment_token)
-                confirmed_transaction_id = str(verification.get('transactionId') or '')
-                settlement = torobpay.settle(order.torob_payment_token)
-                settled_transaction_id = str(settlement.get('transactionId') or '')
-                if not confirmed_transaction_id or settled_transaction_id != confirmed_transaction_id:
-                    raise TorobPayError('شناسه تراکنش در پاسخ تأیید و تسویه ترب‌پی یکسان نیست.')
-            except TorobPayError as payment_error:
-                # A timeout or duplicate callback may arrive after TorobPay has
-                # already settled the order. Trust status only if it confirms amount.
-                status = torobpay.get_status(order.torob_payment_token)
-                try:
-                    status_amount_matches = int(status.get('amount')) == int(order.final_price) * 10
-                except (TypeError, ValueError):
-                    status_amount_matches = False
-                if status.get('status') != 'SETTLE' or not status_amount_matches:
-                    raise payment_error
-                confirmed_transaction_id = str(status.get('transactionId') or '')
-                if not confirmed_transaction_id:
-                    raise payment_error
+            order = _verify_and_finalize_torobpay_order(order)
         except TorobPayError as exc:
             logger.error('TorobPay verification/settlement failed for order %s: %s', order.order_number, exc)
-            messages.error(request, 'تأیید پرداخت ترب‌پی کامل نشد. سفارش در انتظار بررسی مجدد باقی می‌ماند.')
-            return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
-
-        try:
-            with transaction.atomic():
-                order = Order.objects.select_for_update().get(pk=order.pk)
-                if order.status != Order.Status.PAID:
-                    for item in order.items.select_related('variant').all():
-                        if item.variant_id:
-                            variant = item.variant.__class__.objects.select_for_update().get(pk=item.variant_id)
-                            if variant.stock < item.quantity:
-                                raise ValueError('Insufficient inventory for a confirmed TorobPay order.')
-                            variant.stock -= item.quantity
-                            variant.save(update_fields=['stock'])
-                    order.status = Order.Status.PAID
-                    order.torob_transaction_id = confirmed_transaction_id
-                    order.ref_id = confirmed_transaction_id
-                    order.paid_at = timezone.now()
-                    order.save(update_fields=[
-                        'status', 'torob_transaction_id', 'ref_id', 'paid_at', 'updated_at'
-                    ])
-                    if order.coupon:
-                        type(order.coupon).objects.filter(pk=order.coupon_id).update(
-                            used_count=F('used_count') + 1
-                        )
+            return redirect('orders:payment_result', order_number=order.order_number)
         except (DatabaseError, ValueError) as exc:
-            logger.exception('Could not finalize TorobPay order %s: %s', order.order_number, exc)
-            messages.error(request, 'پرداخت تأیید شده اما ثبت نهایی سفارش نیازمند بررسی پشتیبانی است.')
-            return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+            logger.exception('TorobPay verification/settlement failed for order %s: %s', order.order_number, exc)
+            return redirect('orders:payment_result', order_number=order.order_number)
 
-        Cart(request).clear()
-        request.session.pop('coupon_code', None)
-        messages.success(request, 'پرداخت با موفقیت انجام شد!')
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': True})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
     if order.payment_method != Order.PaymentMethod.SEP:
-        messages.error(request, 'روش پرداخت این سفارش با درگاه بازگشتی هم‌خوانی ندارد.')
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
     if state != 'OK' or not ref_num:
         order.status = Order.Status.CANCELLED
         order.save()
-        messages.error(request, 'پرداخت توسط کاربر لغو شد.')
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
     callback_terminal = callback_data.get('TerminalId')
     if callback_terminal and str(callback_terminal) != str(settings.SEP_TERMINAL_ID):
-        messages.error(request, 'اطلاعات ترمینال پرداخت معتبر نیست.')
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
     result = SepPaymentService().verify_payment(ref_num=ref_num, amount=order.final_price)
     if not result['success']:
         # در خطای شبکه وضعیت را باز نگه می‌داریم تا تأیید مجدد ممکن باشد.
-        messages.error(request, 'پرداخت هنوز از طرف درگاه تأیید نشده است. لطفاً وضعیت سفارش را بررسی کنید.')
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
     try:
         with transaction.atomic():
@@ -410,18 +438,9 @@ def payment_callback_view(request):
                 if order.coupon:
                     type(order.coupon).objects.filter(pk=order.coupon_id).update(used_count=F('used_count') + 1)
     except IntegrityError:
-        messages.error(request, 'رسید پرداخت قبلاً برای سفارش دیگری استفاده شده است.')
-        return render(request, 'orders/payment_result.html', {'order': order, 'success': False})
+        return redirect('orders:payment_result', order_number=order.order_number)
 
-    cart = Cart(request)
-    cart.clear()
-    request.session.pop('coupon_code', None)
-    messages.success(request, 'پرداخت با موفقیت انجام شد!')
-
-    return render(request, 'orders/payment_result.html', {
-        'order': order,
-        'success': True,
-    })
+    return redirect('orders:payment_result', order_number=order.order_number)
 
 
 @login_required
@@ -442,35 +461,110 @@ def order_detail_view(request, order_number):
 
 
 @login_required
+def payment_result_view(request, order_number):
+    """Same-site landing page: safe place to update the user's session after callback."""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    success = order.status in [
+        Order.Status.PAID,
+        Order.Status.PROCESSING,
+        Order.Status.SHIPPED,
+        Order.Status.DELIVERED,
+    ]
+    if success:
+        Cart(request).clear()
+        request.session.pop('coupon_code', None)
+    return render(request, 'orders/payment_result.html', {
+        'order': order,
+        'success': success,
+        'pending_payment': order.status == Order.Status.PENDING,
+    })
+
+
+@login_required
+@require_POST
+def retry_torobpay_verification_view(request, order_number):
+    """Let the owning customer recover a paid TorobPay order after a lost callback."""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    if (
+        order.payment_method != Order.PaymentMethod.TOROBPAY
+        or order.status != Order.Status.PENDING
+        or not order.torob_payment_token
+    ):
+        messages.error(request, 'این سفارش برای بررسی مجدد پرداخت ترب‌پی قابل استفاده نیست.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    try:
+        _verify_and_finalize_torobpay_order(order)
+    except TorobPayError as exc:
+        logger.warning('TorobPay retry failed for order %s: %s', order.order_number, exc)
+        messages.error(request, 'ترب‌پی هنوز پرداخت را تأیید نکرده است. کمی بعد دوباره تلاش کنید.')
+    except (DatabaseError, ValueError) as exc:
+        logger.exception('Could not finalize retried TorobPay order %s: %s', order.order_number, exc)
+        messages.error(request, 'پرداخت تأیید شده اما ثبت سفارش نیازمند بررسی پشتیبانی است.')
+    else:
+        messages.success(request, 'پرداخت ترب‌پی تأیید شد و سفارش با موفقیت ثبت شد.')
+    return redirect('orders:detail', order_number=order.order_number)
+
+
+@login_required
 @require_POST
 def cancel_order_view(request, order_number):
     """لغو سفارش توسط کاربر"""
-    order = get_object_or_404(
-        Order,
-        order_number=order_number,
-        user=request.user,
-    )
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
 
-    if not order.can_cancel:
-        messages.error(request, 'این سفارش قابل لغو نیست.')
+    try:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if not order.can_cancel:
+                messages.error(request, 'این سفارش قابل لغو نیست.')
+                return redirect('orders:detail', order_number=order.order_number)
+
+            if (
+                order.payment_method == Order.PaymentMethod.TOROBPAY
+                and order.torob_payment_token
+            ):
+                try:
+                    TorobPayService().cancel(order.torob_payment_token)
+                except TorobPayError as cancel_error:
+                    # A retry after a completed cancel should still finish locally.
+                    try:
+                        provider_status = TorobPayService().get_status(order.torob_payment_token)
+                    except TorobPayError:
+                        provider_status = {}
+                    if provider_status.get('status') not in ('REVERT', 'CANCELED'):
+                        logger.error(
+                            'TorobPay cancellation failed for order %s: %s',
+                            order.order_number,
+                            cancel_error,
+                        )
+                        messages.error(
+                            request,
+                            'لغو سفارش در ترب‌پی تأیید نشد؛ سفارش در سایت هم لغو نشد. کمی بعد دوباره تلاش کنید.',
+                        )
+                        return redirect('orders:detail', order_number=order.order_number)
+
+            # Restore stock and coupon use only after provider cancellation succeeds.
+            if order.status in [Order.Status.PAID, Order.Status.PROCESSING]:
+                for item in order.items.select_related('variant').all():
+                    if item.variant_id:
+                        variant = item.variant.__class__.objects.select_for_update().get(
+                            pk=item.variant_id,
+                        )
+                        variant.stock += item.quantity
+                        variant.save(update_fields=['stock'])
+
+                if order.coupon_id:
+                    type(order.coupon).objects.filter(
+                        pk=order.coupon_id,
+                        used_count__gt=0,
+                    ).update(used_count=F('used_count') - 1)
+
+            order.status = Order.Status.CANCELLED
+            order.save(update_fields=['status', 'updated_at'])
+    except DatabaseError:
+        logger.exception('Could not save cancellation for order %s.', order.order_number)
+        messages.error(request, 'لغو سفارش ثبت نشد؛ لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.')
         return redirect('orders:detail', order_number=order.order_number)
-
-    # بازگرداندن موجودی کالاها (اگر پرداخت شده بود)
-    if order.status in [Order.Status.PAID, Order.Status.PROCESSING]:
-        for item in order.items.select_related('variant').all():
-            if item.variant:
-                PerfumeVariant = item.variant.__class__
-                PerfumeVariant.objects.filter(
-                    pk=item.variant.pk,
-                ).update(stock=F('stock') + item.quantity)
-
-        # بازگرداندن تعداد استفاده کد تخفیف
-        if order.coupon and order.coupon.used_count > 0:
-            order.coupon.used_count -= 1
-            order.coupon.save()
-
-    order.status = Order.Status.CANCELLED
-    order.save()
 
     messages.success(request, 'سفارش شما با موفقیت لغو شد.')
     return redirect('orders:detail', order_number=order.order_number)

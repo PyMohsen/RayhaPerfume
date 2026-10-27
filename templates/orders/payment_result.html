@@ -27,9 +27,20 @@
                 <path d="m9 9 6 6"/>
             </svg>
         </div>
+        {% if pending_payment %}
+        <h1>در انتظار تأیید پرداخت</h1>
+        <p class="result-message">وضعیت پرداخت هنوز نهایی نشده است. اگر پرداخت ترب‌پی را انجام داده‌اید، می‌توانید وضعیت را دوباره بررسی کنید.</p>
+        {% else %}
         <h1>پرداخت ناموفق</h1>
         <p class="result-message">متأسفانه پرداخت انجام نشد.</p>
+        {% endif %}
         <p>شماره سفارش: {{ order.order_number }}</p>
+        {% if pending_payment and order.payment_method == 'torobpay' and order.torob_payment_token %}
+        <form method="post" action="{% url 'orders:torobpay_retry' order_number=order.order_number %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">بررسی مجدد پرداخت ترب‌پی</button>
+        </form>
+        {% endif %}
         <a href="{% url 'cart:detail' %}" class="btn btn-primary">بازگشت به سبد خرید</a>
         {% endif %}
         <a href="{% url 'core:home' %}" class="btn btn-outline">بازگشت به صفحه اصلی</a>

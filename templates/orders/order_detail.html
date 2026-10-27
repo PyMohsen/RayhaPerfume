@@ -98,6 +98,13 @@
                     {% endif %}
                     <div class="cart-summary-row"><span>هزینه ارسال:</span><span>{% if order.shipping_cost > 0 %}{{ order.shipping_cost|price_format }} تومان{% else %}رایگان{% endif %}</span></div>
                     <div class="cart-summary-row total"><span>مبلغ پرداختی:</span><span>{{ order.final_price|price_format }} تومان</span></div>
+                    {% if order.payment_method == 'torobpay' and order.status == 'pending' and order.torob_payment_token %}
+                    <form method="post" action="{% url 'orders:torobpay_retry' order_number=order.order_number %}" class="torobpay-retry-form">
+                        {% csrf_token %}
+                        <p>اگر پرداخت ترب‌پی را انجام داده‌اید و سفارش هنوز تأیید نشده، وضعیت را دوباره بررسی کنید.</p>
+                        <button type="submit" class="btn btn-primary btn-block">بررسی مجدد پرداخت ترب‌پی</button>
+                    </form>
+                    {% endif %}
                     {% if order.ref_id %}<p class="ref-id">شماره پیگیری: {{ order.ref_id }}</p>{% endif %}
                 </div>
             </div>

@@ -173,7 +173,7 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# تنظیمات Referrer-Policy برای درگاه پرداخت SEP
+# تنظیمات Referrer-Policy برای درگاه‌های پرداخت
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # تنظیمات امنیتی مخصوص Production (فقط وقتی DEBUG=False)
@@ -183,8 +183,7 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
-    # SEP returns to the merchant with a cross-site POST. Lax cookies are
-    # omitted on that request, which can replace the authenticated session.
+    # Payment gateways return with a cross-site POST; browsers may omit Lax cookies.
     SESSION_COOKIE_SAMESITE = 'None'
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

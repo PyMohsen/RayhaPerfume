@@ -6,7 +6,7 @@
 /* ---------- Font Face Declarations ---------- */
 @font-face {
     font-family: 'RaviFaNum';
-    src: url('../fonts/RaviFaNum-Regular.ttf') format('truetype');
+    src: url('../fonts/RaviFaNum-Regular.woff2') format('woff2');
     font-weight: 100 500;
     font-style: normal;
     font-display: swap;
@@ -14,7 +14,7 @@
 
 @font-face {
     font-family: 'RaviFaNum';
-    src: url('../fonts/RaviFaNum-SemiBold.ttf') format('truetype');
+    src: url('../fonts/RaviFaNum-SemiBold.woff2') format('woff2');
     font-weight: 600 900;
     font-style: normal;
     font-display: swap;
@@ -1527,6 +1527,18 @@ input, textarea, select {
 }
 
 /* ---------- Page Title ---------- */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .page-title {
     font-size: var(--font-size-2xl);
     font-weight: 800;

@@ -24,6 +24,7 @@ class TorobPayService:
     VERIFY_URL = '/api/online/payment/v1/verify'
     SETTLE_URL = '/api/online/payment/v1/settle'
     STATUS_URL = '/api/online/payment/v1/status'
+    CANCEL_URL = '/api/online/payment/v1/cancel'
     REQUEST_TIMEOUT = (5, 15)
     CACHE_KEY = 'torobpay_access_token'
 
@@ -159,3 +160,6 @@ class TorobPayService:
 
     def get_status(self, payment_token):
         return self._request('GET', self.STATUS_URL, params={'paymentToken': payment_token})
+
+    def cancel(self, payment_token):
+        return self._request('POST', self.CANCEL_URL, payload={'paymentToken': payment_token})

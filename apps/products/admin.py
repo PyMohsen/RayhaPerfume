@@ -79,10 +79,11 @@ class PerfumeImageInline(admin.TabularInline):
 class PerfumeAdmin(admin.ModelAdmin):
     change_list_template = 'admin/products/perfume/change_list.html'
     list_display = (
-        'name', 'brand', 'gender', 'nature',
+        'name', # 'brand', 'gender', 
         'variant_50_price_input', 'variant_50_stock_input',
         'variant_100_price_input', 'variant_100_stock_input',
-        'is_active', 'is_featured', 'views_count', 'created_at'
+        # 'is_active', 'is_featured', 'views_count', 'created_at'
+        'updated_at',
     )
     list_filter = (
         'is_active', 'is_featured', 'gender', 'nature',
