@@ -1159,7 +1159,7 @@
     background: var(--gray-900);
     color: var(--white);
     padding: var(--space-4);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     overflow-x: auto;
     margin-bottom: var(--space-4);
     direction: ltr;
@@ -1929,12 +1929,62 @@ body.drawer-open {
 }
 
 .address-select-card {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
     padding: var(--space-4);
     border: 2px solid var(--gray-200);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: var(--transition-fast);
+}
+
+.address-select-choice {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.checkout-address-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--space-2);
+}
+
+.checkout-address-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: var(--primary);
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.checkout-address-action:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--white);
+}
+
+.checkout-address-action.danger {
+    color: var(--danger);
+}
+
+.checkout-address-action.danger:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--white);
+}
+
+.checkout-address-action svg {
+    width: 18px;
+    height: 18px;
 }
 
 .address-select-card:hover {

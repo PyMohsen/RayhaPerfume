@@ -1,8 +1,16 @@
+import json
 import re
+from pathlib import Path
 
 from django import forms
 
 from .models import CustomUser, UserAddress
+
+
+with (Path(__file__).parent / 'data' / 'iran_provinces_cities.json').open(
+    encoding='utf-8'
+) as cities_file:
+    IRAN_PROVINCES_CITIES = json.load(cities_file)
 
 
 class PhoneLoginForm(forms.Form):
@@ -110,10 +118,21 @@ class ProfileUpdateForm(forms.ModelForm):
 
 class UserAddressForm(forms.ModelForm):
     """فرم آدرس کاربر"""
+    province = forms.ChoiceField(
+        label='استان',
+        choices=[('', 'استان را انتخاب کنید')],
+        widget=forms.Select(attrs={'class': 'form-input', 'data-province-select': ''}),
+    )
+    city = forms.ChoiceField(
+        label='شهر',
+        choices=[('', 'ابتدا استان را انتخاب کنید')],
+        widget=forms.Select(attrs={'class': 'form-input', 'data-city-select': ''}),
+    )
+
     class Meta:
         model = UserAddress
         fields = ['title', 'full_name', 'phone_number', 'province', 'city',
-                  'address', 'postal_code', 'is_default']
+                  'address', 'postal_code']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -128,14 +147,6 @@ class UserAddressForm(forms.ModelForm):
                 'placeholder': '09123456789',
                 'dir': 'ltr',
             }),
-            'province': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'استان',
-            }),
-            'city': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'شهر',
-            }),
             'address': forms.Textarea(attrs={
                 'class': 'form-input',
                 'placeholder': 'آدرس کامل',
@@ -146,10 +157,33 @@ class UserAddressForm(forms.ModelForm):
                 'placeholder': 'کد پستی',
                 'dir': 'ltr',
             }),
-            'is_default': forms.CheckboxInput(attrs={
-                'class': 'form-checkbox',
-            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        provinces = sorted(IRAN_PROVINCES_CITIES)
+        self.fields['province'].choices = [('', 'استان را انتخاب کنید')] + [
+            (province, province) for province in provinces
+        ]
+
+        selected_province = (
+            self.data.get(self.add_prefix('province'))
+            if self.is_bound
+            else self.instance.province
+        )
+        cities = IRAN_PROVINCES_CITIES.get(selected_province, [])
+        self.fields['city'].choices = [('', 'شهر را انتخاب کنید')] + [
+            (city, city) for city in cities
+        ]
+        if not selected_province:
+            self.fields['city'].widget.attrs['disabled'] = 'disabled'
+
+    def clean_city(self):
+        city = self.cleaned_data['city']
+        province = self.cleaned_data.get('province')
+        if city not in IRAN_PROVINCES_CITIES.get(province, []):
+            raise forms.ValidationError('شهر انتخاب‌شده با استان هم‌خوانی ندارد.')
+        return city
 
     def clean_phone_number(self):
         phone = self.cleaned_data['phone_number']

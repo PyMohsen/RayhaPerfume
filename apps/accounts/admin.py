@@ -49,7 +49,7 @@ class OTPCodeAdmin(admin.ModelAdmin):
 @admin.register(UserAddress)
 class UserAddressAdmin(admin.ModelAdmin):
     """تنظیمات پنل ادمین برای آدرس‌ها"""
-    list_display = ('user', 'title', 'full_name', 'city', 'province', 'is_default')
-    list_filter = ('is_default', 'province', 'city')
+    list_display = ('user', 'title', 'full_name', 'city', 'province')
+    list_filter = ('province', 'city')
     search_fields = ('user__phone_number', 'full_name', 'address')
     raw_id_fields = ('user',)

@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django_ratelimit.decorators import ratelimit
 
@@ -13,6 +14,7 @@ from .forms import (
     ProfileCompleteForm,
     ProfileUpdateForm,
     UserAddressForm,
+    IRAN_PROVINCES_CITIES,
 )
 from .models import CustomUser, OTPCode, UserAddress
 
@@ -215,6 +217,7 @@ def address_create_view(request):
     return render(request, 'accounts/address_form.html', {
         'form': form,
         'title': 'افزودن آدرس جدید',
+        'address_cities': IRAN_PROVINCES_CITIES,
     })
 
 
@@ -222,12 +225,19 @@ def address_create_view(request):
 def address_update_view(request, pk):
     """ویرایش آدرس"""
     address = get_object_or_404(UserAddress, pk=pk, user=request.user)
+    next_url = request.POST.get('next') if request.method == 'POST' else request.GET.get('next', '')
 
     if request.method == 'POST':
         form = UserAddressForm(request.POST, instance=address)
         if form.is_valid():
             form.save()
             messages.success(request, 'آدرس به‌روزرسانی شد.')
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
             return redirect('accounts:address_list')
     else:
         form = UserAddressForm(instance=address)
@@ -235,6 +245,8 @@ def address_update_view(request, pk):
     return render(request, 'accounts/address_form.html', {
         'form': form,
         'title': 'ویرایش آدرس',
+        'address_cities': IRAN_PROVINCES_CITIES,
+        'next_url': next_url,
     })
 
 
@@ -245,6 +257,13 @@ def address_delete_view(request, pk):
     address = get_object_or_404(UserAddress, pk=pk, user=request.user)
     address.delete()
     messages.success(request, 'آدرس حذف شد.')
+    next_url = request.POST.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
     return redirect('accounts:address_list')
 
 

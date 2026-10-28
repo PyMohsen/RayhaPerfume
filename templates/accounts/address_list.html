@@ -16,8 +16,7 @@
             {% if addresses %}
             <div class="address-grid">
                 {% for address in addresses %}
-                <div class="address-card {% if address.is_default %}default{% endif %}">
-                    {% if address.is_default %}<span class="address-badge">پیش‌فرض</span>{% endif %}
+                <div class="address-card">
                     <h4 class="address-title">{{ address.title }}</h4>
                     <p><strong>{{ address.full_name }}</strong></p>
                     <p>{{ address.province }}، {{ address.city }}</p>

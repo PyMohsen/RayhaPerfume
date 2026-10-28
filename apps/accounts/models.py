@@ -37,7 +37,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name='تصویر پروفایل'
     )
 
-    # آدرس پیش‌فرض
+    # اطلاعات آدرس پروفایل
     address = models.TextField(
         blank=True,
         verbose_name='آدرس'
@@ -259,24 +259,10 @@ class UserAddress(models.Model):
         max_length=10,
         verbose_name='کد پستی'
     )
-    is_default = models.BooleanField(
-        default=False,
-        verbose_name='آدرس پیش‌فرض'
-    )
-
     class Meta:
         verbose_name = 'آدرس'
         verbose_name_plural = 'آدرس‌ها'
-        ordering = ['-is_default', '-id']
+        ordering = ['-id']
 
     def __str__(self):
         return f'{self.title} - {self.full_name}'
-
-    def save(self, *args, **kwargs):
-        # اگر آدرس پیش‌فرض تنظیم شده، بقیه را غیرفعال کن
-        if self.is_default:
-            UserAddress.objects.filter(
-                user=self.user,
-                is_default=True
-            ).exclude(pk=self.pk).update(is_default=False)
-        super().save(*args, **kwargs)

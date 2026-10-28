@@ -82,8 +82,7 @@ class OrderCreateAddressValidationTests(TestCase):
             province='Tehran',
             city='Tehran',
             address='Street 1',
-            postal_code='1234567890',
-            is_default=True
+            postal_code='1234567890'
         )
 
         mock_instance = mock_sep_cls.return_value

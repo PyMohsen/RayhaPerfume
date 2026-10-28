@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.accounts.models import UserAddress
+from apps.accounts.forms import UserAddressForm, IRAN_PROVINCES_CITIES
 from apps.cart.cart import Cart
 from .models import Order, OrderItem, CouponCode
 from .sep import SepPaymentService
@@ -105,14 +106,19 @@ def checkout_view(request):
         messages.warning(request, 'سبد خرید شما خالی است.')
         return redirect('cart:detail')
 
-    items = cart.get_items()
-    addresses = request.user.addresses.all()
-    default_address = addresses.filter(is_default=True).first() or addresses.first()
+    address_form = UserAddressForm() if not request.user.addresses.exists() else None
+    return render(request, 'orders/checkout.html', _checkout_context(request, address_form))
 
-    # بررسی کد تخفیف از session
+
+def _checkout_context(request, address_form=None):
+    cart = Cart(request)
+    items = cart.get_items()
+    addresses = list(request.user.addresses.all())
+    selected_address = addresses[0] if len(addresses) == 1 else None
+
     coupon_discount = 0
-    coupon_code = request.session.get('coupon_code')
     coupon = None
+    coupon_code = request.session.get('coupon_code')
     if coupon_code:
         try:
             coupon = CouponCode.objects.get(code__iexact=coupon_code)
@@ -124,12 +130,13 @@ def checkout_view(request):
     shipping_cost = getattr(settings, 'SHIPPING_COST')
     total = cart.get_total_price()
     final_price = total - coupon_discount + shipping_cost
-    torobpay_eligible = TorobPayService().is_eligible(final_price)
-
-    context = {
+    return {
         'items': items,
         'addresses': addresses,
-        'default_address': default_address,
+        'selected_address': selected_address,
+        'address_form': address_form,
+        'address_cities': IRAN_PROVINCES_CITIES,
+        'note_value': request.POST.get('note', ''),
         'total_price': cart.get_total_original_price(),
         'discount_amount': cart.get_total_discount(),
         'subtotal': total,
@@ -137,9 +144,8 @@ def checkout_view(request):
         'coupon': coupon,
         'shipping_cost': shipping_cost,
         'final_price': final_price,
-        'torobpay_eligible': torobpay_eligible,
+        'torobpay_eligible': TorobPayService().is_eligible(final_price),
     }
-    return render(request, 'orders/checkout.html', context)
 
 
 @login_required
@@ -202,10 +208,29 @@ def create_order_view(request):
 
     # دریافت آدرس
     if not address_id:
-        address = request.user.addresses.filter(is_default=True).first() or request.user.addresses.first()
-        if address is None:
-            messages.error(request, 'لطفاً یک آدرس برای ارسال سفارش انتخاب کنید.')
+        addresses = list(request.user.addresses.all())
+        if len(addresses) == 1:
+            address = addresses[0]
+        elif len(addresses) > 1:
+            messages.error(request, 'لطفاً یکی از آدرس‌های تحویل را انتخاب کنید.')
             return redirect('orders:checkout')
+        else:
+            address_fields = UserAddressForm.base_fields
+            if not any(field_name in request.POST for field_name in address_fields):
+                messages.error(request, 'لطفاً یک آدرس برای ارسال سفارش انتخاب کنید.')
+                return redirect('orders:checkout')
+
+            address_form = UserAddressForm(request.POST)
+            if not address_form.is_valid():
+                return render(
+                    request,
+                    'orders/checkout.html',
+                    _checkout_context(request, address_form),
+                )
+
+            address = address_form.save(commit=False)
+            address.user = request.user
+            address.save()
     else:
         try:
             address = UserAddress.objects.get(pk=address_id, user=request.user)
