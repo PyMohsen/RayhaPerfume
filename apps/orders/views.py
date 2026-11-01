@@ -19,6 +19,7 @@ from apps.cart.cart import Cart
 from .models import Order, OrderItem, CouponCode
 from .sep import SepPaymentService
 from .torobpay import TorobPayError, TorobPayService
+from .postex import PostexTrackingService
 
 logger = logging.getLogger(__name__)
 
@@ -477,10 +478,13 @@ def order_detail_view(request, order_number):
         user=request.user,
     )
     items = order.items.all()
+    tracking = PostexTrackingService().get_tracking(order.tracking_code)
+    print(tracking)
 
     context = {
         'order': order,
         'items': items,
+        'tracking': tracking,
     }
     return render(request, 'orders/order_detail.html', context)
 

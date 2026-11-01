@@ -59,6 +59,60 @@
                     </div>
                     {% endif %}
 
+                    {% if order.tracking_code %}
+                    <section class="parcel-tracking" aria-labelledby="parcel-tracking-title">
+                        <div class="parcel-tracking-heading">
+                            <span class="parcel-tracking-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                    <path d="M3 5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25v13.5A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V5.25zm3 2.25v1.5h12V7.5H6zm0 4.5v1.5h12V12H6zm0 4.5V18h7.5v-1.5H6z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 id="parcel-tracking-title">وضعیت مرسوله پستی</h3>
+                                <p>آخرین وضعیت و تاریخچه ارسال</p>
+                            </div>
+                        </div>
+                        {% if tracking.available %}
+                        {% with latest_event=tracking.events.0 %}
+                        <div class="parcel-tracking-current">
+                            <span class="parcel-tracking-marker" aria-hidden="true"></span>
+                            <div class="parcel-tracking-event-content">
+                                <strong>{{ latest_event.name }}</strong>
+                                {% if latest_event.description and latest_event.description != latest_event.name %}<p>{{ latest_event.description }}</p>{% endif %}
+                                {% if latest_event.date or latest_event.time %}<time>{{ latest_event.date }}{% if latest_event.date and latest_event.time %}، {% endif %}{{ latest_event.time }}</time>{% endif %}
+                            </div>
+                            <span class="parcel-tracking-latest">آخرین وضعیت</span>
+                        </div>
+                        {% endwith %}
+                        {% with older_events=tracking.events|slice:"1:" %}
+                        {% if older_events %}
+                        <div class="parcel-tracking-history" id="parcelTrackingHistory">
+                            <button type="button" class="parcel-tracking-history-toggle" aria-expanded="false" aria-controls="parcelTrackingHistoryContent">
+                                مشاهده همه رویدادها <span>({{ tracking.events|length }})</span>
+                            </button>
+                            <div class="parcel-tracking-history-content" id="parcelTrackingHistoryContent" hidden>
+                                <ol class="parcel-tracking-events" aria-label="تاریخچه رویدادهای قبلی مرسوله">
+                                    {% for event in older_events %}
+                                    <li class="parcel-tracking-event">
+                                        <span class="parcel-tracking-marker" aria-hidden="true"></span>
+                                        <div class="parcel-tracking-event-content">
+                                            <strong>{{ event.name }}</strong>
+                                            {% if event.description and event.description != event.name %}<p>{{ event.description }}</p>{% endif %}
+                                            {% if event.date or event.time %}<time>{{ event.date }}{% if event.date and event.time %}، {% endif %}{{ event.time }}</time>{% endif %}
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ol>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        {% else %}
+                        <p class="parcel-tracking-empty">در حال حاضر اطلاعاتی برای این کد رهگیری دریافت نشد.</p>
+                        {% endif %}
+                    </section>
+                    {% endif %}
+
                     <h3>آیتم‌های سفارش</h3>
                     <div class="order-items-list">
                         {% for item in items %}
@@ -166,5 +220,60 @@
 })();
 </script>
 {% endif %}
+
+<script>
+(function() {
+    const history = document.getElementById('parcelTrackingHistory');
+    if (!history) return;
+
+    const toggle = history.querySelector('.parcel-tracking-history-toggle');
+    const content = history.querySelector('.parcel-tracking-history-content');
+    let closeTimer;
+
+    toggle.addEventListener('click', function() {
+        const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+        window.clearTimeout(closeTimer);
+
+        if (!isOpen) {
+            history.classList.add('is-open');
+            toggle.setAttribute('aria-expanded', 'true');
+            content.hidden = false;
+            content.style.maxHeight = '0px';
+            content.style.opacity = '0';
+            content.offsetHeight;
+            content.style.maxHeight = content.scrollHeight + 'px';
+            content.style.opacity = '1';
+            content.addEventListener('transitionend', function onOpenTransition(event) {
+                if (event.propertyName !== 'max-height') return;
+                content.removeEventListener('transitionend', onOpenTransition);
+                if (toggle.getAttribute('aria-expanded') === 'true') content.style.maxHeight = 'none';
+            });
+            return;
+        }
+
+        content.style.maxHeight = content.scrollHeight + 'px';
+        content.offsetHeight;
+        content.style.maxHeight = '0px';
+        content.style.opacity = '0';
+        toggle.setAttribute('aria-expanded', 'false');
+
+        function finishClose() {
+            if (toggle.getAttribute('aria-expanded') === 'false') {
+                content.hidden = true;
+                content.style.maxHeight = '';
+                content.style.opacity = '';
+                history.classList.remove('is-open');
+            }
+        }
+
+        content.addEventListener('transitionend', function onCloseTransition(event) {
+            if (event.propertyName !== 'max-height') return;
+            content.removeEventListener('transitionend', onCloseTransition);
+            finishClose();
+        });
+        closeTimer = window.setTimeout(finishClose, 400);
+    });
+})();
+</script>
 
 {% endblock %}

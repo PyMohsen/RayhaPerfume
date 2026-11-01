@@ -210,6 +210,8 @@ SMS_TEMPLATE_ID = os.getenv('SMS_TEMPLATE_ID', '')
 
 # Shipping Settings
 SHIPPING_COST = 0  # هزینه ارسال به تومان
+POSTEX_API_KEY = os.getenv('POSTEX_API_KEY', '').strip()
+POSTEX_COURIER = os.getenv('POSTEX_COURIER', 'IR_POST').strip()
 
 
 # ============================================

@@ -2358,6 +2358,204 @@ body.drawer-open {
     border-bottom: 1px solid var(--gray-100);
 }
 
+.parcel-tracking {
+    margin: 0 0 var(--space-6);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid rgba(74, 44, 90, 0.1);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, rgba(74, 44, 90, 0.035), rgba(204, 160, 75, 0.06));
+}
+
+.parcel-tracking-heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.parcel-tracking-icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: var(--radius-md);
+    background: rgba(74, 44, 90, 0.09);
+    color: var(--primary, #4a2c5a);
+}
+
+.parcel-tracking-heading h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.parcel-tracking-heading p {
+    margin: 0 0 0 auto;
+    color: var(--gray-500);
+    font-size: var(--font-size-xs);
+}
+
+.parcel-tracking-current {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.parcel-tracking-empty {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: var(--font-size-sm);
+}
+
+.parcel-tracking-events {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.parcel-tracking-event {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.parcel-tracking-marker {
+    position: static;
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
+    margin-top: 2px;
+    border: 2px solid var(--gray-400);
+    border-radius: 50%;
+    background: var(--white);
+}
+
+.parcel-tracking-event.is-latest .parcel-tracking-marker {
+    border-color: #4a2c5a;
+    background: #4a2c5a;
+    box-shadow: 0 0 0 4px rgba(74, 44, 90, 0.1);
+}
+
+.parcel-tracking-current .parcel-tracking-marker {
+    border-color: #4a2c5a;
+    background: #4a2c5a;
+    box-shadow: 0 0 0 4px rgba(74, 44, 90, 0.1);
+}
+
+.parcel-tracking-event-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.parcel-tracking-event-content strong {
+    display: block;
+    color: var(--gray-900);
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+}
+
+.parcel-tracking-event-content p {
+    margin: 2px 0 0;
+    color: var(--gray-600);
+    font-size: var(--font-size-xs);
+}
+
+.parcel-tracking-event-content time {
+    display: block;
+    margin-top: 2px;
+    color: var(--gray-500);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+
+.parcel-tracking-latest {
+    flex: 0 0 auto;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    background: rgba(74, 44, 90, 0.09);
+    color: var(--primary, #4a2c5a);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.parcel-tracking-history {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-2);
+}
+
+.parcel-tracking-history-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: fit-content;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--primary, #4a2c5a);
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.parcel-tracking-history-toggle::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    margin-right: var(--space-1);
+    border-left: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg) translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+.parcel-tracking-history.is-open .parcel-tracking-history-toggle {
+    order: 2;
+    margin-top: var(--space-2);
+}
+
+.parcel-tracking-history.is-open .parcel-tracking-history-toggle::after {
+    transform: rotate(135deg) translateY(-2px);
+}
+
+.parcel-tracking-history-content {
+    order: 1;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.32s ease, opacity 0.22s ease;
+}
+
+.parcel-tracking-history-content[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .parcel-tracking-history-content,
+    .parcel-tracking-history-toggle::after {
+        transition-duration: 0.01ms;
+    }
+}
+
+.parcel-tracking-empty {
+    padding: var(--space-2) 0;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-xs);
+}
+
 .order-items-list {
     margin-top: var(--space-4);
 }
