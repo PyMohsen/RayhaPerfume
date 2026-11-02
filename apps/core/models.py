@@ -1,4 +1,5 @@
 from django.db import models
+from django_ckeditor_5.fields import CKEditor5Field
 
 
 class SiteSettings(models.Model):
@@ -46,8 +47,9 @@ class SiteSettings(models.Model):
         blank=True,
         verbose_name='واتساپ'
     )
-    about_text = models.TextField(
+    about_text = CKEditor5Field(
         blank=True,
+        config_name='extends',
         verbose_name='متن درباره ما'
     )
     shipping_info = models.TextField(

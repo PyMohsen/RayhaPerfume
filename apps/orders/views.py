@@ -479,7 +479,6 @@ def order_detail_view(request, order_number):
     )
     items = order.items.all()
     tracking = PostexTrackingService().get_tracking(order.tracking_code)
-    print(tracking)
 
     context = {
         'order': order,
