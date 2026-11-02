@@ -18,6 +18,7 @@ class Order(models.Model):
         PROCESSING = 'processing', 'در حال پردازش'
         SHIPPED = 'shipped', 'ارسال شده'
         DELIVERED = 'delivered', 'تحویل داده شده'
+        RETURN_REQUESTED = 'return_requested', 'درخواست مرجوع'
         CANCELLED = 'cancelled', 'لغو شده'
         REFUNDED = 'refunded', 'مرجوع شده'
 
@@ -116,6 +117,17 @@ class Order(models.Model):
 
     note = models.TextField(blank=True, verbose_name='یادداشت مشتری')
     admin_note = models.TextField(blank=True, verbose_name='یادداشت ادمین')
+    return_reason = models.TextField(blank=True, verbose_name='علت درخواست مرجوع')
+    return_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='زمان درخواست مرجوع'
+    )
+    pre_return_status = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='وضعیت قبل از درخواست مرجوع'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ثبت')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='آخرین به‌روزرسانی')
@@ -144,12 +156,27 @@ class Order(models.Model):
         return self.status == self.Status.PROCESSING
 
     @property
+    def can_return(self):
+        """آیا سفارش قابل درخواست مرجوع است"""
+        return self.status in [
+            self.Status.PROCESSING,
+            self.Status.SHIPPED,
+            self.Status.DELIVERED,
+        ]
+
+    @property
+    def can_cancel_return(self):
+        """آیا کاربر می‌تواند درخواست مرجوعی را لغو کند"""
+        return self.status == self.Status.RETURN_REQUESTED
+
+    @property
     def status_display_class(self):
         """کلاس CSS مناسب وضعیت"""
         classes = {
             'processing': 'status-processing',
             'shipped': 'status-shipped',
             'delivered': 'status-delivered',
+            'return_requested': 'status-return-requested',
             'cancelled': 'status-cancelled',
             'refunded': 'status-refunded',
         }

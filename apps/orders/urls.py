@@ -13,5 +13,7 @@ urlpatterns = [
     path('payment/result/<str:order_number>/', views.payment_result_view, name='payment_result'),
     path('<str:order_number>/torobpay/retry/', views.retry_torobpay_verification_view, name='torobpay_retry'),
     path('<str:order_number>/cancel/', views.cancel_order_view, name='cancel'),
+    path('<str:order_number>/return/', views.request_return_view, name='request_return'),
+    path('<str:order_number>/cancel-return/', views.cancel_return_request_view, name='cancel_return'),
     path('<str:order_number>/', views.order_detail_view, name='detail'),
 ]

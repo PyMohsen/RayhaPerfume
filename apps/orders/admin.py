@@ -13,18 +13,18 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'order_number', 'user', 'full_name', 'final_price',
-        'status', 'payment_method', 'ref_id', 'created_at'
+        'status', 'return_reason_preview', 'payment_method', 'ref_id', 'created_at'
     )
     list_filter = ('status', 'payment_method', 'created_at', 'province')
     search_fields = (
         'order_number', 'full_name', 'phone_number', 'ref_id',
-        'torob_transaction_id',
+        'torob_transaction_id', 'return_reason',
     )
     readonly_fields = (
         'order_number', 'user', 'total_price', 'discount_amount',
         'coupon_discount', 'final_price', 'payment_token', 'payment_ref_num',
         'ref_id', 'torob_payment_token', 'torob_transaction_id',
-        'paid_at', 'created_at', 'updated_at'
+        'paid_at', 'return_requested_at', 'pre_return_status', 'created_at', 'updated_at'
     )
     raw_id_fields = ('user', 'coupon')
     inlines = [OrderItemInline]
@@ -32,6 +32,9 @@ class OrderAdmin(admin.ModelAdmin):
     fieldsets = (
         ('اطلاعات سفارش', {
             'fields': ('order_number', 'user', 'status', 'payment_method', 'note', 'admin_note')
+        }),
+        ('اطلاعات مرجوعی', {
+            'fields': ('return_reason', 'return_requested_at', 'pre_return_status'),
         }),
         ('اطلاعات گیرنده', {
             'fields': ('full_name', 'phone_number', 'province', 'city', 'address', 'postal_code')
@@ -56,6 +59,12 @@ class OrderAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
+
+    @admin.display(description='علت مرجوعی')
+    def return_reason_preview(self, obj):
+        if not obj.return_reason:
+            return '-'
+        return (obj.return_reason[:35] + '...') if len(obj.return_reason) > 35 else obj.return_reason
 
 
 @admin.register(CouponCode)

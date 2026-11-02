@@ -297,6 +297,7 @@ class OrderPaymentFlowTests(TestCase):
         self.assertIn('processing', status_keys)
         self.assertIn('shipped', status_keys)
         self.assertIn('delivered', status_keys)
+        self.assertIn('return_requested', status_keys)
         self.assertIn('cancelled', status_keys)
         self.assertIn('refunded', status_keys)
 
@@ -337,3 +338,165 @@ class OrderPaymentFlowTests(TestCase):
 
         self.variant.refresh_from_db()
         self.assertEqual(self.variant.stock, 10)  # Stock restored
+
+    def test_return_request_success(self):
+        """User can submit return request with a reason for an eligible order."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET1',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+        self.assertTrue(order.can_return)
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        reason = 'محصول دچار شکستگی شیشه در حین ارسال شده است.'
+        response = self.client.post(return_url, {'return_reason': reason})
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.RETURN_REQUESTED)
+        self.assertEqual(order.return_reason, reason)
+        self.assertIsNotNone(order.return_requested_at)
+        self.assertFalse(order.can_return)
+        self.assertFalse(order.can_cancel)
+
+    def test_return_request_without_reason_fails(self):
+        """Submitting return request without reason redirects with error and leaves status unchanged."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET2',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(return_url, {'return_reason': '   '})
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DELIVERED)
+        self.assertEqual(order.return_reason, '')
+        self.assertIsNone(order.return_requested_at)
+
+    def test_return_request_on_cancelled_order_fails(self):
+        """User cannot submit return request for a cancelled order."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET3',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.CANCELLED,
+        )
+        self.assertFalse(order.can_return)
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(return_url, {'return_reason': 'علت لغو قبلی'})
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.CANCELLED)
+
+    def test_return_request_by_another_user_returns_404(self):
+        """User cannot submit return request on another user's order."""
+        other_user = CustomUser.objects.create_user(
+            phone_number='09999999999',
+            full_name='Other User',
+        )
+        order = Order.objects.create(
+            user=other_user,
+            order_number='RP-RET4',
+            full_name='Other User',
+            phone_number='09999999999',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(return_url, {'return_reason': 'تلاش کاربر دیگر'})
+        self.assertEqual(response.status_code, 404)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DELIVERED)
+
+    def test_cancel_return_request_restores_previous_status(self):
+        """User can cancel return request, reverting order to its previous status."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-CANCEL',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.RETURN_REQUESTED,
+            pre_return_status=Order.Status.SHIPPED,
+            return_reason='انصراف دادم',
+        )
+        self.assertTrue(order.can_cancel_return)
+
+        cancel_return_url = reverse('orders:cancel_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(cancel_return_url)
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.SHIPPED)
+        self.assertEqual(order.pre_return_status, '')
+        self.assertEqual(order.return_reason, '')
+        self.assertIsNone(order.return_requested_at)
+
+    def test_cancel_return_request_on_non_return_requested_order_fails(self):
+        """Cannot cancel return request if order is not in RETURN_REQUESTED status."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-INVALID',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.PROCESSING,
+        )
+        self.assertFalse(order.can_cancel_return)
+
+        cancel_return_url = reverse('orders:cancel_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(cancel_return_url)
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PROCESSING)

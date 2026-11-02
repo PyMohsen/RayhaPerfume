@@ -18,7 +18,7 @@
                         {% if order.tracking_code %}<span>کد پیگیری پستی: {{ order.tracking_code }}</span>{% endif %}
                     </div>
 
-                    {% if order.status != 'cancelled' and order.status != 'refunded' %}
+                    {% if order.status != 'cancelled' and order.status != 'refunded' and order.status != 'return_requested' %}
                     <!-- Order Progress Tracker -->
                     <div class="order-progress-tracker" data-status="{{ order.status }}">
                         <div class="progress-line-bg"></div>
@@ -51,10 +51,64 @@
                         <div class="progress-step" data-step="3">
                             <div class="step-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                                    <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+                                    <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
                                 </svg>
                             </div>
                             <span class="step-label">تحویل به مشتری</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if order.status == 'return_requested' %}
+                    <div class="order-return-status-card" role="region" aria-label="وضعیت مرجوعی سفارش">
+                        <div class="return-status-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="return-status-content">
+                            <div class="return-status-header">
+                                <h4 class="return-status-title">درخواست مرجوعی ثبت شده و در حال بررسی است</h4>
+                                {% if order.return_requested_at %}
+                                <span class="return-status-date">{{ order.return_requested_at|date:"Y/m/d H:i" }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="return-status-desc">درخواست مرجوعی شما برای این سفارش ثبت گردیده است. کارشناسان ما پس از بررسی علت مرجوعی، با شما تماس خواهند گرفت.</p>
+                            {% if order.return_reason %}
+                            <div class="return-status-reason-box">
+                                <span class="reason-label">علت مرجوعی ذکر شده توسط شما:</span>
+                                <p class="reason-text">{{ order.return_reason }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if order.can_cancel_return %}
+                            <div class="return-status-actions">
+                                <button type="button" class="btn-cancel-return-request" id="btnOpenCancelReturnModal">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
+                                    </svg>
+                                    انصراف و لغو درخواست مرجوعی
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif order.status == 'refunded' and order.return_reason %}
+                    <div class="order-return-status-card is-refunded" role="region" aria-label="وضعیت مرجوعی سفارش">
+                        <div class="return-status-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="return-status-content">
+                            <div class="return-status-header">
+                                <h4 class="return-status-title">سفارش مرجوع شده است</h4>
+                            </div>
+                            <p class="return-status-desc">این سفارش با موفقیت مرجوع و مراحل مالی آن انجام شده است.</p>
+                            <div class="return-status-reason-box">
+                                <span class="reason-label">علت مرجوعی:</span>
+                                <p class="reason-text">{{ order.return_reason }}</p>
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -124,14 +178,24 @@
                         {% endfor %}
                     </div>
 
-                    {% if order.can_cancel %}
-                    <div class="order-cancel-section">
+                    {% if order.can_cancel or order.can_return %}
+                    <div class="order-actions-section">
+                        {% if order.can_return %}
+                        <button type="button" class="btn-return-order" id="btnOpenReturnModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                                <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clip-rule="evenodd" />
+                            </svg>
+                            درخواست مرجوعی
+                        </button>
+                        {% endif %}
+                        {% if order.can_cancel %}
                         <button type="button" class="btn-cancel-order" id="btnOpenCancelModal">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
                                 <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
                             </svg>
                             لغو سفارش
                         </button>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -161,14 +225,14 @@
 
 {% if order.can_cancel %}
 <!-- Cancel Order Modal -->
-<div class="cancel-modal-overlay" id="cancelModalOverlay">
+<div class="cancel-modal-overlay" id="cancelModalOverlay" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
     <div class="cancel-modal">
         <div class="cancel-modal-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
                 <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.499-2.599 4.499H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.004zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
             </svg>
         </div>
-        <h3 class="cancel-modal-title">لغو سفارش</h3>
+        <h3 class="cancel-modal-title" id="cancelModalTitle">لغو سفارش</h3>
         <p class="cancel-modal-desc">آیا از لغو سفارش <strong>{{ order.order_number }}</strong> اطمینان دارید؟</p>
         <p class="cancel-modal-warning">این عملیات غیرقابل بازگشت است.</p>
         <div class="cancel-modal-actions">
@@ -187,15 +251,174 @@
     const overlay = document.getElementById('cancelModalOverlay');
     const dismissBtn = document.getElementById('btnDismissCancel');
 
+    if (!openBtn || !overlay) return;
+
     openBtn.addEventListener('click', function() {
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     });
 
-    dismissBtn.addEventListener('click', function() {
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', function() {
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) {
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+})();
+</script>
+{% endif %}
+
+{% if order.can_return %}
+<!-- Return Order Modal -->
+<div class="return-modal-overlay" id="returnModalOverlay" role="dialog" aria-modal="true" aria-labelledby="returnModalTitle">
+    <div class="return-modal">
+        <div class="return-modal-header">
+            <div class="return-modal-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                    <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="return-modal-title" id="returnModalTitle">درخواست مرجوعی سفارش</h3>
+                <span class="return-modal-subtitle">سفارش شماره {{ order.order_number }}</span>
+            </div>
+        </div>
+        <p class="return-modal-desc">لطفاً دلیل درخواست مرجوعی خود را به طور کامل توضیح دهید تا توسط کارشناسان پشتیبانی بررسی شود.</p>
+        <form method="post" action="{% url 'orders:request_return' order.order_number %}" id="returnOrderForm">
+            {% csrf_token %}
+            <div class="return-form-group">
+                <label for="returnReasonInput" class="return-form-label">
+                    علت درخواست مرجوعی <span class="required-star">*</span>
+                </label>
+                <textarea
+                    name="return_reason"
+                    id="returnReasonInput"
+                    class="return-form-textarea"
+                    placeholder="علت درخواست مرجوعی را بنویسید (مثال: مغایرت کالای دریافتی، آسیب در ارسال، نقص کیفی، انصراف از خرید و...)"
+                    rows="4"
+                    required
+                    minlength="5"
+                    maxlength="1000"
+                ></textarea>
+                <div class="return-form-hint">ذکر علت مرجوعی الزامی است (حداقل ۵ کاراکتر).</div>
+            </div>
+            <div class="return-modal-actions">
+                <button type="button" class="btn-return-dismiss" id="btnDismissReturn">انصراف</button>
+                <button type="submit" class="btn-return-submit" id="btnSubmitReturn">
+                    ثبت درخواست مرجوعی
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    const openBtn = document.getElementById('btnOpenReturnModal');
+    const overlay = document.getElementById('returnModalOverlay');
+    const dismissBtn = document.getElementById('btnDismissReturn');
+    const form = document.getElementById('returnOrderForm');
+    const textarea = document.getElementById('returnReasonInput');
+
+    if (!openBtn || !overlay) return;
+
+    function openModal() {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function() {
+            if (textarea) textarea.focus();
+        }, 150);
+    }
+
+    function closeModal() {
         overlay.classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    openBtn.addEventListener('click', openModal);
+    if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeModal();
+        }
     });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const val = (textarea ? textarea.value : '').trim();
+            if (!val || val.length < 5) {
+                e.preventDefault();
+                alert('لطفاً علت درخواست مرجوعی را به صورت کامل (حداقل ۵ کاراکتر) وارد نمایید.');
+                if (textarea) textarea.focus();
+            }
+        });
+    }
+})();
+</script>
+{% endif %}
+
+{% if order.can_cancel_return %}
+<!-- Cancel Return Request Modal -->
+<div class="cancel-modal-overlay" id="cancelReturnModalOverlay" role="dialog" aria-modal="true" aria-labelledby="cancelReturnModalTitle">
+    <div class="cancel-modal">
+        <div class="cancel-modal-icon" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="36" height="36">
+                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clip-rule="evenodd" />
+            </svg>
+        </div>
+        <h3 class="cancel-modal-title" id="cancelReturnModalTitle">لغو درخواست مرجوعی</h3>
+        <p class="cancel-modal-desc">آیا از لغو درخواست مرجوعی سفارش <strong>{{ order.order_number }}</strong> اطمینان دارید؟</p>
+        <p class="cancel-modal-warning" style="background:#FFFBEB;color:#B45309;">وضعیت سفارش به حالت قبلی بازمی‌گردد.</p>
+        <div class="cancel-modal-actions">
+            <button type="button" class="btn-cancel-dismiss" id="btnDismissCancelReturn">انصراف</button>
+            <form method="post" action="{% url 'orders:cancel_return' order.order_number %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-cancel-return-confirm">بله، لغو شود</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const openBtn = document.getElementById('btnOpenCancelReturnModal');
+    const overlay = document.getElementById('cancelReturnModalOverlay');
+    const dismissBtn = document.getElementById('btnDismissCancelReturn');
+
+    if (!openBtn || !overlay) return;
+
+    openBtn.addEventListener('click', function() {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', function() {
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
 
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {

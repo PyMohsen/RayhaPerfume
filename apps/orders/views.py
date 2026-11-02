@@ -720,3 +720,85 @@ def cancel_order_view(request, order_number):
 
     messages.success(request, 'سفارش شما با موفقیت لغو شد.')
     return redirect('orders:detail', order_number=order.order_number)
+
+
+@login_required
+@require_POST
+def request_return_view(request, order_number):
+    """درخواست مرجوعی سفارش توسط کاربر با ذکر علت"""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+
+    reason = request.POST.get('return_reason', '').strip()
+    if not reason:
+        messages.error(request, 'لطفاً علت درخواست مرجوعی را ذکر کنید.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    if not order.can_return:
+        messages.error(request, 'امکان ثبت درخواست مرجوعی برای این سفارش در وضعیت فعلی وجود ندارد.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if not order.can_return:
+                messages.error(request, 'امکان ثبت درخواست مرجوعی برای این سفارش در وضعیت فعلی وجود ندارد.')
+                return redirect('orders:detail', order_number=order.order_number)
+
+            order.pre_return_status = order.status
+            order.status = Order.Status.RETURN_REQUESTED
+            order.return_reason = reason
+            order.return_requested_at = timezone.now()
+            order.save(update_fields=['status', 'pre_return_status', 'return_reason', 'return_requested_at', 'updated_at'])
+    except DatabaseError:
+        logger.exception('Could not save return request for order %s.', order.order_number)
+        messages.error(request, 'خطا در ثبت درخواست مرجوعی؛ لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    messages.success(request, 'درخواست مرجوعی شما با موفقیت ثبت شد.')
+    return redirect('orders:detail', order_number=order.order_number)
+
+
+@login_required
+@require_POST
+def cancel_return_request_view(request, order_number):
+    """لغو درخواست مرجوعی توسط کاربر و بازگشت به وضعیت قبلی سفارش"""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+
+    if not order.can_cancel_return:
+        messages.error(request, 'امکان لغو درخواست مرجوعی برای این سفارش وجود ندارد.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if not order.can_cancel_return:
+                messages.error(request, 'امکان لغو درخواست مرجوعی برای این سفارش وجود ندارد.')
+                return redirect('orders:detail', order_number=order.order_number)
+
+            revert_status = order.pre_return_status or Order.Status.DELIVERED
+            valid_statuses = [
+                choice[0]
+                for choice in Order.Status.choices
+                if choice[0] != Order.Status.RETURN_REQUESTED
+            ]
+            if revert_status not in valid_statuses:
+                revert_status = Order.Status.DELIVERED
+
+            order.status = revert_status
+            order.pre_return_status = ''
+            order.return_reason = ''
+            order.return_requested_at = None
+            order.save(update_fields=[
+                'status',
+                'pre_return_status',
+                'return_reason',
+                'return_requested_at',
+                'updated_at',
+            ])
+    except DatabaseError:
+        logger.exception('Could not cancel return request for order %s.', order.order_number)
+        messages.error(request, 'خطا در لغو درخواست مرجوعی؛ لطفاً دوباره تلاش کنید.')
+        return redirect('orders:detail', order_number=order.order_number)
+
+    messages.success(request, 'درخواست مرجوعی با موفقیت لغو شد')
+    return redirect('orders:detail', order_number=order.order_number)
