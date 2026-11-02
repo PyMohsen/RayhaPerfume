@@ -15,8 +15,6 @@ class Order(models.Model):
         TOROBPAY = 'torobpay', 'ترب‌پی (پرداخت اعتباری)'
 
     class Status(models.TextChoices):
-        PENDING = 'pending', 'در انتظار پرداخت'
-        PAID = 'paid', 'پرداخت شده'
         PROCESSING = 'processing', 'در حال پردازش'
         SHIPPED = 'shipped', 'ارسال شده'
         DELIVERED = 'delivered', 'تحویل داده شده'
@@ -54,7 +52,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.PENDING,
+        default=Status.PROCESSING,
         verbose_name='وضعیت'
     )
 
@@ -143,18 +141,12 @@ class Order(models.Model):
     @property
     def can_cancel(self):
         """آیا سفارش قابل لغو است (فقط قبل از ارسال)"""
-        return self.status in [
-            self.Status.PENDING,
-            self.Status.PAID,
-            self.Status.PROCESSING,
-        ]
+        return self.status == self.Status.PROCESSING
 
     @property
     def status_display_class(self):
         """کلاس CSS مناسب وضعیت"""
         classes = {
-            'pending': 'status-pending',
-            'paid': 'status-paid',
             'processing': 'status-processing',
             'shipped': 'status-shipped',
             'delivered': 'status-delivered',
@@ -281,3 +273,105 @@ class CouponCode(models.Model):
         if self.max_discount:
             discount = min(discount, self.max_discount)
         return discount
+
+
+class PaymentSession(models.Model):
+    """جلسه پرداخت قبل از ثبت قطعی سفارش"""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'در انتظار پرداخت'
+        COMPLETED = 'completed', 'تکمیل شده'
+        FAILED = 'failed', 'ناموفق'
+
+    session_key = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        verbose_name='شناسه یکتای پرداخت'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='payment_sessions',
+        verbose_name='کاربر'
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=Order.PaymentMethod.choices,
+        default=Order.PaymentMethod.SEP,
+        verbose_name='روش پرداخت'
+    )
+    address_data = models.JSONField(verbose_name='اطلاعات آدرس')
+    items_data = models.JSONField(verbose_name='اقلام سبد خرید')
+
+    total_price = models.PositiveIntegerField(verbose_name='مبلغ کل')
+    discount_amount = models.PositiveIntegerField(default=0, verbose_name='مبلغ تخفیف')
+    coupon_discount = models.PositiveIntegerField(default=0, verbose_name='تخفیف کد تخفیف')
+    shipping_cost = models.PositiveIntegerField(default=0, verbose_name='هزینه ارسال')
+    final_price = models.PositiveIntegerField(verbose_name='مبلغ نهایی')
+
+    coupon = models.ForeignKey(
+        'CouponCode',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_sessions',
+        verbose_name='کد تخفیف'
+    )
+    note = models.TextField(blank=True, verbose_name='یادداشت مشتری')
+
+    payment_token = models.CharField(max_length=200, blank=True, verbose_name='توکن سپ')
+    torob_payment_token = models.CharField(max_length=200, blank=True, verbose_name='توکن ترب‌پی')
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name='وضعیت'
+    )
+    order = models.OneToOneField(
+        'Order',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_session',
+        verbose_name='سفارش ثبت شده'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='آخرین به‌روزرسانی')
+
+    class Meta:
+        verbose_name = 'جلسه پرداخت'
+        verbose_name_plural = 'جلسات پرداخت'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'پرداخت {self.session_key} ({self.get_status_display()})'
+
+    @property
+    def order_number(self):
+        return self.session_key
+
+    @property
+    def full_name(self):
+        return self.address_data.get('full_name', '')
+
+    @property
+    def phone_number(self):
+        return self.address_data.get('phone_number', '')
+
+    @property
+    def province(self):
+        return self.address_data.get('province', '')
+
+    @property
+    def city(self):
+        return self.address_data.get('city', '')
+
+    @property
+    def address(self):
+        return self.address_data.get('address', '')
+
+    @property
+    def postal_code(self):
+        return self.address_data.get('postal_code', '')

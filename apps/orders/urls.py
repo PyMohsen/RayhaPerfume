@@ -9,6 +9,7 @@ urlpatterns = [
     path('coupon/apply/', views.apply_coupon_view, name='apply_coupon'),
     path('coupon/remove/', views.remove_coupon_view, name='remove_coupon'),
     path('payment/callback/', views.payment_callback_view, name='payment_callback'),
+    path('payment/failure/', views.payment_failure_view, name='payment_failure'),
     path('payment/result/<str:order_number>/', views.payment_result_view, name='payment_result'),
     path('<str:order_number>/torobpay/retry/', views.retry_torobpay_verification_view, name='torobpay_retry'),
     path('<str:order_number>/cancel/', views.cancel_order_view, name='cancel'),

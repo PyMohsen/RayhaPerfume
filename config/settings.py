@@ -3,6 +3,7 @@ Django settings for Rayha Perfume project.
 """
 
 import os
+import sys
 import warnings
 from pathlib import Path
 
@@ -176,8 +177,8 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 # تنظیمات Referrer-Policy برای درگاه‌های پرداخت
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# تنظیمات امنیتی مخصوص Production (فقط وقتی DEBUG=False)
-if not DEBUG:
+# تنظیمات امنیتی مخصوص Production (فقط وقتی DEBUG=False و خارج از تست‌ها)
+if not DEBUG and 'test' not in sys.argv:
     SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True

@@ -272,7 +272,7 @@ def product_detail_view(request, slug):
         )
 
     # شناسایی خریداران این محصول
-    paid_statuses = ['paid', 'processing', 'shipped', 'delivered']
+    paid_statuses = ['processing', 'shipped', 'delivered']
     buyer_user_ids = set(
         Order.objects.filter(
             status__in=paid_statuses,

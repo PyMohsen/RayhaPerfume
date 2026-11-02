@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, CouponCode
+from .models import Order, OrderItem, CouponCode, PaymentSession
 
 
 class OrderItemInline(admin.TabularInline):
@@ -67,3 +67,22 @@ class CouponCodeAdmin(admin.ModelAdmin):
     )
     list_filter = ('is_active', 'valid_from', 'valid_to')
     search_fields = ('code',)
+
+
+@admin.register(PaymentSession)
+class PaymentSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        'session_key', 'user', 'payment_method', 'final_price',
+        'status', 'order', 'created_at'
+    )
+    list_filter = ('status', 'payment_method', 'created_at')
+    search_fields = ('session_key', 'user__phone_number', 'payment_token', 'torob_payment_token')
+    readonly_fields = (
+        'session_key', 'user', 'payment_method', 'address_data', 'items_data',
+        'total_price', 'discount_amount', 'coupon_discount', 'shipping_cost',
+        'final_price', 'coupon', 'note', 'payment_token', 'torob_payment_token',
+        'status', 'order', 'created_at', 'updated_at'
+    )
+
+    def has_add_permission(self, request):
+        return False

@@ -12,7 +12,7 @@
             </svg>
         </div>
         <h1>پرداخت موفق</h1>
-        <p class="result-message">سفارش شما با موفقیت ثبت شد.</p>
+        <p class="result-message">سفارش شما با موفقیت ثبت شد و در حال پردازش می‌باشد.</p>
         <div class="result-details">
             <p>شماره سفارش: <strong>{{ order.order_number }}</strong></p>
             <p>شماره پیگیری: <strong>{{ order.ref_id }}</strong></p>
@@ -27,20 +27,8 @@
                 <path d="m9 9 6 6"/>
             </svg>
         </div>
-        {% if pending_payment %}
-        <h1>در انتظار تأیید پرداخت</h1>
-        <p class="result-message">وضعیت پرداخت هنوز نهایی نشده است. اگر پرداخت ترب‌پی را انجام داده‌اید، می‌توانید وضعیت را دوباره بررسی کنید.</p>
-        {% else %}
         <h1>پرداخت ناموفق</h1>
-        <p class="result-message">متأسفانه پرداخت انجام نشد.</p>
-        {% endif %}
-        <p>شماره سفارش: {{ order.order_number }}</p>
-        {% if pending_payment and order.payment_method == 'torobpay' and order.torob_payment_token %}
-        <form method="post" action="{% url 'orders:torobpay_retry' order_number=order.order_number %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">بررسی مجدد پرداخت ترب‌پی</button>
-        </form>
-        {% endif %}
+        <p class="result-message">{{ error_message|default:"متأسفانه پرداخت انجام نشد یا توسط کاربر لغو گردید. هیچ سفارشی ثبت نشد." }}</p>
         <a href="{% url 'cart:detail' %}" class="btn btn-primary">بازگشت به سبد خرید</a>
         {% endif %}
         <a href="{% url 'core:home' %}" class="btn btn-outline">بازگشت به صفحه اصلی</a>
