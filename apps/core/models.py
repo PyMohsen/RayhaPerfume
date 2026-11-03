@@ -56,13 +56,10 @@ class SiteSettings(models.Model):
         blank=True,
         verbose_name='اطلاعات ارسال'
     )
-    return_policy = models.TextField(
+    return_policy = CKEditor5Field(
         blank=True,
-        verbose_name='سیاست بازگشت'
-    )
-    terms = models.TextField(
-        blank=True,
-        verbose_name='قوانین و مقررات'
+        config_name='extends',
+        verbose_name='شرایط مرجوعی کالا'
     )
 
     # متا تگ‌ها

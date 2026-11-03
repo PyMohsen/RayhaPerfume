@@ -18,7 +18,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('محتوا', {
-            'fields': ('about_text', 'shipping_info', 'return_policy', 'terms'),
+            'fields': ('about_text', 'shipping_info', 'return_policy'),
             'classes': ('collapse',),
         }),
         ('سئو', {

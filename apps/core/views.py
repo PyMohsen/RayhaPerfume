@@ -100,10 +100,10 @@ def faq_view(request):
     return render(request, 'core/faq.html', {'faqs': faqs})
 
 
-def terms_view(request):
-    """قوانین و مقررات"""
+def return_policy_view(request):
+    """شرایط مرجوعی کالا"""
     settings_obj = SiteSettings.get_settings()
-    return render(request, 'core/terms.html', {'site_settings': settings_obj})
+    return render(request, 'core/return_policy.html', {'site_settings': settings_obj})
 
 
 def robots_txt_view(request):

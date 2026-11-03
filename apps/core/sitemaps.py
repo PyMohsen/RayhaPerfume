@@ -25,7 +25,7 @@ class StaticViewSitemap(CanonicalSitemap):
         'core:about': {'priority': 0.6, 'changefreq': 'monthly'},
         'core:contact': {'priority': 0.6, 'changefreq': 'monthly'},
         'core:faq': {'priority': 0.5, 'changefreq': 'monthly'},
-        'core:terms': {'priority': 0.4, 'changefreq': 'monthly'},
+        'core:return_policy': {'priority': 0.4, 'changefreq': 'monthly'},
     }
 
     def items(self):
