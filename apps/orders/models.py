@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.conf import settings
@@ -5,6 +6,19 @@ from django.db import models
 from django.utils import timezone
 
 from apps.products.models import PerfumeVariant
+
+
+def order_return_image_path(instance, filename):
+    """
+    مسیر ذخیره‌سازی امن تصویر مرجوعی با استفاده از شناسه سفارش و UUID یکتا.
+    نام فایل ارسالی کاربر نادیده گرفته می‌شود تا از حملات نام فایل و Path Traversal جلوگیری شود.
+    """
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png', '.webp']:
+        ext = '.jpg'
+    safe_name = f'{uuid.uuid4().hex}{ext}'
+    order_num = getattr(instance, 'order_number', 'unknown') or 'unknown'
+    return f'returns/{order_num}/{safe_name}'
 
 
 class Order(models.Model):
@@ -118,6 +132,12 @@ class Order(models.Model):
     note = models.TextField(blank=True, verbose_name='یادداشت مشتری')
     admin_note = models.TextField(blank=True, verbose_name='یادداشت ادمین')
     return_reason = models.TextField(blank=True, verbose_name='علت درخواست مرجوع')
+    return_image = models.ImageField(
+        upload_to=order_return_image_path,
+        blank=True,
+        null=True,
+        verbose_name='تصویر مرجوعی'
+    )
     return_requested_at = models.DateTimeField(
         null=True,
         blank=True,

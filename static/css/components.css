@@ -3180,6 +3180,8 @@ body.drawer-open {
     padding: var(--space-8);
     max-width: 480px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     text-align: right;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
     transform: scale(0.9) translateY(20px);
@@ -3317,6 +3319,216 @@ body.drawer-open {
 .btn-return-submit:hover {
     background: #B45309;
     box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+}
+
+/* Return Image Upload in Modal */
+.return-label-optional {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--gray-500);
+    margin-right: var(--space-1);
+}
+
+.return-file-input {
+    display: none;
+}
+
+.return-upload-dropzone {
+    border: 2px dashed var(--gray-300);
+    border-radius: var(--radius-lg);
+    background: var(--gray-50);
+    padding: var(--space-4);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.return-upload-dropzone:hover,
+.return-upload-dropzone:focus-visible {
+    border-color: #D97706;
+    background: #FFFBEB;
+    outline: none;
+}
+
+.return-upload-dropzone.dragover {
+    border-color: #B45309;
+    background: #FEF3C7;
+    transform: scale(1.01);
+}
+
+.return-upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.return-upload-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #FEF3C7;
+    color: #D97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.return-upload-dropzone:hover .return-upload-icon {
+    transform: translateY(-2px);
+}
+
+.return-upload-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.return-upload-prompt {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--gray-800);
+}
+
+.return-upload-specs {
+    font-size: var(--font-size-xs);
+    color: var(--gray-500);
+}
+
+.return-upload-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    text-align: right;
+}
+
+.return-preview-img {
+    width: 54px;
+    height: 54px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    flex-shrink: 0;
+}
+
+.return-preview-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.return-preview-name {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--gray-800);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: ltr;
+    text-align: right;
+}
+
+.return-preview-size {
+    font-size: 11px;
+    color: var(--gray-500);
+    direction: ltr;
+    text-align: right;
+}
+
+.return-preview-remove-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #FCA5A5;
+    background: #FEF2F2;
+    color: #EF4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.return-preview-remove-btn:hover {
+    background: #EF4444;
+    color: var(--white);
+}
+
+.return-upload-error {
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-md);
+    color: #DC2626;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+/* Order Detail Return Card Image Display */
+.return-status-image-box {
+    margin-top: var(--space-3);
+}
+
+.return-status-img-thumb {
+    position: relative;
+    display: inline-block;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1.5px solid #FDE68A;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: var(--space-1);
+    background: var(--white);
+}
+
+.return-status-img-thumb img {
+    display: block;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+}
+
+.return-status-img-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.65);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.return-status-img-thumb:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.return-status-img-thumb:hover .return-status-img-overlay {
+    opacity: 1;
+}
+
+.order-return-status-card.is-refunded .return-status-img-thumb {
+    border-color: #DDD6FE;
 }
 
 /* ---------- Contact ---------- */

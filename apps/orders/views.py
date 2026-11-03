@@ -18,6 +18,7 @@ from apps.accounts.forms import UserAddressForm, IRAN_PROVINCES_CITIES
 from apps.cart.cart import Cart
 from apps.products.models import PerfumeVariant
 from .models import Order, OrderItem, CouponCode, PaymentSession
+from .forms import OrderReturnForm
 from .sep import SepPaymentService
 from .torobpay import TorobPayError, TorobPayService
 from .postex import PostexTrackingService
@@ -725,17 +726,22 @@ def cancel_order_view(request, order_number):
 @login_required
 @require_POST
 def request_return_view(request, order_number):
-    """درخواست مرجوعی سفارش توسط کاربر با ذکر علت"""
+    """درخواست مرجوعی سفارش توسط کاربر با ذکر علت و بارگذاری اختیاری تصویر"""
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
-
-    reason = request.POST.get('return_reason', '').strip()
-    if not reason:
-        messages.error(request, 'لطفاً علت درخواست مرجوعی را ذکر کنید.')
-        return redirect('orders:detail', order_number=order.order_number)
 
     if not order.can_return:
         messages.error(request, 'امکان ثبت درخواست مرجوعی برای این سفارش در وضعیت فعلی وجود ندارد.')
         return redirect('orders:detail', order_number=order.order_number)
+
+    form = OrderReturnForm(request.POST, request.FILES)
+    if not form.is_valid():
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, error)
+        return redirect('orders:detail', order_number=order.order_number)
+
+    reason = form.cleaned_data['return_reason']
+    image = form.cleaned_data.get('return_image')
 
     try:
         with transaction.atomic():
@@ -744,11 +750,31 @@ def request_return_view(request, order_number):
                 messages.error(request, 'امکان ثبت درخواست مرجوعی برای این سفارش در وضعیت فعلی وجود ندارد.')
                 return redirect('orders:detail', order_number=order.order_number)
 
+            # اگر تصویر جدیدی ارسال شده و قبلاً تصویری ذخیره شده باشد، فایل قبلی را پاک می‌کنیم
+            if image and order.return_image:
+                try:
+                    order.return_image.delete(save=False)
+                except Exception:
+                    pass
+
             order.pre_return_status = order.status
             order.status = Order.Status.RETURN_REQUESTED
             order.return_reason = reason
+            if image:
+                order.return_image = image
             order.return_requested_at = timezone.now()
-            order.save(update_fields=['status', 'pre_return_status', 'return_reason', 'return_requested_at', 'updated_at'])
+
+            update_fields = [
+                'status',
+                'pre_return_status',
+                'return_reason',
+                'return_requested_at',
+                'updated_at',
+            ]
+            if image:
+                update_fields.append('return_image')
+
+            order.save(update_fields=update_fields)
     except DatabaseError:
         logger.exception('Could not save return request for order %s.', order.order_number)
         messages.error(request, 'خطا در ثبت درخواست مرجوعی؛ لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.')
@@ -784,6 +810,14 @@ def cancel_return_request_view(request, order_number):
             if revert_status not in valid_statuses:
                 revert_status = Order.Status.DELIVERED
 
+            # پاک‌سازی فایل تصویر مرجوعی در صورت لغو
+            if order.return_image:
+                try:
+                    order.return_image.delete(save=False)
+                except Exception:
+                    pass
+                order.return_image = None
+
             order.status = revert_status
             order.pre_return_status = ''
             order.return_reason = ''
@@ -792,6 +826,7 @@ def cancel_return_request_view(request, order_number):
                 'status',
                 'pre_return_status',
                 'return_reason',
+                'return_image',
                 'return_requested_at',
                 'updated_at',
             ])

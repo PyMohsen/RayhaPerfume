@@ -1,6 +1,11 @@
+import io
+import os
 from unittest.mock import patch
+from PIL import Image
 
 from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -500,3 +505,206 @@ class OrderPaymentFlowTests(TestCase):
 
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.PROCESSING)
+
+    @staticmethod
+    def _create_test_image(format='JPEG', size=(50, 50), color=(255, 0, 0)):
+        buffer = io.BytesIO()
+        image = Image.new('RGB', size, color=color)
+        image.save(buffer, format=format)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def test_return_request_with_valid_image_success(self):
+        """User can submit return request with a reason and a valid uploaded image."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-IMG1',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        image_data = self._create_test_image(format='JPEG')
+        uploaded_image = SimpleUploadedFile(
+            name='damaged_bottle.jpg',
+            content=image_data,
+            content_type='image/jpeg'
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        reason = 'شیشه عطر هنگام تحویل ترک خورده و نشتی دارد.'
+        response = self.client.post(return_url, {
+            'return_reason': reason,
+            'return_image': uploaded_image,
+        })
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.RETURN_REQUESTED)
+        self.assertEqual(order.return_reason, reason)
+        self.assertTrue(bool(order.return_image))
+        # Verify safe filename is used instead of user-supplied name
+        self.assertNotIn('damaged_bottle.jpg', order.return_image.name)
+        self.assertTrue(order.return_image.name.startswith(f'returns/{order.order_number}/'))
+        self.assertTrue(order.return_image.name.endswith('.jpg'))
+        self.assertTrue(default_storage.exists(order.return_image.name))
+
+        # Cleanup test image from disk
+        order.return_image.delete(save=False)
+
+    def test_return_request_with_oversized_image_fails(self):
+        """Uploading an image larger than 5MB fails validation and does not update order."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-OVERSIZE',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        # 5MB + 1024 bytes
+        large_content = b'0' * (5 * 1024 * 1024 + 1024)
+        uploaded_image = SimpleUploadedFile(
+            name='large.jpg',
+            content=large_content,
+            content_type='image/jpeg'
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(return_url, {
+            'return_reason': 'محصول مغایرت دارد و حجم عکس زیاد است.',
+            'return_image': uploaded_image,
+        })
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DELIVERED)
+        self.assertFalse(bool(order.return_image))
+
+    def test_return_request_with_disallowed_extension_fails(self):
+        """Uploading an executable/disallowed extension fails validation."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-EXT',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        uploaded_file = SimpleUploadedFile(
+            name='malicious.php',
+            content=b'<?php phpinfo(); ?>',
+            content_type='application/x-php'
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(return_url, {
+            'return_reason': 'تست آپلود غیرمجاز با فایل نامعتبر',
+            'return_image': uploaded_file,
+        })
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DELIVERED)
+        self.assertFalse(bool(order.return_image))
+
+    def test_return_request_with_fake_image_fails_pillow_check(self):
+        """Uploading a non-image file renamed with .jpg extension fails deep validation."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-FAKE',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        fake_image = SimpleUploadedFile(
+            name='not_an_image.jpg',
+            content=b'<script>alert("xss")</script>',
+            content_type='image/jpeg'
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        response = self.client.post(return_url, {
+            'return_reason': 'تست تصویر جعلی با کد مخرب درون هدر',
+            'return_image': fake_image,
+        })
+
+        self.assertRedirects(response, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DELIVERED)
+        self.assertFalse(bool(order.return_image))
+
+    def test_cancel_return_request_cleans_up_uploaded_image(self):
+        """Cancelling return request deletes the uploaded image from disk storage."""
+        order = Order.objects.create(
+            user=self.user,
+            order_number='RP-RET-CLEAN',
+            full_name='Test User',
+            phone_number='09123456789',
+            province='Tehran',
+            city='Tehran',
+            address='Street 1',
+            postal_code='1234567890',
+            total_price=100000,
+            final_price=100000,
+            status=Order.Status.DELIVERED,
+        )
+
+        image_data = self._create_test_image(format='PNG')
+        uploaded_image = SimpleUploadedFile(
+            name='item_photo.png',
+            content=image_data,
+            content_type='image/png'
+        )
+
+        return_url = reverse('orders:request_return', kwargs={'order_number': order.order_number})
+        self.client.post(return_url, {
+            'return_reason': 'کالای ارسالی با فاکتور مطابقت ندارد.',
+            'return_image': uploaded_image,
+        })
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.RETURN_REQUESTED)
+        self.assertTrue(bool(order.return_image))
+        image_path = order.return_image.name
+        self.assertTrue(default_storage.exists(image_path))
+
+        # Now cancel the return request
+        cancel_url = reverse('orders:cancel_return', kwargs={'order_number': order.order_number})
+        cancel_res = self.client.post(cancel_url)
+        self.assertRedirects(cancel_res, reverse('orders:detail', kwargs={'order_number': order.order_number}))
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DELIVERED)
+        self.assertFalse(bool(order.return_image))
+        # Verify file is deleted from disk
+        self.assertFalse(default_storage.exists(image_path))

@@ -80,6 +80,21 @@
                                 <p class="reason-text">{{ order.return_reason }}</p>
                             </div>
                             {% endif %}
+                            {% if order.return_image %}
+                            <div class="return-status-image-box">
+                                <span class="reason-label">تصویر پیوست‌شده:</span>
+                                <a href="{{ order.return_image.url }}" target="_blank" rel="noopener noreferrer" class="return-status-img-thumb" title="مشاهده در اندازه بزرگ‌تر">
+                                    <img src="{{ order.return_image.url }}" alt="تصویر مرجوعی سفارش {{ order.order_number }}">
+                                    <span class="return-status-img-overlay">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                            <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                                            <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        مشاهده
+                                    </span>
+                                </a>
+                            </div>
+                            {% endif %}
 
                             {% if order.can_cancel_return %}
                             <div class="return-status-actions">
@@ -109,6 +124,21 @@
                                 <span class="reason-label">علت مرجوعی:</span>
                                 <p class="reason-text">{{ order.return_reason }}</p>
                             </div>
+                            {% if order.return_image %}
+                            <div class="return-status-image-box">
+                                <span class="reason-label">تصویر مرجوعی:</span>
+                                <a href="{{ order.return_image.url }}" target="_blank" rel="noopener noreferrer" class="return-status-img-thumb" title="مشاهده در اندازه بزرگ‌تر">
+                                    <img src="{{ order.return_image.url }}" alt="تصویر مرجوعی سفارش {{ order.order_number }}">
+                                    <span class="return-status-img-overlay">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                            <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                                            <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        مشاهده
+                                    </span>
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -298,7 +328,7 @@
             </div>
         </div>
         <p class="return-modal-desc">لطفاً دلیل درخواست مرجوعی خود را به طور کامل توضیح دهید تا توسط کارشناسان پشتیبانی بررسی شود.</p>
-        <form method="post" action="{% url 'orders:request_return' order.order_number %}" id="returnOrderForm">
+        <form method="post" action="{% url 'orders:request_return' order.order_number %}" id="returnOrderForm" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="return-form-group">
                 <label for="returnReasonInput" class="return-form-label">
@@ -316,6 +346,53 @@
                 ></textarea>
                 <div class="return-form-hint">ذکر علت مرجوعی الزامی است (حداقل ۵ کاراکتر).</div>
             </div>
+
+            <div class="return-form-group">
+                <label for="returnImageInput" class="return-form-label">
+                    تصویر کالا <span class="return-label-optional">(اختیاری)</span>
+                </label>
+                <div class="return-upload-container">
+                    <input
+                        type="file"
+                        name="return_image"
+                        id="returnImageInput"
+                        class="return-file-input"
+                        accept="image/jpeg,image/png,image/webp"
+                    >
+                    <div class="return-upload-dropzone" id="returnUploadDropzone" role="button" tabindex="0" aria-label="انتخاب یا رها کردن تصویر کالا">
+                        <div class="return-upload-placeholder" id="returnUploadPlaceholder">
+                            <div class="return-upload-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="30" height="30">
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" />
+                                    <line x1="16" x2="22" y1="5" y2="5" />
+                                    <line x1="19" x2="19" y1="2" y2="8" />
+                                    <circle cx="9" cy="9" r="2" />
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                </svg>
+                            </div>
+                            <div class="return-upload-text-group">
+                                <span class="return-upload-prompt">برای بارگذاری تصویر کلیک کنید یا فایل را اینجا بکشید</span>
+                                <span class="return-upload-specs">فرمت‌های مجاز: JPG، PNG، WEBP (حداکثر ۵ مگابایت)</span>
+                            </div>
+                        </div>
+
+                        <div class="return-upload-preview" id="returnUploadPreview" style="display: none;">
+                            <img src="" alt="پیش‌نمایش تصویر مرجوعی" id="returnPreviewImg" class="return-preview-img">
+                            <div class="return-preview-details">
+                                <span class="return-preview-name" id="returnPreviewFilename"></span>
+                                <span class="return-preview-size" id="returnPreviewFilesize"></span>
+                            </div>
+                            <button type="button" class="return-preview-remove-btn" id="btnRemoveReturnImage" title="حذف تصویر" aria-label="حذف تصویر">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="return-upload-error" id="returnUploadError" role="alert" style="display: none;"></div>
+                </div>
+            </div>
+
             <div class="return-modal-actions">
                 <button type="button" class="btn-return-dismiss" id="btnDismissReturn">انصراف</button>
                 <button type="submit" class="btn-return-submit" id="btnSubmitReturn">
@@ -333,8 +410,147 @@
     const dismissBtn = document.getElementById('btnDismissReturn');
     const form = document.getElementById('returnOrderForm');
     const textarea = document.getElementById('returnReasonInput');
+    const fileInput = document.getElementById('returnImageInput');
+    const dropzone = document.getElementById('returnUploadDropzone');
+    const placeholder = document.getElementById('returnUploadPlaceholder');
+    const preview = document.getElementById('returnUploadPreview');
+    const previewImg = document.getElementById('returnPreviewImg');
+    const previewFilename = document.getElementById('returnPreviewFilename');
+    const previewFilesize = document.getElementById('returnPreviewFilesize');
+    const removeBtn = document.getElementById('btnRemoveReturnImage');
+    const errorBox = document.getElementById('returnUploadError');
 
     if (!openBtn || !overlay) return;
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    const ALLOWED_EXTS = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+
+    function showUploadError(msg) {
+        if (!errorBox) return;
+        errorBox.textContent = msg;
+        errorBox.style.display = 'block';
+    }
+
+    function clearUploadError() {
+        if (!errorBox) return;
+        errorBox.textContent = '';
+        errorBox.style.display = 'none';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' بایت';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' کیلوبایت';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' مگابایت';
+    }
+
+    function resetFileInput() {
+        if (fileInput) fileInput.value = '';
+        if (previewImg) previewImg.src = '';
+        if (previewFilename) previewFilename.textContent = '';
+        if (previewFilesize) previewFilesize.textContent = '';
+        if (preview) preview.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+        clearUploadError();
+    }
+
+    function handleFile(file) {
+        clearUploadError();
+        if (!file) {
+            resetFileInput();
+            return;
+        }
+
+        // ۱. بررسی حجم فایل
+        if (file.size > MAX_SIZE) {
+            showUploadError('حجم تصویر نباید بیشتر از ۵ مگابایت باشد (حجم فایل انتخابی: ' + formatFileSize(file.size) + ').');
+            resetFileInput();
+            return;
+        }
+
+        // ۲. بررسی پسوند
+        const fileName = file.name || '';
+        const ext = ('.' + fileName.split('.').pop()).toLowerCase();
+        if (!ALLOWED_EXTS.includes(ext)) {
+            showUploadError('فرمت فایل مجاز نیست. فقط فایل‌های JPG، PNG و WEBP مجاز هستند.');
+            resetFileInput();
+            return;
+        }
+
+        // ۳. بررسی نوع MIME
+        if (file.type && !ALLOWED_MIMES.includes(file.type.toLowerCase())) {
+            showUploadError('نوع محتوای فایل معتبر نیست.');
+            resetFileInput();
+            return;
+        }
+
+        // نمایش پیش‌نمایش
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (previewImg) previewImg.src = e.target.result;
+            if (previewFilename) previewFilename.textContent = fileName;
+            if (previewFilesize) previewFilesize.textContent = formatFileSize(file.size);
+            if (placeholder) placeholder.style.display = 'none';
+            if (preview) preview.style.display = 'flex';
+        };
+        reader.onerror = function() {
+            showUploadError('خطا در خواندن فایل انتخابی.');
+            resetFileInput();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (dropzone && fileInput) {
+        dropzone.addEventListener('click', function(e) {
+            if (e.target.closest('#btnRemoveReturnImage')) return;
+            fileInput.click();
+        });
+
+        dropzone.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files[0]) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(function(eventName) {
+            dropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function(eventName) {
+            dropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('dragover');
+            });
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            if (dt && dt.files && dt.files.length) {
+                const droppedFile = dt.files[0];
+                fileInput.files = dt.files;
+                handleFile(droppedFile);
+            }
+        });
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            resetFileInput();
+        });
+    }
 
     function openModal() {
         overlay.classList.add('active');
@@ -371,6 +587,16 @@
                 e.preventDefault();
                 alert('لطفاً علت درخواست مرجوعی را به صورت کامل (حداقل ۵ کاراکتر) وارد نمایید.');
                 if (textarea) textarea.focus();
+                return;
+            }
+
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                const f = fileInput.files[0];
+                if (f.size > MAX_SIZE) {
+                    e.preventDefault();
+                    showUploadError('حجم تصویر نباید بیشتر از ۵ مگابایت باشد.');
+                    return;
+                }
             }
         });
     }

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .models import Order, OrderItem, CouponCode, PaymentSession
 
@@ -24,7 +25,7 @@ class OrderAdmin(admin.ModelAdmin):
         'order_number', 'user', 'total_price', 'discount_amount',
         'coupon_discount', 'final_price', 'payment_token', 'payment_ref_num',
         'ref_id', 'torob_payment_token', 'torob_transaction_id',
-        'paid_at', 'return_requested_at', 'pre_return_status', 'created_at', 'updated_at'
+        'paid_at', 'return_image_preview', 'return_requested_at', 'pre_return_status', 'created_at', 'updated_at'
     )
     raw_id_fields = ('user', 'coupon')
     inlines = [OrderItemInline]
@@ -34,7 +35,7 @@ class OrderAdmin(admin.ModelAdmin):
             'fields': ('order_number', 'user', 'status', 'payment_method', 'note', 'admin_note')
         }),
         ('اطلاعات مرجوعی', {
-            'fields': ('return_reason', 'return_requested_at', 'pre_return_status'),
+            'fields': ('return_reason', 'return_image', 'return_image_preview', 'return_requested_at', 'pre_return_status'),
         }),
         ('اطلاعات گیرنده', {
             'fields': ('full_name', 'phone_number', 'province', 'city', 'address', 'postal_code')
@@ -65,6 +66,17 @@ class OrderAdmin(admin.ModelAdmin):
         if not obj.return_reason:
             return '-'
         return (obj.return_reason[:35] + '...') if len(obj.return_reason) > 35 else obj.return_reason
+
+    @admin.display(description='پیش‌نمایش تصویر مرجوعی')
+    def return_image_preview(self, obj):
+        if obj.return_image:
+            return format_html(
+                '<a href="{0}" target="_blank" rel="noopener noreferrer">'
+                '<img src="{0}" style="max-height: 120px; max-width: 180px; border-radius: 8px; border: 1px solid #ccc; object-fit: cover;" />'
+                '</a>',
+                obj.return_image.url
+            )
+        return 'تصویری ثبت نشده است'
 
 
 @admin.register(CouponCode)
