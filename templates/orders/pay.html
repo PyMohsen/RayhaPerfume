@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}پرداخت آنلاین{% endblock %}
+
+{% block extra_css %}
+<style>
+.pay-card-wrapper {
+    max-width: 580px;
+    margin: 2.5rem auto 4rem auto;
+    padding: 0 1rem;
+}
+.pay-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+.pay-card-header {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #ffffff;
+    padding: 2rem 1.75rem;
+    text-align: center;
+    position: relative;
+}
+.pay-card-header .pay-icon {
+    width: 54px;
+    height: 54px;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+    color: #d4af37;
+}
+.pay-card-header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem 0;
+    color: #f9fafb;
+}
+.pay-card-header p {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0;
+}
+.pay-user-badge {
+    margin-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    color: #e5e7eb;
+}
+.pay-card-body {
+    padding: 2rem 1.75rem;
+}
+.pay-form-group {
+    margin-bottom: 1.6rem;
+}
+.pay-form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+.pay-amount-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.pay-amount-input-wrapper input {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding-left: 4.5rem;
+    text-align: left;
+    direction: ltr;
+}
+.pay-currency-badge {
+    position: absolute;
+    left: 1rem;
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 600;
+    pointer-events: none;
+    direction: rtl;
+}
+.pay-amount-words {
+    font-size: 0.825rem;
+    color: #b45309;
+    margin-top: 0.4rem;
+    min-height: 1.2rem;
+    font-weight: 500;
+}
+.pay-quick-amounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 0.6rem;
+}
+.pay-quick-chip {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.775rem;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pay-quick-chip:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+.pay-methods-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.pay-method-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff;
+}
+.pay-method-card:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+.pay-method-card.active {
+    border-color: #d4af37;
+    background: #fffdf7;
+    box-shadow: 0 0 0 1px #d4af37;
+}
+.pay-method-card input[type="radio"] {
+    margin-left: 0.85rem;
+    width: 18px;
+    height: 18px;
+    accent-color: #d4af37;
+    cursor: pointer;
+}
+.pay-method-info {
+    flex: 1;
+}
+.pay-method-title {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+.pay-method-subtitle {
+    display: block;
+    font-size: 0.775rem;
+    color: #6b7280;
+    margin-top: 2px;
+}
+.pay-method-logo {
+    height: 34px;
+    width: auto;
+    max-width: 65px;
+    object-fit: contain;
+    margin-right: 0.5rem;
+}
+.pay-btn-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0.95rem 1.5rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border-radius: 12px;
+    margin-top: 1rem;
+    transition: all 0.2s;
+}
+.pay-security-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 1.25rem;
+    font-size: 0.775rem;
+    color: #6b7280;
+    text-align: center;
+}
+.pay-security-note svg {
+    color: #10b981;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pay-card-wrapper">
+    <div class="pay-card">
+        <div class="pay-card-header">
+            <div class="pay-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" />
+                </svg>
+            </div>
+            <h1>پرداخت آنلاین مستقیم</h1>
+            <p>مبلغ مورد نظر و روش پرداخت خود را مشخص فرمایید</p>
+            <div class="pay-user-badge">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>پرداخت‌کننده: <strong>{{ request.user.full_name|default:"کاربر محترم" }}</strong> ({{ request.user.phone_number|persian_digits }})</span>
+            </div>
+        </div>
+
+        <div class="pay-card-body">
+            <form method="POST" action="{% url 'pay' %}" id="direct-pay-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="form-error" style="margin-bottom: 1.25rem; background: #fee2e2; color: #991b1b; padding: 0.75rem 1rem; border-radius: 8px;">
+                    {% for error in form.non_field_errors %}
+                    <p style="margin: 0;">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- فیلد قیمت / مبلغ -->
+                <div class="pay-form-group">
+                    <label for="id_amount">مبلغ قابل پرداخت *</label>
+                    <div class="pay-amount-input-wrapper">
+                        <input type="text"
+                               name="amount"
+                               id="id_amount"
+                               class="form-input"
+                               placeholder="مثال: ۵۰,۰۰۰"
+                               value="{{ form.amount.value|default:'' }}"
+                               autocomplete="off"
+                               inputmode="numeric"
+                               required>
+                        <span class="pay-currency-badge">تومان</span>
+                    </div>
+                    {% if form.amount.errors %}
+                    <span class="form-error" style="color: #dc2626; font-size: 0.8rem; margin-top: 4px; display: block;">{{ form.amount.errors.0 }}</span>
+                    {% endif %}
+                    <div id="amount-words" class="pay-amount-words"></div>
+
+                    <!-- مبالغ سریع -->
+                    <div class="pay-quick-amounts">
+                        <span style="font-size: 0.75rem; color: #9ca3af; align-self: center;">مبالغ پیشنهادی:</span>
+                        <button type="button" class="pay-quick-chip" data-amount="50000">۵۰,۰۰۰</button>
+                        <button type="button" class="pay-quick-chip" data-amount="100000">۱۰۰,۰۰۰</button>
+                        <button type="button" class="pay-quick-chip" data-amount="200000">۲۰۰,۰۰۰</button>
+                        <button type="button" class="pay-quick-chip" data-amount="500000">۵۰۰,۰۰۰</button>
+                        <button type="button" class="pay-quick-chip" data-amount="1000000">۱,۰۰۰,۰۰۰</button>
+                    </div>
+                </div>
+
+                <!-- انتخاب روش پرداخت -->
+                <div class="pay-form-group">
+                    <label>روش پرداخت *</label>
+                    <div class="pay-methods-grid">
+                        <!-- درگاه بانکی سپ -->
+                        <label class="pay-method-card {% if form.payment_method.value != 'torobpay' %}active{% endif %}" id="card-method-sep">
+                            <input type="radio" name="payment_method" value="sep" {% if form.payment_method.value != 'torobpay' %}checked{% endif %}>
+                            <div class="pay-method-info">
+                                <span class="pay-method-title">درگاه بانکی سپ (پرداخت الکترونیک سامان)</span>
+                                <span class="pay-method-subtitle">پرداخت آنلاین با کلیه کارت‌های شتاب</span>
+                            </div>
+                            <img src="{% static 'images/SepLogo.png' %}" alt="درگاه سپ" class="pay-method-logo">
+                        </label>
+
+                        <!-- پرداخت اعتباری ترب‌پی -->
+                        <label class="pay-method-card {% if form.payment_method.value == 'torobpay' %}active{% endif %}" id="card-method-torob">
+                            <input type="radio" name="payment_method" value="torobpay" {% if form.payment_method.value == 'torobpay' %}checked{% endif %}>
+                            <div class="pay-method-info">
+                                <span class="pay-method-title">پرداخت اعتباری ترب‌پی</span>
+                                <span class="pay-method-subtitle">خرید اقساطی بدون سود و ضامن</span>
+                            </div>
+                            <img src="{% static 'images/TorobLogo.png' %}" alt="ترب‌پی" class="pay-method-logo">
+                        </label>
+                    </div>
+                    {% if form.payment_method.errors %}
+                    <span class="form-error" style="color: #dc2626; font-size: 0.8rem; margin-top: 4px; display: block;">{{ form.payment_method.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- فیلد توضیحات -->
+                <div class="pay-form-group">
+                    <label for="id_description">توضیحات یا بابت پرداخت (اختیاری)</label>
+                    <textarea name="description"
+                              id="id_description"
+                              class="form-input"
+                              rows="3"
+                              placeholder="توضیحات، بابت پرداخت، شماره سفارش یا پیگیری...">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                    <span class="form-error" style="color: #dc2626; font-size: 0.8rem; margin-top: 4px; display: block;">{{ form.description.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- دکمه اتصال به درگاه -->
+                <button type="submit" class="btn btn-primary pay-btn-submit" id="submit-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>پرداخت امن و اتصال به درگاه</span>
+                </button>
+
+                <!-- پیام امنیتی -->
+                <div class="pay-security-note">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <span>اتصال امن از طریق شبکه پرداخت الکترونیک شاپرک و درگاه رسمی بانکی</span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var amountInput = document.getElementById('id_amount');
+    var wordsDisplay = document.getElementById('amount-words');
+    var radioSep = document.getElementById('card-method-sep');
+    var radioTorob = document.getElementById('card-method-torob');
+    var radios = document.querySelectorAll('input[name="payment_method"]');
+    var chips = document.querySelectorAll('.pay-quick-chip');
+    var form = document.getElementById('direct-pay-form');
+    var submitBtn = document.getElementById('submit-btn');
+
+    // تابع تبدیل عدد به حروف فارسی
+    function numToPersianWords(num) {
+        if (!num || isNaN(num) || num <= 0) return '';
+        var units = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+        var teens = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+        var tens = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+        var hundreds = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+        var scales = ['', ' هزار', ' میلیون', ' میلیارد'];
+
+        function chunkToWords(c) {
+            var parts = [];
+            var h = Math.floor(c / 100);
+            var rest = c % 100;
+            var t = Math.floor(rest / 10);
+            var u = rest % 10;
+            if (h > 0) parts.push(hundreds[h]);
+            if (rest >= 10 && rest < 20) {
+                parts.push(teens[rest - 10]);
+            } else {
+                if (t > 0) parts.push(tens[t]);
+                if (u > 0) parts.push(units[u]);
+            }
+            return parts.join(' و ');
+        }
+
+        var chunks = [];
+        var temp = num;
+        while (temp > 0) {
+            chunks.push(temp % 1000);
+            temp = Math.floor(temp / 1000);
+        }
+        var wordParts = [];
+        for (var i = chunks.length - 1; i >= 0; i--) {
+            if (chunks[i] > 0) {
+                var chunkWords = chunkToWords(chunks[i]);
+                if (chunkWords) {
+                    wordParts.push(chunkWords + scales[i]);
+                }
+            }
+        }
+        return wordParts.length ? wordParts.join(' و ') + ' تومان' : '';
+    }
+
+    // نرمال‌سازی و قالب‌بندی با کاما
+    function formatAmountInput() {
+        var raw = amountInput.value;
+        // تبدیل ارقام فارسی به انگلیسی و حذف کاراکترهای اضافه
+        var persianDigits = '۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩';
+        var clean = '';
+        for (var i = 0; i < raw.length; i++) {
+            var idx = persianDigits.indexOf(raw[i]);
+            if (idx !== -1) {
+                clean += (idx % 10);
+            } else if (raw[i] >= '0' && raw[i] <= '9') {
+                clean += raw[i];
+            }
+        }
+        if (!clean) {
+            amountInput.value = '';
+            wordsDisplay.textContent = '';
+            return;
+        }
+        var num = parseInt(clean, 10);
+        amountInput.value = num.toLocaleString('en-US');
+        wordsDisplay.textContent = 'مبلغ به حروف: ' + numToPersianWords(num);
+    }
+
+    if (amountInput) {
+        amountInput.addEventListener('input', formatAmountInput);
+        if (amountInput.value) {
+            formatAmountInput();
+        }
+    }
+
+    // چیپ‌های مبالغ سریع
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            var amt = this.getAttribute('data-amount');
+            amountInput.value = amt;
+            formatAmountInput();
+        });
+    });
+
+    // جابجایی استایل انتخاب روش پرداخت
+    radios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            if (radioSep) radioSep.classList.toggle('active', radioSep.querySelector('input').checked);
+            if (radioTorob) radioTorob.classList.toggle('active', radioTorob.querySelector('input').checked);
+        });
+    });
+
+    // وضعیت دکمه در زمان ارسال فرم
+    if (form) {
+        form.addEventListener('submit', function () {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>در حال پردازش و انتقال به درگاه...</span>';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

@@ -95,3 +95,58 @@ class OrderReturnForm(forms.Form):
 
         return image
 
+
+class DirectPaymentForm(forms.Form):
+    """فرم پرداخت مستقیم و سریع"""
+    amount = forms.CharField(
+        label='مبلغ پرداختی (تومان)',
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'مثال: ۵۰,۰۰۰',
+            'id': 'id_amount',
+            'autocomplete': 'off',
+            'inputmode': 'numeric',
+        }),
+        error_messages={
+            'required': 'لطفاً مبلغ پرداختی را وارد کنید.',
+        }
+    )
+    payment_method = forms.ChoiceField(
+        choices=(
+            ('sep', 'درگاه بانکی سپ'),
+            ('torobpay', 'پرداخت اعتباری ترب‌پی'),
+        ),
+        initial='sep',
+        widget=forms.RadioSelect(attrs={'class': 'payment-method-radio'}),
+        label='روش پرداخت'
+    )
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-input',
+            'rows': 3,
+            'placeholder': 'توضیحات، بابت پرداخت، شماره فاکتور و ... (اختیاری)',
+        }),
+        label='توضیحات'
+    )
+
+    def clean_amount(self):
+        amount_raw = self.cleaned_data.get('amount', '')
+        if isinstance(amount_raw, int):
+            amount = amount_raw
+        else:
+            # تبدیل ارقام فارسی و عربی به انگلیسی و حذف کاراکترهای جداکننده
+            persian_arabic = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+            cleaned_str = str(amount_raw).translate(persian_arabic).replace(',', '').replace('،', '').replace(' ', '').strip()
+            try:
+                amount = int(cleaned_str)
+            except ValueError:
+                raise ValidationError('لطفاً مبلغ معتبری به صورت عددی وارد کنید.')
+
+        if amount < 1000:
+            raise ValidationError('حداقل مبلغ قابل پرداخت ۱,۰۰۰ تومان می‌باشد.')
+        if amount > 500_000_000:
+            raise ValidationError('مبلغ وارد شده بیشتر از سقف مجاز روزانه درگاه (۵۰ میلیون تومان) است.')
+        return amount
+
+

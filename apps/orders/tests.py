@@ -10,7 +10,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import CustomUser, UserAddress
-from apps.orders.models import Order, OrderItem, PaymentSession
+from apps.orders.models import Order, OrderItem, PaymentSession, DirectPayment
 from apps.products.models import Perfume, PerfumeVariant
 
 
@@ -708,3 +708,259 @@ class OrderPaymentFlowTests(TestCase):
         self.assertFalse(bool(order.return_image))
         # Verify file is deleted from disk
         self.assertFalse(default_storage.exists(image_path))
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class DirectPaymentTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            phone_number='09123456789',
+            full_name='محمد رضایی',
+            email='mohammad@example.com'
+        )
+        self.other_user = CustomUser.objects.create_user(
+            phone_number='09987654321',
+            full_name='علی احمدی',
+            email='ali@example.com'
+        )
+        self.admin_user = CustomUser.objects.create_superuser(
+            phone_number='09000000000',
+            full_name='مدیر سیستم',
+            password='admin_password_123'
+        )
+        self.client.force_login(self.user)
+
+    def test_pay_page_requires_login(self):
+        """ورود به صفحه /pay بدون لاگین به صفحه ورود هدایت می‌شود"""
+        self.client.logout()
+        response = self.client.get('/pay/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/accounts/login/', response.url)
+
+    def test_pay_page_renders_for_logged_in_user(self):
+        """کاربر لاگین کرده به صفحه پرداخت دسترسی دارد و اطلاعات وی نمایش داده می‌شود"""
+        self.client.force_login(self.user)
+        response = self.client.get('/pay/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'orders/pay.html')
+        self.assertContains(response, 'محمد رضایی')
+        self.assertContains(response, 'درگاه بانکی سپ')
+        self.assertContains(response, 'پرداخت اعتباری ترب‌پی')
+
+    @patch('apps.orders.views.SepPaymentService.request_payment')
+    def test_pay_submission_with_sep(self, mock_request_payment):
+        """ارسال فرم با درگاه سپ، رکورد پرداخت در وضعیت PENDING می‌سازد و به درگاه هدایت می‌کند"""
+        mock_request_payment.return_value = {
+            'success': True,
+            'token': 'mock_sep_token_999',
+            'url': 'https://sep.shaparak.ir/OnlinePG/OnlinePG'
+        }
+        self.client.force_login(self.user)
+        response = self.client.post('/pay/', {
+            'amount': '۵۰,۰۰۰',  # ورودی فارسی همراه با کاما
+            'payment_method': 'sep',
+            'description': 'بابت تست درگاه سپ'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'orders/redirect_to_gateway.html')
+
+        payment = DirectPayment.objects.filter(user=self.user).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.amount, 50000)
+        self.assertEqual(payment.payment_method, 'sep')
+        self.assertEqual(payment.description, 'بابت تست درگاه سپ')
+        self.assertEqual(payment.status, DirectPayment.Status.PENDING)
+        self.assertEqual(payment.payment_token, 'mock_sep_token_999')
+
+    @patch('apps.orders.views.TorobPayService.create_direct_payment')
+    def test_pay_submission_with_torobpay(self, mock_torob_payment):
+        """ارسال فرم با ترب‌پی، رکورد پرداخت را ساخته و به درگاه ترب هدایت می‌کند"""
+        mock_torob_payment.return_value = {
+            'payment_token': 'mock_torob_token_888',
+            'payment_page_url': 'https://cpg.torobpay.com/pay/888'
+        }
+        self.client.force_login(self.user)
+        response = self.client.post('/pay/', {
+            'amount': '150000',
+            'payment_method': 'torobpay',
+            'description': 'خرید اقساطی ترب'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'orders/redirect_to_gateway.html')
+
+        payment = DirectPayment.objects.filter(user=self.user).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.amount, 150000)
+        self.assertEqual(payment.payment_method, 'torobpay')
+        self.assertEqual(payment.torob_payment_token, 'mock_torob_token_888')
+
+    @patch('apps.orders.views.SepPaymentService.verify_payment')
+    def test_sep_callback_successful(self, mock_verify):
+        """کال‌بک موفق سپ، پرداخت را تکمیل کرده و به صفحه نتیجه هدایت می‌کند"""
+        mock_verify.return_value = {
+            'success': True,
+            'ref_id': 'RRN-998877',
+            'payment_ref_num': 'REF-112233'
+        }
+        payment = DirectPayment.objects.create(
+            user=self.user,
+            amount=50000,
+            payment_method='sep',
+            status=DirectPayment.Status.PENDING
+        )
+
+        response = self.client.post('/pay/callback/', {
+            'ResNum': payment.tracking_number,
+            'State': 'OK',
+            'RefNum': 'REF-112233',
+            'TerminalId': settings.SEP_TERMINAL_ID,
+            'CID': '603799******1234'
+        })
+        self.assertRedirects(response, f'/pay/result/{payment.tracking_number}/')
+
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, DirectPayment.Status.COMPLETED)
+        self.assertEqual(payment.ref_id, 'RRN-998877')
+        self.assertEqual(payment.payment_ref_num, 'REF-112233')
+        self.assertEqual(payment.card_number, '603799******1234')
+        self.assertIsNotNone(payment.paid_at)
+
+    def test_sep_callback_failed(self):
+        """کال‌بک ناموفق سپ، وضعیت پرداخت را FAILED قرار می‌دهد"""
+        payment = DirectPayment.objects.create(
+            user=self.user,
+            amount=50000,
+            payment_method='sep',
+            status=DirectPayment.Status.PENDING
+        )
+        response = self.client.post('/pay/callback/', {
+            'ResNum': payment.tracking_number,
+            'State': 'CanceledByUser',
+            'RefNum': ''
+        })
+        self.assertRedirects(response, f'/pay/result/{payment.tracking_number}/')
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, DirectPayment.Status.FAILED)
+
+    @patch('apps.orders.views.TorobPayService.get_status')
+    def test_torobpay_callback_successful(self, mock_get_status):
+        """کال‌بک ترب‌پی در صورت تأیید تسویه، پرداخت را موفق ثبت می‌کند"""
+        mock_get_status.return_value = {
+            'status': 'SETTLE',
+            'amount': 500000,  # ریال
+            'transactionId': 'TX-TOROB-777'
+        }
+        payment = DirectPayment.objects.create(
+            user=self.user,
+            amount=50000,  # تومان
+            payment_method='torobpay',
+            torob_payment_token='token_torob_test',
+            status=DirectPayment.Status.PENDING
+        )
+
+        response = self.client.get(f'/pay/callback/?transactionId={payment.tracking_number}&state=OK&amount=500000')
+        self.assertRedirects(response, f'/pay/result/{payment.tracking_number}/')
+
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, DirectPayment.Status.COMPLETED)
+        self.assertEqual(payment.ref_id, 'TX-TOROB-777')
+        self.assertIsNotNone(payment.paid_at)
+
+    @patch('apps.orders.views.TorobPayService.get_status')
+    def test_torobpay_callback_timeout_keeps_pending_and_retries(self, mock_get_status):
+        """در صورت بروز تایم‌اوت ترب‌پی در کال‌بک، تراکنش به عنوان PENDING حفظ شده و با دکمه استعلام مجدد تکمیل می‌شود"""
+        from apps.orders.torobpay import TorobPayError
+
+        # ابتدا در کال‌بک، ترب‌پی دچار تایم‌اوت می‌شود
+        mock_get_status.side_effect = TorobPayError('Read timed out')
+        payment = DirectPayment.objects.create(
+            user=self.user,
+            amount=50000,
+            payment_method='torobpay',
+            torob_payment_token='token_timeout_test',
+            status=DirectPayment.Status.PENDING
+        )
+
+        response = self.client.get(f'/pay/callback/?transactionId={payment.tracking_number}&state=OK&amount=500000')
+        payment.refresh_from_db()
+        # نباید بلافاصله FAILED شود تا وجه مشتری از دست نرود
+        self.assertEqual(payment.status, DirectPayment.Status.PENDING)
+
+        # حالا در استعلام مجدد، ترب‌پی پاسخ موفق می‌دهد
+        mock_get_status.side_effect = None
+        mock_get_status.return_value = {
+            'status': 'SETTLE',
+            'amount': 500000,
+            'transactionId': 'TX-RETRY-SUCCESS-123'
+        }
+        retry_response = self.client.post(f'/pay/retry/{payment.tracking_number}/')
+        self.assertRedirects(retry_response, f'/pay/result/{payment.tracking_number}/')
+
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, DirectPayment.Status.COMPLETED)
+        self.assertEqual(payment.ref_id, 'TX-RETRY-SUCCESS-123')
+        self.assertIsNotNone(payment.paid_at)
+
+    def test_direct_payment_result_permissions(self):
+        """کاربر مالک می‌تواند رسید پرداخت را ببیند، اما کاربر دیگر به خانه هدایت می‌شود"""
+        payment = DirectPayment.objects.create(
+            user=self.user,
+            amount=50000,
+            status=DirectPayment.Status.COMPLETED,
+            ref_id='12345678'
+        )
+
+        # کاربر صاحب پرداخت
+        self.client.force_login(self.user)
+        response = self.client.get(f'/pay/result/{payment.tracking_number}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'orders/pay_result.html')
+        self.assertContains(response, 'پرداخت با موفقیت انجام شد')
+        self.assertContains(response, payment.tracking_number)
+
+        # کاربر بدون لاگین اما دارای نشست پرداخت معتبر (حالت بازگشت از درگاه)
+        self.client.logout()
+        session = self.client.session
+        session['direct_pay_tracking'] = payment.tracking_number
+        session.save()
+        response_session = self.client.get(f'/pay/result/{payment.tracking_number}/')
+        self.assertEqual(response_session.status_code, 200)
+        self.assertContains(response_session, payment.tracking_number)
+
+        # کاربر غریبه بدون لاگین و بدون نشست پرداخت (هدایت به لاگین)
+        self.client.session.flush()
+        response_anon = self.client.get(f'/pay/result/{payment.tracking_number}/')
+        self.assertEqual(response_anon.status_code, 302)
+        self.assertIn('/accounts/login/', response_anon.url)
+
+        # کاربر لاگین‌کرده دیگر (غیره)
+        self.client.force_login(self.other_user)
+        response_other = self.client.get(f'/pay/result/{payment.tracking_number}/')
+        self.assertEqual(response_other.status_code, 302)
+        self.assertEqual(response_other.url, '/')
+
+    def test_admin_displays_direct_payments(self):
+        """پرداخت‌ها در پنل ادمین ثبت و با فیلدها و بج وضعیت نمایش داده می‌شوند"""
+        payment = DirectPayment.objects.create(
+            user=self.user,
+            amount=75000,
+            payment_method='sep',
+            status=DirectPayment.Status.COMPLETED,
+            ref_id='ADMIN-REF-123',
+            description='توضیحات تست در ادمین'
+        )
+
+        self.client.force_login(self.admin_user)
+        admin_list_url = reverse('admin:orders_directpayment_changelist')
+        response = self.client.get(admin_list_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, payment.tracking_number)
+        self.assertContains(response, '75,000 تومان')
+        self.assertContains(response, 'موفق')
+
+        admin_detail_url = reverse('admin:orders_directpayment_change', args=[payment.pk])
+        detail_response = self.client.get(admin_detail_url)
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, 'توضیحات تست در ادمین')
+        self.assertContains(detail_response, 'ADMIN-REF-123')
+

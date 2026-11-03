@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}نتیجه پرداخت آنلاین{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 3rem auto; padding: 0 1rem;">
+    <div class="payment-result {% if success %}success{% else %}failed{% endif %}" style="background: #ffffff; border-radius: 16px; padding: 2.5rem 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.06); text-align: center; border: 1px solid rgba(0,0,0,0.05);">
+        {% if success %}
+        <div class="result-icon result-icon-success" style="width: 72px; height: 72px; margin: 0 auto 1.5rem auto; background: #ecfdf5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="m9 12 2 2 4-4"/>
+            </svg>
+        </div>
+        <h1 style="font-size: 1.5rem; color: #065f46; margin-bottom: 0.5rem; font-weight: 700;">پرداخت با موفقیت انجام شد</h1>
+        <p class="result-message" style="color: #4b5563; font-size: 0.95rem; margin-bottom: 2rem;">تراکنش شما با موفقیت در سامانه ثبت و تأیید گردید.</p>
+        
+        <div class="result-details" style="background: #f9fafb; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; text-align: right; border: 1px solid #f3f4f6;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">شناسه پرداخت:</span>
+                <strong style="color: #111827; font-family: monospace; font-size: 0.95rem; direction: ltr;">{{ payment.tracking_number }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">مبلغ پرداختی:</span>
+                <strong style="color: #059669; font-size: 1.05rem;">{{ payment.amount|price_format }} تومان</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">روش پرداخت:</span>
+                <span style="color: #1f2937; font-weight: 600;">{{ payment.get_payment_method_display }}</span>
+            </div>
+            {% if payment.ref_id %}
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">کد پیگیری بانکی:</span>
+                <strong style="color: #111827; direction: ltr; font-family: monospace;">{{ payment.ref_id }}</strong>
+            </div>
+            {% endif %}
+            {% if payment.card_number %}
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">شماره کارت:</span>
+                <span style="color: #111827; direction: ltr; font-family: monospace;">{{ payment.card_number }}</span>
+            </div>
+            {% endif %}
+            {% if payment.paid_at %}
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; {% if payment.description %}border-bottom: 1px dashed #e5e7eb;{% endif %}">
+                <span style="color: #6b7280; font-size: 0.9rem;">تاریخ و ساعت پرداخت:</span>
+                <span style="color: #374151; font-size: 0.875rem;">{{ payment.paid_at|date:"Y/m/d H:i" }}</span>
+            </div>
+            {% endif %}
+            {% if payment.description %}
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                <span style="color: #6b7280; font-size: 0.9rem;">توضیحات:</span>
+                <span style="color: #374151; font-size: 0.875rem;">{{ payment.description }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'pay' %}" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 10px;">پرداخت جدید</a>
+            <a href="{% url 'core:home' %}" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 10px;">بازگشت به صفحه اصلی</a>
+        </div>
+
+        {% elif is_pending %}
+        <div class="result-icon result-icon-pending" style="width: 72px; height: 72px; margin: 0 auto 1.5rem auto; background: #fffbeb; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        </div>
+        <h1 style="font-size: 1.5rem; color: #b45309; margin-bottom: 0.5rem; font-weight: 700;">در حال بررسی وضعیت پرداخت</h1>
+        <p class="result-message" style="color: #4b5563; font-size: 0.95rem; margin-bottom: 2rem;">تراکنش شما در ترب‌پی ثبت شده است. به دلیل تأخیر در پاسخ سرور ترب‌پی، تأیید نهایی نیازمند استعلام مجدد است.</p>
+
+        <div class="result-details" style="background: #f9fafb; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; text-align: right; border: 1px solid #f3f4f6;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">شناسه پرداخت:</span>
+                <strong style="color: #111827; font-family: monospace; font-size: 0.95rem; direction: ltr;">{{ payment.tracking_number }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">مبلغ:</span>
+                <strong style="color: #b45309; font-size: 1.05rem;">{{ payment.amount|price_format }} تومان</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                <span style="color: #6b7280; font-size: 0.9rem;">روش پرداخت:</span>
+                <span style="color: #1f2937; font-weight: 600;">{{ payment.get_payment_method_display }}</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <form method="POST" action="{% url 'pay_retry_torobpay' tracking_number=payment.tracking_number %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 10px; background: #f59e0b; border-color: #f59e0b;">بررسی مجدد وضعیت از ترب‌پی</button>
+            </form>
+            <a href="{% url 'core:home' %}" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 10px;">بازگشت به صفحه اصلی</a>
+        </div>
+
+        {% else %}
+        <div class="result-icon result-icon-failed" style="width: 72px; height: 72px; margin: 0 auto 1.5rem auto; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="m15 9-6 6"/>
+                <path d="m9 9 6 6"/>
+            </svg>
+        </div>
+        <h1 style="font-size: 1.5rem; color: #991b1b; margin-bottom: 0.5rem; font-weight: 700;">پرداخت ناموفق</h1>
+        <p class="result-message" style="color: #4b5563; font-size: 0.95rem; margin-bottom: 2rem;">متأسفانه تراکنش انجام نشد یا از سوی کاربر/بانک لغو گردید. هیچ مبلغی کسر نگردیده است.</p>
+
+        <div class="result-details" style="background: #f9fafb; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; text-align: right; border: 1px solid #f3f4f6;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb;">
+                <span style="color: #6b7280; font-size: 0.9rem;">شناسه پرداخت:</span>
+                <strong style="color: #111827; font-family: monospace; font-size: 0.95rem; direction: ltr;">{{ payment.tracking_number }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                <span style="color: #6b7280; font-size: 0.9rem;">مبلغ:</span>
+                <strong style="color: #ef4444; font-size: 1.05rem;">{{ payment.amount|price_format }} تومان</strong>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            {% if payment.payment_method == 'torobpay' and payment.torob_payment_token %}
+            <form method="POST" action="{% url 'pay_retry_torobpay' tracking_number=payment.tracking_number %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 10px;">استعلام مجدد از ترب‌پی</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'pay' %}" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 10px;">تلاش مجدد</a>
+            <a href="{% url 'core:home' %}" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 10px;">بازگشت به صفحه اصلی</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

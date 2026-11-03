@@ -422,3 +422,117 @@ class PaymentSession(models.Model):
     @property
     def postal_code(self):
         return self.address_data.get('postal_code', '')
+
+
+class DirectPayment(models.Model):
+    """مدل پرداخت مستقیم / آزاد"""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'در انتظار پرداخت'
+        COMPLETED = 'completed', 'موفق'
+        FAILED = 'failed', 'ناموفق'
+        CANCELLED = 'cancelled', 'لغو شده'
+
+    tracking_number = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        verbose_name='شناسه پرداخت'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='direct_payments',
+        verbose_name='کاربر'
+    )
+    amount = models.PositiveBigIntegerField(
+        verbose_name='مبلغ (تومان)'
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=Order.PaymentMethod.choices,
+        default=Order.PaymentMethod.SEP,
+        verbose_name='روش پرداخت'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='توضیحات'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name='وضعیت'
+    )
+
+    # اطلاعات درگاه سپ (SEP)
+    payment_token = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='توکن سپ'
+    )
+    payment_ref_num = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='رسید دیجیتال SEP'
+    )
+    ref_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='شماره پیگیری / RRN'
+    )
+    card_number = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='شماره کارت'
+    )
+
+    # اطلاعات درگاه ترب‌پی (TorobPay)
+    torob_payment_token = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='توکن ترب‌پی'
+    )
+    torob_transaction_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='شناسه تراکنش ترب‌پی'
+    )
+
+    paid_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='زمان پرداخت'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ثبت')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='آخرین به‌روزرسانی')
+
+    class Meta:
+        verbose_name = 'پرداخت مستقیم'
+        verbose_name_plural = 'پرداخت‌های مستقیم'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'پرداخت {self.tracking_number} ({self.amount:,} تومان)'
+
+    def save(self, *args, **kwargs):
+        if not self.tracking_number:
+            self.tracking_number = self.generate_tracking_number()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def generate_tracking_number():
+        """تولید شناسه پرداخت یکتا"""
+        return f'PAY-{uuid.uuid4().hex[:8].upper()}'
+
+    @property
+    def order_number(self):
+        """جهت سازگاری با قالب انتقال به درگاه"""
+        return self.tracking_number
+
+    @property
+    def final_price(self):
+        """جهت سازگاری با قالب انتقال به درگاه"""
+        return self.amount
+

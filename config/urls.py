@@ -13,6 +13,7 @@ from django.contrib.sitemaps.views import sitemap
 from apps.core.sitemaps import StaticViewSitemap
 from apps.products.sitemaps import PerfumeSitemap
 from apps.core.views import robots_txt_view
+from apps.orders.views import direct_pay_view
 
 
 sitemaps = {
@@ -27,6 +28,8 @@ urlpatterns = [
     path('products/', include('apps.products.urls')),
     path('cart/', include('apps.cart.urls')),
     path('orders/', include('apps.orders.urls')),
+    path('pay/', include('apps.orders.pay_urls')),
+    path('pay', direct_pay_view),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
 
     # سئو: نقشه سایت و ربات‌ها

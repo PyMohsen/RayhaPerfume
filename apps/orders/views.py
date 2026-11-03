@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import DatabaseError, IntegrityError
@@ -17,8 +18,8 @@ from apps.accounts.models import UserAddress
 from apps.accounts.forms import UserAddressForm, IRAN_PROVINCES_CITIES
 from apps.cart.cart import Cart
 from apps.products.models import PerfumeVariant
-from .models import Order, OrderItem, CouponCode, PaymentSession
-from .forms import OrderReturnForm
+from .models import Order, OrderItem, CouponCode, PaymentSession, DirectPayment
+from .forms import OrderReturnForm, DirectPaymentForm
 from .sep import SepPaymentService
 from .torobpay import TorobPayError, TorobPayService
 from .postex import PostexTrackingService
@@ -437,6 +438,10 @@ def payment_callback_view(request):
         logger.warning('Payment session not found for key: %s', session_key)
         return redirect('core:home')
 
+    # بازیابی نشست کاربری در بازگشت از درگاه پرداخت جهت جلوگیری از خروج (logout) ناخواسته
+    if not request.user.is_authenticated and payment_session.user:
+        auth_login(request, payment_session.user, backend='apps.accounts.backends.PhoneBackend')
+
     # اگر سفارش این پرداخت قبلاً با موفقیت ساخته شده باشد (مثلاً رفرش یا تکرار کال‌بک)
     if payment_session.status == PaymentSession.Status.COMPLETED and payment_session.order:
         return redirect('orders:payment_result', order_number=payment_session.order.order_number)
@@ -837,3 +842,321 @@ def cancel_return_request_view(request, order_number):
 
     messages.success(request, 'درخواست مرجوعی با موفقیت لغو شد')
     return redirect('orders:detail', order_number=order.order_number)
+
+
+# ==============================================================================
+# پرداخت مستقیم / دلخواه (/pay)
+# ==============================================================================
+
+@login_required
+def direct_pay_view(request):
+    """
+    صفحه پرداخت آزاد/مستقیم با تعیین مبلغ، روش پرداخت (سپ یا ترب‌پی) و توضیحات.
+    ورود به این صفحه نیازمند ورود کاربر به حساب کاربری است.
+    """
+    if request.method == 'POST':
+        form = DirectPaymentForm(request.POST)
+        if form.is_valid():
+            amount = form.cleaned_data['amount']
+            payment_method = form.cleaned_data['payment_method']
+            description = form.cleaned_data['description']
+
+            payment = DirectPayment.objects.create(
+                user=request.user,
+                amount=amount,
+                payment_method=payment_method,
+                description=description,
+                status=DirectPayment.Status.PENDING,
+            )
+            request.session['direct_pay_tracking'] = payment.tracking_number
+
+            try:
+                callback_url = request.build_absolute_uri(reverse('pay_callback'))
+            except Exception:
+                callback_url = request.build_absolute_uri('/pay/callback/')
+
+            if payment_method == Order.PaymentMethod.TOROBPAY:
+                try:
+                    result = TorobPayService().create_direct_payment(
+                        payment=payment,
+                        return_url=callback_url,
+                    )
+                except TorobPayError as exc:
+                    logger.error('TorobPay direct pay failed for %s: %s', payment.tracking_number, exc)
+                    payment.status = DirectPayment.Status.FAILED
+                    payment.save(update_fields=['status', 'updated_at'])
+                    messages.error(request, 'خطا در اتصال به ترب‌پی. لطفاً درگاه سپ را انتخاب یا دوباره تلاش کنید.')
+                    return render(request, 'orders/pay.html', {'form': form})
+
+                payment.torob_payment_token = result['payment_token']
+                payment.save(update_fields=['torob_payment_token', 'updated_at'])
+                return render(request, 'orders/redirect_to_gateway.html', {
+                    'gateway_url': result['payment_page_url'],
+                    'order': payment,
+                    'payment_provider': 'torobpay',
+                })
+
+            # درگاه بانکی سپ
+            sep = SepPaymentService()
+            result = sep.request_payment(
+                amount=payment.amount,
+                res_num=payment.tracking_number,
+                callback_url=callback_url,
+                mobile=request.user.phone_number,
+            )
+
+            if result.get('success'):
+                payment.payment_token = result['token']
+                payment.save(update_fields=['payment_token', 'updated_at'])
+                return render(request, 'orders/redirect_to_gateway.html', {
+                    'gateway_url': result['url'],
+                    'payment_token': result['token'],
+                    'order': payment,
+                })
+            else:
+                logger.error('SEP direct pay failed for %s: %s', payment.tracking_number, result.get('error'))
+                payment.status = DirectPayment.Status.FAILED
+                payment.save(update_fields=['status', 'updated_at'])
+                error_msg = result.get('error', 'خطا در اتصال به درگاه پرداخت سپ')
+                messages.error(request, error_msg)
+                return render(request, 'orders/pay.html', {'form': form})
+    else:
+        form = DirectPaymentForm()
+
+    return render(request, 'orders/pay.html', {'form': form})
+
+
+def verify_and_settle_direct_payment(payment):
+    """
+    استعلام وضعیت پرداخت مستقیم از ترب‌پی و تسویه در صورت لزوم.
+    در صورت موفقیت (True, پیام) و در صورت عدم تأیید (False, پیام خطا) بازمی‌گرداند.
+    همچنین از حملات Replay Attack و ثبت مجدد تراکنش‌های قبلی جلوگیری می‌کند.
+    """
+    if payment.payment_method != Order.PaymentMethod.TOROBPAY or not payment.torob_payment_token:
+        return False, 'توکن پرداخت ترب‌پی یافت نشد.'
+
+    service = TorobPayService()
+    try:
+        status = service.get_status(payment.torob_payment_token)
+        try:
+            amount_matches = int(status.get('amount')) == int(payment.amount) * 10
+        except (TypeError, ValueError):
+            amount_matches = False
+
+        if not amount_matches:
+            return False, 'مبلغ سفارش در ترب‌پی با مبلغ پرداخت مطابقت ندارد.'
+
+        state = status.get('status')
+        if state == 'SETTLE':
+            tx_id = str(status.get('transactionId') or '')
+        elif state == 'PENDING':
+            v = service.verify(payment.torob_payment_token)
+            verified_tx = str(v.get('transactionId') or '')
+            s = service.settle(payment.torob_payment_token)
+            tx_id = str(s.get('transactionId') or verified_tx)
+        elif state == 'VERIFY':
+            s = service.settle(payment.torob_payment_token)
+            tx_id = str(s.get('transactionId') or '')
+        else:
+            return False, f'وضعیت پرداخت در ترب‌پی: {state}'
+
+        # جلوگیری از حملات Replay: این شناسه نباید قبلاً برای پرداخت یا سفارش دیگری ثبت شده باشد
+        if (
+            DirectPayment.objects.filter(torob_transaction_id=tx_id).exclude(pk=payment.pk).exists()
+            or Order.objects.filter(torob_transaction_id=tx_id).exists()
+        ):
+            return False, 'این شناسه تراکنش ترب‌پی قبلاً در سیستم ثبت شده است.'
+
+        with transaction.atomic():
+            payment = DirectPayment.objects.select_for_update().get(pk=payment.pk)
+            if payment.status == DirectPayment.Status.COMPLETED:
+                return True, 'پرداخت قبلاً ثبت و تأیید شده است.'
+
+            payment.status = DirectPayment.Status.COMPLETED
+            payment.torob_transaction_id = tx_id
+            payment.ref_id = tx_id
+            payment.paid_at = timezone.now()
+            payment.save(update_fields=['status', 'torob_transaction_id', 'ref_id', 'paid_at', 'updated_at'])
+        return True, 'پرداخت با موفقیت تأیید و تسویه شد.'
+    except TorobPayError as exc:
+        # در صورت بروز خطا در مرحله تسویه، یک بار دیگر وضعیت را استعلام می‌کنیم
+        try:
+            settled_status = service.get_status(payment.torob_payment_token)
+            if settled_status.get('status') == 'SETTLE':
+                tx_id = str(settled_status.get('transactionId') or '')
+                if not (
+                    DirectPayment.objects.filter(torob_transaction_id=tx_id).exclude(pk=payment.pk).exists()
+                    or Order.objects.filter(torob_transaction_id=tx_id).exists()
+                ):
+                    with transaction.atomic():
+                        payment = DirectPayment.objects.select_for_update().get(pk=payment.pk)
+                        if payment.status == DirectPayment.Status.COMPLETED:
+                            return True, 'پرداخت قبلاً تکمیل شده است.'
+                        payment.status = DirectPayment.Status.COMPLETED
+                        payment.torob_transaction_id = tx_id
+                        payment.ref_id = tx_id
+                        payment.paid_at = timezone.now()
+                        payment.save(update_fields=['status', 'torob_transaction_id', 'ref_id', 'paid_at', 'updated_at'])
+                    return True, 'پرداخت با موفقیت تسویه و تأیید شد.'
+        except Exception:
+            pass
+        return False, str(exc)
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def direct_pay_callback_view(request):
+    """دریافت نتیجه پرداخت مستقیم از درگاه سپ یا ترب‌پی به صورت اتمیک و امن"""
+    callback_data = request.POST if request.method == 'POST' else request.GET
+    res_num = (callback_data.get('ResNum') or '').strip()
+    torob_transaction_id = (callback_data.get('transactionId') or '').strip()
+
+    tracking_number = torob_transaction_id or res_num
+    if not tracking_number:
+        logger.warning('Direct payment callback without tracking identifier.')
+        return redirect('core:home')
+
+    payment = DirectPayment.objects.filter(tracking_number=tracking_number).first()
+    if payment is None:
+        logger.warning('Direct payment not found for tracking: %s', tracking_number)
+        return redirect('core:home')
+
+    # بازیابی نشست کاربری و جلوگیری از لاگ‌اوت شدن در صورت حذف کوکی توسط مرورگر در بازگشت Cross-Site
+    if not request.user.is_authenticated and payment.user:
+        auth_login(request, payment.user, backend='apps.accounts.backends.PhoneBackend')
+
+    # ذخیره شناسه در سشن جهت دسترسی مجاز کاربر در صفحه نتیجه
+    request.session['direct_pay_tracking'] = payment.tracking_number
+
+    # اگر قبلاً تکمیل شده باشد
+    if payment.status == DirectPayment.Status.COMPLETED:
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    # بازگشت از درگاه ترب‌پی
+    if payment.payment_method == Order.PaymentMethod.TOROBPAY:
+        state = callback_data.get('state', '').strip().upper()
+        amount = callback_data.get('amount', '').strip()
+        try:
+            amount_matches = int(amount) == int(payment.amount) * 10
+        except (TypeError, ValueError):
+            amount_matches = False
+
+        if state != 'OK' or not amount_matches or not payment.torob_payment_token:
+            payment.status = DirectPayment.Status.FAILED
+            payment.save(update_fields=['status', 'updated_at'])
+            return redirect('pay_result', tracking_number=payment.tracking_number)
+
+        success, message = verify_and_settle_direct_payment(payment)
+        if not success:
+            logger.error('TorobPay direct payment verification failed for %s: %s', payment.tracking_number, message)
+            # اگر پرداخت در ترب‌پی موفق بوده (state=OK) ولی به دلیل کندی شبکه استعلام انجام نشد،
+            # وضعیت در انتظار (PENDING) می‌ماند تا امکان استعلام مجدد وجود داشته باشد
+            payment.status = DirectPayment.Status.PENDING
+            payment.save(update_fields=['status', 'updated_at'])
+
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    # بازگشت از درگاه سپ
+    if payment.payment_method != Order.PaymentMethod.SEP:
+        return redirect('core:home')
+
+    state = callback_data.get('State', '').strip().upper()
+    ref_num = callback_data.get('RefNum')
+    callback_terminal = callback_data.get('TerminalId')
+
+    if callback_terminal and str(callback_terminal) != str(settings.SEP_TERMINAL_ID):
+        payment.status = DirectPayment.Status.FAILED
+        payment.save(update_fields=['status', 'updated_at'])
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    if state != 'OK' or not ref_num:
+        payment.status = DirectPayment.Status.FAILED
+        payment.save(update_fields=['status', 'updated_at'])
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    sep_result = SepPaymentService().verify_payment(ref_num=ref_num, amount=payment.amount)
+    if not sep_result.get('success'):
+        payment.status = DirectPayment.Status.FAILED
+        payment.save(update_fields=['status', 'updated_at'])
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    verified_ref_num = str(sep_result.get('payment_ref_num', ref_num))
+
+    # جلوگیری از Replay Attack: این RefNum نباید برای پرداخت یا سفارش دیگری استفاده شده باشد
+    if (
+        DirectPayment.objects.filter(payment_ref_num=verified_ref_num).exclude(pk=payment.pk).exists()
+        or Order.objects.filter(payment_ref_num=verified_ref_num).exists()
+    ):
+        logger.error('SEP RefNum %s has already been used for another payment/order!', verified_ref_num)
+        payment.status = DirectPayment.Status.FAILED
+        payment.save(update_fields=['status', 'updated_at'])
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    with transaction.atomic():
+        payment = DirectPayment.objects.select_for_update().get(pk=payment.pk)
+        if payment.status == DirectPayment.Status.COMPLETED:
+            return redirect('pay_result', tracking_number=payment.tracking_number)
+
+        payment.status = DirectPayment.Status.COMPLETED
+        payment.ref_id = str(sep_result.get('ref_id', ref_num))
+        payment.payment_ref_num = verified_ref_num
+        payment.card_number = str(callback_data.get('CID') or '')
+        payment.paid_at = timezone.now()
+        payment.save(update_fields=['status', 'ref_id', 'payment_ref_num', 'card_number', 'paid_at', 'updated_at'])
+
+    return redirect('pay_result', tracking_number=payment.tracking_number)
+
+
+def direct_pay_result_view(request, tracking_number):
+    """نمایش نتیجه پرداخت مستقیم به کاربر با بررسی امن دسترسی"""
+    payment = get_object_or_404(DirectPayment, tracking_number=tracking_number)
+
+    # بررسی دسترسی: مالک لاگین کرده، ادمین سیستم، یا داشتن کلید امن نشست
+    is_owner = request.user.is_authenticated and payment.user == request.user
+    is_staff = request.user.is_authenticated and request.user.is_staff
+    has_session_token = request.session.get('direct_pay_tracking') == payment.tracking_number
+
+    if not (is_owner or is_staff or has_session_token):
+        if not request.user.is_authenticated:
+            from django.shortcuts import resolve_url
+            return redirect(f"{resolve_url(settings.LOGIN_URL)}?next={request.path}")
+        return redirect('core:home')
+
+    # اگر پرداخت ترب‌پی هنوز تکمیل نشده است، یک بار به صورت خودکار استعلام می‌گیریم
+    if (
+        payment.payment_method == Order.PaymentMethod.TOROBPAY
+        and payment.status != DirectPayment.Status.COMPLETED
+        and payment.torob_payment_token
+    ):
+        success, _ = verify_and_settle_direct_payment(payment)
+        if success:
+            payment.refresh_from_db()
+
+    return render(request, 'orders/pay_result.html', {
+        'payment': payment,
+        'success': payment.status == DirectPayment.Status.COMPLETED,
+        'is_pending': payment.status == DirectPayment.Status.PENDING,
+    })
+
+
+@require_POST
+def retry_direct_pay_torobpay_view(request, tracking_number):
+    """استعلام و بررسی مجدد پرداخت ترب‌پی در صورت بروز خطای تایم‌اوت یا کندی شبکه"""
+    payment = get_object_or_404(DirectPayment, tracking_number=tracking_number)
+    if payment.payment_method != Order.PaymentMethod.TOROBPAY or not payment.torob_payment_token:
+        messages.error(request, 'این پرداخت مربوط به درگاه ترب‌پی نیست.')
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    if payment.status == DirectPayment.Status.COMPLETED:
+        messages.info(request, 'این پرداخت قبلاً با موفقیت تأیید شده است.')
+        return redirect('pay_result', tracking_number=payment.tracking_number)
+
+    success, message = verify_and_settle_direct_payment(payment)
+    if success:
+        messages.success(request, 'پرداخت شما در ترب‌پی با موفقیت استعلام و تأیید شد.')
+    else:
+        messages.warning(request, f'استعلام پرداخت ترب‌پی با خطا مواجه شد: {message}')
+
+    return redirect('pay_result', tracking_number=payment.tracking_number)
+
+

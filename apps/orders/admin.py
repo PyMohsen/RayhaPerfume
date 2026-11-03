@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Order, OrderItem, CouponCode, PaymentSession
+from .models import Order, OrderItem, CouponCode, PaymentSession, DirectPayment
 
 
 class OrderItemInline(admin.TabularInline):
@@ -107,3 +107,85 @@ class PaymentSessionAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(DirectPayment)
+class DirectPaymentAdmin(admin.ModelAdmin):
+    list_display = (
+        'tracking_number', 'user', 'amount_display', 'payment_method_display',
+        'status_badge', 'ref_id', 'created_at', 'paid_at'
+    )
+    list_filter = ('status', 'payment_method', 'created_at')
+    search_fields = (
+        'tracking_number', 'user__phone_number', 'user__full_name',
+        'ref_id', 'payment_ref_num', 'torob_transaction_id', 'description'
+    )
+    readonly_fields = (
+        'tracking_number', 'user', 'amount', 'payment_method',
+        'description', 'status', 'payment_token', 'payment_ref_num',
+        'ref_id', 'card_number', 'torob_payment_token', 'torob_transaction_id',
+        'paid_at', 'created_at', 'updated_at'
+    )
+    raw_id_fields = ('user',)
+    actions = ['recheck_torobpay_status']
+    fieldsets = (
+        ('اطلاعات پرداخت', {
+            'fields': ('tracking_number', 'user', 'amount', 'payment_method', 'status', 'description')
+        }),
+        ('اطلاعات تراکنش درگاه بانکی سپ (SEP)', {
+            'fields': ('payment_token', 'payment_ref_num', 'ref_id', 'card_number'),
+            'classes': ('collapse',),
+        }),
+        ('اطلاعات تراکنش ترب‌پی', {
+            'fields': ('torob_payment_token', 'torob_transaction_id'),
+            'classes': ('collapse',),
+        }),
+        ('زمان‌ها', {
+            'fields': ('paid_at', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    @admin.display(description='مبلغ (تومان)', ordering='amount')
+    def amount_display(self, obj):
+        return f'{obj.amount:,} تومان'
+
+    @admin.display(description='روش پرداخت')
+    def payment_method_display(self, obj):
+        return obj.get_payment_method_display()
+
+    @admin.display(description='وضعیت')
+    def status_badge(self, obj):
+        colors = {
+            'pending': ('#b45309', '#fef3c7'),
+            'completed': ('#065f46', '#d1fae5'),
+            'failed': ('#991b1b', '#fee2e2'),
+            'cancelled': ('#374151', '#f3f4f6'),
+        }
+        color, bg = colors.get(obj.status, ('#374151', '#f3f4f6'))
+        return format_html(
+            '<span style="background:{}; color:{}; padding:3px 8px; border-radius:10px; font-weight:600; font-size:12px;">{}</span>',
+            bg, color, obj.get_status_display()
+        )
+
+    @admin.action(description='استعلام و بررسی مجدد وضعیت از ترب‌پی')
+    def recheck_torobpay_status(self, request, queryset):
+        from .views import verify_and_settle_direct_payment
+        success_count = 0
+        failed_count = 0
+        for payment in queryset:
+            if payment.payment_method == 'torobpay' and payment.torob_payment_token:
+                if payment.status == DirectPayment.Status.COMPLETED:
+                    continue
+                success, msg = verify_and_settle_direct_payment(payment)
+                if success:
+                    success_count += 1
+                else:
+                    failed_count += 1
+                    self.message_user(request, f'پرداخت {payment.tracking_number}: {msg}', level='warning')
+        if success_count:
+            self.message_user(request, f'{success_count} پرداخت ترب‌پی با موفقیت استعلام و تأیید شد.', level='success')
+        elif not failed_count:
+            self.message_user(request, 'تراکنش ترب‌پی قابل استعلام در موارد انتخابی یافت نشد.', level='info')
+
+

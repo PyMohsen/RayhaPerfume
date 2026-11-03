@@ -3,6 +3,7 @@
 All amounts passed to TorobPay are in rials; this shop stores prices in toman.
 """
 import logging
+import time
 from urllib.parse import urlparse
 
 import requests
@@ -25,7 +26,7 @@ class TorobPayService:
     SETTLE_URL = '/api/online/payment/v1/settle'
     STATUS_URL = '/api/online/payment/v1/status'
     CANCEL_URL = '/api/online/payment/v1/cancel'
-    REQUEST_TIMEOUT = (5, 15)
+    REQUEST_TIMEOUT = (15, 30)
     CACHE_KEY = 'torobpay_access_token'
 
     def __init__(self):
@@ -67,8 +68,9 @@ class TorobPayService:
         return token
 
     def _request(self, method, path, *, params=None, payload=None):
-        for attempt in range(2):
-            token = self._access_token(force_refresh=bool(attempt))
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            token = self._access_token(force_refresh=bool(attempt and attempt == max_attempts - 1))
             try:
                 response = requests.request(
                     method,
@@ -83,6 +85,12 @@ class TorobPayService:
                     continue
                 response.raise_for_status()
                 data = response.json()
+            except (requests.Timeout, requests.ConnectionError) as exc:
+                logger.warning('TorobPay %s attempt %d/%d failed with timeout/connection error: %s', path, attempt + 1, max_attempts, exc)
+                if attempt < max_attempts - 1:
+                    time.sleep(1.5)
+                    continue
+                raise TorobPayError('ارتباط با سرویس ترب‌پی به دلیل کندی شبکه برقرار نشد.') from exc
             except (requests.RequestException, ValueError) as exc:
                 logger.warning('TorobPay %s request failed: %s', path, exc)
                 raise TorobPayError('ارتباط با سرویس ترب‌پی برقرار نشد.') from exc
@@ -90,7 +98,7 @@ class TorobPayService:
                 logger.warning('TorobPay %s returned an unsuccessful response: %s', path, data)
                 raise TorobPayError('ترب‌پی درخواست را نپذیرفت.')
             return data.get('response') or {}
-        raise TorobPayError('احراز هویت ترب‌پی معتبر نیست.')
+        raise TorobPayError('احراز هویت یا ارتباط با ترب‌پی معتبر نیست.')
 
     def is_eligible(self, amount_toman):
         """Return False on any eligibility error; SEP remains available."""
@@ -151,6 +159,53 @@ class TorobPayService:
         ):
             raise TorobPayError('اطلاعات صفحه پرداخت ترب‌پی معتبر نیست.')
         return {'payment_token': str(payment_token), 'payment_page_url': str(payment_page_url)}
+
+    def create_direct_payment(self, *, payment, return_url):
+        cart_items = [{
+            'id': str(payment.tracking_number),
+            'name': payment.description or 'پرداخت مستقیم',
+            'count': 1,
+            'amount': int(payment.amount) * 10,
+            'category': 'عطر',
+            'commissionType': 0,
+        }]
+        payload = {
+            'amount': int(payment.amount) * 10,
+            'discountAmount': 0,
+            'externalSourceAmount': 0,
+            'mobile': getattr(payment.user, 'phone_number', ''),
+            'paymentMethodTypeDto': 'ONLINE_CREDIT',
+            'returnURL': return_url,
+            'transactionId': payment.tracking_number,
+            'customer_full_name': getattr(payment.user, 'full_name', '') or 'مشتری',
+            'registration_phone_number': getattr(payment.user, 'phone_number', ''),
+            'address': getattr(payment.user, 'address', '') or 'ثبت نشده',
+            'postalCode': getattr(payment.user, 'postal_code', '') or '1111111111',
+            'city': getattr(payment.user, 'city', '') or 'تهران',
+            'province': getattr(payment.user, 'province', '') or 'تهران',
+            'cartList': [{
+                'cartId': payment.tracking_number,
+                'totalAmount': int(payment.amount) * 10,
+                'taxAmount': 0,
+                'shippingAmount': 0,
+                'isTaxIncluded': True,
+                'isShipmentIncluded': True,
+                'cartItems': cart_items,
+            }],
+        }
+        result = self._request('POST', self.PAYMENT_URL, payload=payload)
+        payment_token = result.get('paymentToken')
+        payment_page_url = result.get('paymentPageUrl')
+        parsed_url = urlparse(str(payment_page_url or ''))
+        if (
+            not payment_token
+            or len(str(payment_token)) > 200
+            or parsed_url.scheme != 'https'
+            or not parsed_url.netloc
+        ):
+            raise TorobPayError('اطلاعات صفحه پرداخت ترب‌پی معتبر نیست.')
+        return {'payment_token': str(payment_token), 'payment_page_url': str(payment_page_url)}
+
 
     def verify(self, payment_token):
         return self._request('POST', self.VERIFY_URL, payload={'paymentToken': payment_token})
