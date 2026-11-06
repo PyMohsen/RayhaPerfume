@@ -381,6 +381,12 @@ class Perfume(models.Model):
     @property
     def primary_image(self):
         """تصویر اصلی محصول"""
+        if hasattr(self, '_prefetched_objects_cache') and 'images' in self._prefetched_objects_cache:
+            for img in self.images.all():
+                if img.is_primary:
+                    return img
+            images = list(self.images.all())
+            return images[0] if images else None
         img = self.images.filter(is_primary=True).first()
         if not img:
             img = self.images.first()
@@ -419,8 +425,52 @@ class Perfume(models.Model):
         return variants[0] if variants else None
 
     @property
+    def default_variant(self):
+        """
+        واریانت پیش‌فرض برای نمایش در صفحه جزئیات:
+        اگر ۵۰ میل موجود بود، ۵۰ میل
+        در غیر این‌صورت اگر ۱۰۰ میل موجود بود، ۱۰۰ میل
+        در غیر این‌صورت اولین واریانت موجود دیگر
+        و در صورت عدم موجودی هیچ‌کدام، اولین واریانت
+        """
+        variants = list(self.variants.all())
+        for v in variants:
+            if v.size == 50 and v.is_available:
+                return v
+        for v in variants:
+            if v.size == 100 and v.is_available:
+                return v
+        for v in variants:
+            if v.is_available:
+                return v
+        return variants[0] if variants else None
+
+    @property
+    def display_variant(self):
+        """
+        واریانت نمایشی در کارت محصول و نتایج جستجو:
+        اگر ۵۰ میل موجود بود، ۵۰ میل
+        در غیر این‌صورت اگر ۱۰۰ میل موجود بود، ۱۰۰ میل
+        در غیر این‌صورت هر واریانت موجود دیگر
+        و اگر هیچ‌کدام موجود نبود، None
+        """
+        variants = list(self.variants.all())
+        for v in variants:
+            if v.size == 50 and v.is_available:
+                return v
+        for v in variants:
+            if v.size == 100 and v.is_available:
+                return v
+        for v in variants:
+            if v.is_available:
+                return v
+        return None
+
+    @property
     def is_available(self):
         """آیا موجود است؟"""
+        if hasattr(self, '_prefetched_objects_cache') and 'variants' in self._prefetched_objects_cache:
+            return any(v.stock > 0 for v in self.variants.all())
         return self.variants.filter(stock__gt=0).exists()
 
     @property

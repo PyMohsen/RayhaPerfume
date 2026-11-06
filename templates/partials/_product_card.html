@@ -17,17 +17,16 @@
             </div>
             {% endif %}
 
+            {% with variant=perfume.display_variant %}
             <!-- Top Right Discount Badge -->
-            {% with variant=perfume.variant_50 %}
             {% if variant and variant.discount_percent > 0 %}
             <span class="product-badge discount-badge">-{{ variant.discount_percent|persian_digits }}٪</span>
-            {% elif perfume.has_discount %}
+            {% elif perfume.is_available and perfume.has_discount %}
             <span class="product-badge discount-badge">-{{ perfume.max_discount|persian_digits }}٪</span>
             {% endif %}
-            {% endwith %}
 
             <!-- Out of Stock Badge -->
-            {% if not perfume.is_available %}
+            {% if not perfume.is_available or not variant %}
             <span class="product-badge unavailable-badge">ناموجود</span>
             {% endif %}
 
@@ -48,26 +47,21 @@
 
             <!-- Price -->
             <div class="product-card-price">
-                {% if perfume.is_available %}
-                    {% with variant=perfume.variant_50 %}
-                    {% if variant %}
-                        {% if variant.discount_percent > 0 %}
-                        <span class="price-original">{{ variant.price|price_format }} تومان</span>
-                        <span class="price-final">{{ variant.final_price|price_format }} تومان</span>
-                        {% else %}
-                        <span class="price-final">{{ variant.price|price_format }} تومان</span>
-                        {% endif %}
+                {% if variant and variant.is_available %}
+                    {% if variant.discount_percent > 0 %}
+                    <span class="price-original">{{ variant.price|price_format }} تومان</span>
+                    <span class="price-final">{{ variant.final_price|price_format }} تومان</span>
                     {% else %}
-                        <span class="price-unavailable">ناموجود</span>
+                    <span class="price-final">{{ variant.price|price_format }} تومان</span>
                     {% endif %}
-                    {% endwith %}
                 {% else %}
-                <span class="price-unavailable">ناموجود</span>
+                    <span class="price-unavailable">ناموجود</span>
                 {% endif %}
             </div>
 
             <!-- View and Buy CTA Button -->
             <span class="product-card-btn" style="display: block;">مشاهده و خرید</span>
         </div>
+        {% endwith %}
     </a>
 </div>

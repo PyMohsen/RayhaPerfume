@@ -42,16 +42,14 @@ def home_view(request):
     men_perfumes = Perfume.objects.filter(
         is_active=True
     ).filter(
-        Q(gender__slug='مردانه') |
-        Q(gender__slug='زنانه-و-مردانه')
+        Q(gender__slug='مردانه')
     ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
 
     # عطرهای زنانه: شامل عطرهایی که زنانه یا زنانه-و-مردانه هستند
     women_perfumes = Perfume.objects.filter(
         is_active=True
     ).filter(
-        Q(gender__slug='زنانه') |
-        Q(gender__slug='زنانه-و-مردانه')
+        Q(gender__slug='زنانه')
     ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
 
     context = {

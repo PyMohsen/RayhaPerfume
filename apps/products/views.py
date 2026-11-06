@@ -361,8 +361,8 @@ def live_search_api(request):
         primary_img = perfume.primary_image
         image_url = primary_img.image.url if primary_img else ''
 
-        # واریانت ۵۰ میل
-        variant = perfume.variant_50
+        # واریانت نمایشی (۵۰ میل یا ۱۰۰ میل موجود)
+        variant = perfume.display_variant or perfume.variant_50
 
         price = variant.price if variant else 0
         final_price = variant.final_price if variant else 0
