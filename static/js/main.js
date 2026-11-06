@@ -5,39 +5,115 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ==========================================
-    // Liquid Glass Search Overlay Toggle
+    // Search Auto-Focus Helper
+    // ==========================================
+    function focusSearchInput(input) {
+        if (!input) return;
+
+        // Immediate focus
+        input.focus({ preventScroll: true });
+
+        // Next frame focus (after DOM reflow)
+        requestAnimationFrame(function () {
+            input.focus({ preventScroll: true });
+        });
+
+        // 50ms fallback to guarantee focus after CSS transition / visibility changes
+        setTimeout(function () {
+            input.focus({ preventScroll: true });
+            if (input.value && typeof input.setSelectionRange === 'function') {
+                var len = input.value.length;
+                input.setSelectionRange(len, len);
+            }
+        }, 50);
+
+        // 120ms safety check
+        setTimeout(function () {
+            if (document.activeElement !== input) {
+                input.focus({ preventScroll: true });
+            }
+        }, 120);
+    }
+
+    // ==========================================
+    // Liquid Glass Search Overlay Toggle (Desktop)
     // ==========================================
     const searchToggleBtn = document.getElementById('search-toggle-btn');
     const searchOverlay = document.getElementById('glass-search-overlay');
     const searchCloseBtn = document.getElementById('glass-search-close');
     const searchInput = document.getElementById('glass-search-input');
+    const searchBox = searchOverlay ? searchOverlay.querySelector('.glass-search-box') : null;
+
+    function openSearchOverlay() {
+        if (!searchOverlay) return;
+        searchOverlay.classList.add('active');
+        focusSearchInput(searchInput);
+    }
+
+    function closeSearchOverlay() {
+        if (!searchOverlay) return;
+        searchOverlay.classList.remove('active');
+        if (searchInput) {
+            searchInput.blur();
+        }
+    }
 
     if (searchToggleBtn && searchOverlay) {
         searchToggleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
             e.stopPropagation();
-            searchOverlay.classList.toggle('active');
-            if (searchOverlay.classList.contains('active') && searchInput) {
-                searchInput.focus();
+            if (searchOverlay.classList.contains('active')) {
+                closeSearchOverlay();
+            } else {
+                openSearchOverlay();
             }
         });
 
         if (searchCloseBtn) {
-            searchCloseBtn.addEventListener('click', function () {
-                searchOverlay.classList.remove('active');
+            searchCloseBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeSearchOverlay();
             });
         }
 
+        // Clicking on the search box background also focuses the search input
+        if (searchBox && searchInput) {
+            searchBox.addEventListener('click', function (e) {
+                if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.live-search-dropdown')) {
+                    focusSearchInput(searchInput);
+                }
+            });
+        }
+
+        // Click outside closes overlay
         document.addEventListener('click', function (e) {
-            if (searchOverlay.classList.contains('active') && !searchOverlay.contains(e.target) && e.target !== searchToggleBtn) {
-                searchOverlay.classList.remove('active');
+            if (searchOverlay.classList.contains('active')) {
+                if (!searchOverlay.contains(e.target) && !searchToggleBtn.contains(e.target)) {
+                    closeSearchOverlay();
+                }
             }
         });
 
+        // Escape key closes overlay
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && searchOverlay.classList.contains('active')) {
-                searchOverlay.classList.remove('active');
+                closeSearchOverlay();
             }
         });
+
+        // MutationObserver: whenever overlay becomes active (regardless of trigger), auto-focus input
+        if (window.MutationObserver && searchInput) {
+            let wasActive = searchOverlay.classList.contains('active');
+            const overlayObserver = new MutationObserver(function () {
+                const isActive = searchOverlay.classList.contains('active');
+                if (isActive && !wasActive) {
+                    focusSearchInput(searchInput);
+                }
+                wasActive = isActive;
+            });
+            overlayObserver.observe(searchOverlay, { attributes: true, attributeFilter: ['class'] });
+        }
     }
 
     // ==========================================
@@ -46,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const mobileSearchInput = document.getElementById('mobile-search-input');
     const mobileSearchPill = document.querySelector('.glass-pill-mobile-search');
     const mobileSearchCloseBtn = document.getElementById('mobile-search-close-btn');
+    const mobileSearchIcon = document.querySelector('.mobile-search-icon');
     const navbarInner = document.querySelector('.floating-navbar-inner');
 
     function isMobileView() {
@@ -56,9 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!isMobileView() || !navbarInner) return;
         navbarInner.classList.add('mobile-search-expanded');
         if (mobileSearchInput) {
-            setTimeout(function () {
-                mobileSearchInput.focus();
-            }, 100);
+            focusSearchInput(mobileSearchInput);
         }
     }
 
@@ -71,12 +146,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (mobileSearchPill && mobileSearchInput) {
-        // Expand when clicking the search pill area or focusing the input
+        // Expand when clicking the search pill area
         mobileSearchPill.addEventListener('click', function (e) {
-            // Don't expand if clicking the close button
             if (e.target.closest('.mobile-search-close-btn')) return;
             expandMobileSearch();
         });
+
+        // Search icon click inside mobile pill: expand & focus instead of submitting empty form
+        if (mobileSearchIcon) {
+            mobileSearchIcon.addEventListener('click', function (e) {
+                if (!navbarInner.classList.contains('mobile-search-expanded') || !mobileSearchInput.value.trim()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    expandMobileSearch();
+                    focusSearchInput(mobileSearchInput);
+                }
+            });
+        }
 
         mobileSearchInput.addEventListener('focus', function () {
             expandMobileSearch();
@@ -106,7 +192,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 collapseMobileSearch();
             }
         });
+
+        // MutationObserver for mobile search expansion
+        if (window.MutationObserver && navbarInner) {
+            let wasExpanded = navbarInner.classList.contains('mobile-search-expanded');
+            const mobileObserver = new MutationObserver(function () {
+                const isExpanded = navbarInner.classList.contains('mobile-search-expanded');
+                if (isExpanded && !wasExpanded) {
+                    focusSearchInput(mobileSearchInput);
+                }
+                wasExpanded = isExpanded;
+            });
+            mobileObserver.observe(navbarInner, { attributes: true, attributeFilter: ['class'] });
+        }
     }
+
+    // ==========================================
+    // Keyboard Shortcut (e.g. '/' or Ctrl+K / Cmd+K)
+    // ==========================================
+    document.addEventListener('keydown', function (e) {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        const isEditing = activeTag === 'input' || activeTag === 'textarea' || (document.activeElement && document.activeElement.isContentEditable);
+
+        if ((e.key === '/' && !isEditing) || ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) {
+            e.preventDefault();
+            if (isMobileView()) {
+                expandMobileSearch();
+            } else {
+                openSearchOverlay();
+            }
+        }
+    });
 
     // ==========================================
     // Glass Mobile Drawer Toggle

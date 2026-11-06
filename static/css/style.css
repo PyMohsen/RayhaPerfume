@@ -607,6 +607,14 @@ input, textarea, select {
     border-radius: 28px;
     padding: 8px 16px;
     box-shadow: 0 20px 45px rgba(74, 44, 90, 0.18), inset 0 2px 2px #ffffff;
+    cursor: text;
+    transition: all 0.25s ease;
+}
+
+.glass-search-box:focus-within {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(107, 76, 154, 0.35);
+    box-shadow: 0 20px 45px rgba(74, 44, 90, 0.22), 0 0 0 3px rgba(107, 76, 154, 0.1), inset 0 2px 2px #ffffff;
 }
 
 .glass-search-form {
