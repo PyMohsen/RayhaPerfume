@@ -17,6 +17,7 @@ from .forms import (
     IRAN_PROVINCES_CITIES,
 )
 from .models import CustomUser, OTPCode, UserAddress
+from apps.orders.eitaayar import notify_admin_new_user
 
 
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)
@@ -95,6 +96,8 @@ def verify_otp_view(request):
                 user, created = CustomUser.objects.get_or_create(
                     phone_number=phone_number
                 )
+                if created:
+                    notify_admin_new_user(user.id)
 
                 # ورود کاربر
                 backend = PhoneBackend()

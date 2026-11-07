@@ -8,6 +8,7 @@ from .models import (
     Note, Perfume, PerfumeNote, PerfumeVariant, PerfumeImage,
     Wishlist, Review, ReviewLike,
 )
+from apps.orders.eitaayar import notify_admin_new_review
 
 
 @admin.register(Gender)
@@ -232,7 +233,7 @@ class ReviewAdmin(admin.ModelAdmin):
     raw_id_fields = ('user', 'perfume', 'parent')
     list_editable = ('is_approved',)
     readonly_fields = ('created_at', 'updated_at')
-    actions = ['approve_reviews', 'reject_reviews']
+    actions = ['approve_reviews', 'reject_reviews', 'send_to_eitaa']
     inlines = [ReviewLikeInline]
 
     def short_body(self, obj):
@@ -252,4 +253,10 @@ class ReviewAdmin(admin.ModelAdmin):
     def reject_reviews(self, request, queryset):
         updated = queryset.update(is_approved=False)
         self.message_user(request, f'{updated} نظر رد شد.')
+
+    @admin.action(description='ارسال اعلان نظر به گروه ایتا')
+    def send_to_eitaa(self, request, queryset):
+        for review in queryset:
+            notify_admin_new_review(review)
+        self.message_user(request, f'{queryset.count()} نظر با موفقیت به ایتا ارسال شد.', level='success')
 

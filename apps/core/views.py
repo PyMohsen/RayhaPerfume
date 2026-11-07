@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.clickjacking import xframe_options_exempt
 
 from apps.products.models import Perfume, Gender, Nature, Taste, Season
+from apps.orders.eitaayar import notify_admin_contact_message
 from .forms import ContactForm
 from .models import SiteSettings, Slider, FAQ
 
@@ -79,7 +80,8 @@ def contact_view(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
-            form.save()
+            contact_msg = form.save()
+            notify_admin_contact_message(contact_msg.id)
             messages.success(request, 'پیام شما با موفقیت ارسال شد. با تشکر!')
             return redirect('core:contact')
     else:

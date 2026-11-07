@@ -44,8 +44,10 @@ class EitaayarService:
     TIMEOUT = 10  # ثانیه
 
     def __init__(self, token: Optional[str] = None, chat_id: Optional[str] = None):
-        self.token = (token or getattr(settings, 'EITAAYAR_TOKEN', '')).strip()
-        self.chat_id = (chat_id or getattr(settings, 'EITAAYAR_CHAT_ID', '')).strip()
+        raw_token = getattr(settings, 'EITAAYAR_TOKEN', '') if token is None else token
+        raw_chat = getattr(settings, 'EITAAYAR_CHAT_ID', '') if chat_id is None else chat_id
+        self.token = str(raw_token or '').strip()
+        self.chat_id = str(raw_chat or '').strip()
         self.enabled = getattr(settings, 'EITAAYAR_ENABLED', True)
 
     def is_configured(self) -> bool:
@@ -471,3 +473,157 @@ def notify_admin_order_status_changed(
     )
 
     EitaayarService().send_async(text=text, title=f'تغییر وضعیت {order.order_number}')
+
+
+def notify_admin_contact_message(message_or_id: Union[int, Any]) -> None:
+    """
+    ارسال اعلان درخواست تماس / پیام تماس با ما جدید به گروه ادمین
+    """
+    from apps.core.models import ContactMessage
+
+    try:
+        if isinstance(message_or_id, ContactMessage):
+            msg = message_or_id
+        else:
+            msg = ContactMessage.objects.get(pk=message_or_id)
+    except Exception as exc:
+        logger.error('Could not load contact message %s for Eitaa notification: %s', message_or_id, exc)
+        return
+
+    domain = _get_admin_domain()
+    protocol = 'http' if getattr(settings, 'DEBUG', False) else 'https'
+    admin_url = f'{protocol}://{domain}/admin/core/contactmessage/{msg.id}/change/'
+
+    email_line = f'✉️ ایمیل: {msg.email}\n' if msg.email else ''
+
+    text = (
+        '📞 پیام تماس با ما / درخواست تماس جدید\n'
+        '━━━━━━━━━━━━━━━━━━━━\n'
+        f'👤 نام فرستنده: {msg.name}\n'
+        f'📱 شماره تماس: {msg.phone}\n'
+        f'{email_line}'
+        f'📌 موضوع: {msg.subject}\n'
+        f'📅 زمان ارسال: {format_datetime_jalali(msg.created_at)}\n\n'
+        '💬 متن پیام:\n'
+        f'{msg.message.strip()}\n\n'
+        '🔗 مشاهده در پنل مدیریت:\n'
+        f'{admin_url}'
+    )
+
+    EitaayarService().send_async(text=text, title=f'درخواست تماس {msg.name}')
+
+
+def notify_admin_new_review(review_or_id: Union[int, Any]) -> None:
+    """
+    ارسال اعلان ثبت نظر / دیدگاه جدید درباره محصول به گروه ادمین (نیازمند تأیید)
+    """
+    from apps.products.models import Review
+
+    try:
+        if isinstance(review_or_id, Review):
+            review = review_or_id
+        else:
+            review = Review.objects.select_related('user', 'perfume', 'parent').get(pk=review_or_id)
+    except Exception as exc:
+        logger.error('Could not load review %s for Eitaa notification: %s', review_or_id, exc)
+        return
+
+    domain = _get_admin_domain()
+    protocol = 'http' if getattr(settings, 'DEBUG', False) else 'https'
+    admin_url = f'{protocol}://{domain}/admin/products/review/{review.id}/change/'
+
+    user_name = review.user.get_full_name() or review.user.phone_number
+    reply_line = '🔁 نوع: پاسخ به نظر دیگر\n' if review.parent_id else '💬 نوع: نظر اصلی\n'
+
+    text = (
+        '💬 ثبت نظر جدید برای محصول (در انتظار تأیید)\n'
+        '━━━━━━━━━━━━━━━━━━━━\n'
+        f'📦 محصول: {review.perfume.name}\n'
+        f'👤 کاربر: {user_name}\n'
+        f'📞 شماره تماس: {review.user.phone_number}\n'
+        f'{reply_line}'
+        f'📅 زمان ثبت: {format_datetime_jalali(review.created_at)}\n\n'
+        '📝 متن نظر:\n'
+        f'{review.body.strip()}\n\n'
+        '⚠️ این نظر تا زمان تأیید توسط ادمین در سایت نمایش داده نمی‌شود.\n\n'
+        '🔗 بررسی و تأیید نظر در پنل مدیریت:\n'
+        f'{admin_url}'
+    )
+
+    EitaayarService().send_async(text=text, title=f'نظر جدید {review.perfume.name}')
+
+
+def notify_admin_low_stock(variant_or_id: Union[int, Any]) -> None:
+    """
+    ارسال اعلان اتمام یا کاهش شدید موجودی محصول به گروه ادمین
+    """
+    from apps.products.models import PerfumeVariant
+
+    try:
+        if isinstance(variant_or_id, PerfumeVariant):
+            variant = variant_or_id
+        else:
+            variant = PerfumeVariant.objects.select_related('perfume').get(pk=variant_or_id)
+    except Exception as exc:
+        logger.error('Could not load variant %s for low stock notification: %s', variant_or_id, exc)
+        return
+
+    domain = _get_admin_domain()
+    protocol = 'http' if getattr(settings, 'DEBUG', False) else 'https'
+    admin_url = f'{protocol}://{domain}/admin/products/perfume/{variant.perfume_id}/change/'
+
+    if variant.stock == 0:
+        status_line = '🔴 موجودی این واریانت کاملاً به اتمام رسید (ناموجود شد)!'
+        title = f'ناموجود شدن {variant.perfume.name}'
+    else:
+        status_line = f'🟠 موجودی این واریانت رو به اتمام است (تنها {variant.stock} عدد باقی‌مانده)!'
+        title = f'هشدار موجودی کم {variant.perfume.name}'
+
+    text = (
+        '⚠️ هشدار موجودی انبار\n'
+        '━━━━━━━━━━━━━━━━━━━━\n'
+        f'📦 نام عطر: {variant.perfume.name}\n'
+        f'📏 حجم: {variant.size} میل\n'
+        f'🚨 موجودی باقی‌مانده: {variant.stock} عدد\n'
+        f'{status_line}\n'
+        f'📅 زمان: {format_datetime_jalali(timezone.now())}\n\n'
+        '🔗 مدیریت محصول و افزایش موجودی:\n'
+        f'{admin_url}'
+    )
+
+    EitaayarService().send_async(text=text, title=title)
+
+
+def notify_admin_new_user(user_or_id: Union[int, Any]) -> None:
+    """
+    ارسال اعلان ثبت‌نام کاربر جدید در سایت به گروه ادمین
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        if isinstance(user_or_id, User):
+            user = user_or_id
+        else:
+            user = User.objects.get(pk=user_or_id)
+    except Exception as exc:
+        logger.error('Could not load user %s for new user notification: %s', user_or_id, exc)
+        return
+
+    domain = _get_admin_domain()
+    protocol = 'http' if getattr(settings, 'DEBUG', False) else 'https'
+    admin_url = f'{protocol}://{domain}/admin/accounts/customuser/{user.id}/change/'
+
+    name_line = f'👤 نام: {user.full_name}\n' if user.full_name else ''
+
+    text = (
+        '👤 ثبت‌نام کاربر جدید در سایت\n'
+        '━━━━━━━━━━━━━━━━━━━━\n'
+        f'📱 شماره موبایل: {user.phone_number}\n'
+        f'{name_line}'
+        f'📅 زمان عضویت: {format_datetime_jalali(user.date_joined)}\n\n'
+        '🔗 مشاهده کاربر در پنل مدیریت:\n'
+        f'{admin_url}'
+    )
+
+    EitaayarService().send_async(text=text, title=f'کاربر جدید {user.phone_number}')

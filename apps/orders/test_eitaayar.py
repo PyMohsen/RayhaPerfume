@@ -19,9 +19,14 @@ from apps.orders.eitaayar import (
     notify_admin_direct_payment,
     notify_admin_tracking_code_updated,
     notify_admin_order_status_changed,
+    notify_admin_contact_message,
+    notify_admin_new_review,
+    notify_admin_low_stock,
+    notify_admin_new_user,
 )
 from apps.orders.models import Order, OrderItem, DirectPayment
-from apps.products.models import Perfume, PerfumeVariant
+from apps.products.models import Perfume, PerfumeVariant, Review
+from apps.core.models import ContactMessage
 
 User = get_user_model()
 
@@ -269,6 +274,77 @@ class OrderNotificationsTests(TestCase):
         self.assertIn('تغییر وضعیت سفارش', text)
         self.assertIn('در حال پردازش', text)
         self.assertIn('ارسال شده', text)
+
+    @patch.object(EitaayarService, 'send_async')
+    def test_notify_admin_contact_message(self, mock_send_async):
+        contact = ContactMessage.objects.create(
+            name='سارا احمدی',
+            phone='09351234567',
+            email='sara@example.com',
+            subject='مشاوره خرید عطر کادویی',
+            message='سلام، می‌خواستم برای تولد همسرم راهنمایی بگیرم.',
+        )
+
+        notify_admin_contact_message(contact.id)
+        mock_send_async.assert_called_once()
+        text = mock_send_async.call_args[1]['text']
+
+        self.assertIn('پیام تماس با ما / درخواست تماس جدید', text)
+        self.assertIn('سارا احمدی', text)
+        self.assertIn('09351234567', text)
+        self.assertIn('sara@example.com', text)
+        self.assertIn('مشاوره خرید عطر کادویی', text)
+        self.assertIn('راهنمایی بگیرم', text)
+        self.assertIn('/admin/core/contactmessage/', text)
+
+    @patch.object(EitaayarService, 'send_async')
+    def test_notify_admin_new_review(self, mock_send_async):
+        review = Review.objects.create(
+            user=self.user,
+            perfume=self.perfume,
+            body='ماندگاری و پخش بوی فوق‌العاده‌ای داره، پیشنهاد می‌کنم.',
+            is_approved=False,
+        )
+
+        notify_admin_new_review(review.id)
+        mock_send_async.assert_called_once()
+        text = mock_send_async.call_args[1]['text']
+
+        self.assertIn('ثبت نظر جدید برای محصول (در انتظار تأیید)', text)
+        self.assertIn('دیور ساواج', text)
+        self.assertIn('علی محمدی', text)
+        self.assertIn('ماندگاری و پخش بوی فوق‌العاده‌ای داره', text)
+        self.assertIn('/admin/products/review/', text)
+
+    @patch.object(EitaayarService, 'send_async')
+    def test_notify_admin_low_stock(self, mock_send_async):
+        self.variant.stock = 0
+        self.variant.save()
+
+        notify_admin_low_stock(self.variant.id)
+        mock_send_async.assert_called_once()
+        text = mock_send_async.call_args[1]['text']
+
+        self.assertIn('هشدار موجودی انبار', text)
+        self.assertIn('دیور ساواج', text)
+        self.assertIn('100 میل', text)
+        self.assertIn('ناموجود شد', text)
+
+    @patch.object(EitaayarService, 'send_async')
+    def test_notify_admin_new_user(self, mock_send_async):
+        new_user = User.objects.create_user(
+            phone_number='09198765432',
+            full_name='رضا رضایی',
+        )
+
+        notify_admin_new_user(new_user.id)
+        mock_send_async.assert_called_once()
+        text = mock_send_async.call_args[1]['text']
+
+        self.assertIn('ثبت‌نام کاربر جدید در سایت', text)
+        self.assertIn('09198765432', text)
+        self.assertIn('رضا رضایی', text)
+        self.assertIn('/admin/accounts/customuser/', text)
 
 
 class ManagementCommandTests(TestCase):

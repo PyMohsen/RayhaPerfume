@@ -16,6 +16,7 @@ from .models import (
     Review, ReviewLike,
 )
 from apps.orders.models import Order, OrderItem
+from apps.orders.eitaayar import notify_admin_new_review
 
 
 # ==========================================
@@ -457,13 +458,14 @@ def add_review_view(request, slug):
             pk=parent_id, perfume=perfume, is_approved=True, parent__isnull=True
         ).first()
 
-    Review.objects.create(
+    review = Review.objects.create(
         user=request.user,
         perfume=perfume,
         parent=parent,
         body=body,
         is_approved=False,
     )
+    notify_admin_new_review(review.id)
 
     messages.success(request, 'نظر شما ثبت شد و پس از تأیید نمایش داده خواهد شد.')
     return redirect('products:detail', slug=slug)

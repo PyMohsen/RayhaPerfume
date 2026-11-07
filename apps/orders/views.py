@@ -29,6 +29,7 @@ from .eitaayar import (
     notify_admin_return_cancelled,
     notify_admin_order_cancelled,
     notify_admin_direct_payment,
+    notify_admin_low_stock,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,8 @@ def _verify_and_create_torobpay_order(payment_session):
                     raise TorobPayError('موجودی سفارش تأییدشده کافی نیست؛ سفارش نیازمند بررسی است.')
                 variant.stock -= qty
                 variant.save(update_fields=['stock'])
+                if variant.stock <= 2:
+                    transaction.on_commit(lambda v_id=variant.id: notify_admin_low_stock(v_id))
 
         order = Order.objects.create(
             user=payment_session.user,
@@ -534,6 +537,8 @@ def payment_callback_view(request):
                         raise ValueError(f"Insufficient stock for {variant}")
                     variant.stock -= qty
                     variant.save(update_fields=['stock'])
+                    if variant.stock <= 2:
+                        transaction.on_commit(lambda v_id=variant.id: notify_admin_low_stock(v_id))
 
             # ایجاد سفارش نهایی در وضعیت "در حال پردازش"
             order = Order.objects.create(

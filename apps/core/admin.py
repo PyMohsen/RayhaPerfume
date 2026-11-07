@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import SiteSettings, Slider, FAQ, ContactMessage
+from apps.orders.eitaayar import notify_admin_contact_message
 
 
 @admin.register(SiteSettings)
@@ -56,6 +57,13 @@ class ContactMessageAdmin(admin.ModelAdmin):
     search_fields = ('name', 'phone', 'subject', 'message')
     readonly_fields = ('name', 'phone', 'email', 'subject', 'message', 'created_at')
     list_editable = ('is_read',)
+    actions = ['send_to_eitaa']
+
+    @admin.action(description='ارسال مجدد پیام تماس به گروه ایتا')
+    def send_to_eitaa(self, request, queryset):
+        for msg in queryset:
+            notify_admin_contact_message(msg)
+        self.message_user(request, f'{queryset.count()} پیام تماس با موفقیت به ایتا ارسال شد.', level='success')
 
     def has_add_permission(self, request):
         return False
