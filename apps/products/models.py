@@ -493,6 +493,25 @@ class Perfume(models.Model):
         self.views_count += 1
         self.save(update_fields=['views_count'])
 
+    @property
+    def seo_description(self):
+        """توضیحات سئو و متای صفحه محصول (بین ۱۴۰ تا ۱۶۰ کاراکتر بدون تگ HTML)"""
+        import re
+        if self.short_description and self.short_description.strip():
+            raw = self.short_description.strip()
+        elif self.description and self.description.strip():
+            clean_text = re.sub(r'<[^>]+>', ' ', str(self.description))
+            raw = clean_text
+        else:
+            gender_txt = f" {self.gender.name}" if self.gender else ""
+            brand_txt = f" از برند {self.brand}" if self.brand else ""
+            raw = f"خرید آنلاین عطر{gender_txt} {self.name}{brand_txt} با ضمانت ۱۰۰٪ اصالت کالا، مشخصات کامل، نظرات کاربران و بهترین قیمت در فروشگاه عطر رایحا."
+
+        clean = ' '.join(raw.split())
+        if len(clean) > 155:
+            clean = clean[:152].rstrip() + '...'
+        return clean
+
 
 class PerfumeNote(models.Model):
     """جدول واسط برای ارتباط عطر و نوت‌ها"""

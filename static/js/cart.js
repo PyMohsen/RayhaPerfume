@@ -36,6 +36,7 @@ function showToast(message, type) {
         container = document.createElement('div');
         container.id = 'toast-stack';
         container.className = 'toast-stack';
+        container.setAttribute('data-nosnippet', '');
         document.body.appendChild(container);
     }
 
@@ -119,15 +120,48 @@ function updateCartBadge(count) {
 }
 
 /**
- * Cart Floating Notification
+ * Cart Floating Notification (Injected dynamically to prevent indexing in search snippets)
  */
 var _cartNotificationTimer = null;
 
+function getOrCreateCartNotification() {
+    var notification = document.getElementById('cart-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.className = 'cart-notification';
+        notification.id = 'cart-notification';
+        notification.setAttribute('data-nosnippet', '');
+        notification.innerHTML =
+            '<div class="cart-notification-content">' +
+                '<a href="/cart/" class="cart-notification-link">' +
+                    'برو به سبد خرید ' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
+                        '<path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />' +
+                    '</svg>' +
+                '</a>' +
+                '<div class="cart-notification-right">' +
+                    '<span class="cart-notification-text">کالا اضافه شد!</span>' +
+                    '<span class="cart-notification-icon">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10B981">' +
+                            '<path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />' +
+                        '</svg>' +
+                    '</span>' +
+                    '<button class="cart-notification-close" onclick="hideCartNotification()" aria-label="بستن">&times;</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="cart-notification-progress">' +
+                '<div class="cart-notification-progress-bar" id="cart-notification-progress-bar"></div>' +
+            '</div>';
+        document.body.appendChild(notification);
+    }
+    return notification;
+}
+
 function showCartNotification(duration) {
     duration = duration || 4000;
-    var notification = document.getElementById('cart-notification');
-    var progressBar = document.getElementById('cart-notification-progress-bar');
-    if (!notification || !progressBar) return;
+    var notification = getOrCreateCartNotification();
+    var progressBar = notification.querySelector('#cart-notification-progress-bar');
+    if (!progressBar) return;
 
     // Clear any existing timer
     if (_cartNotificationTimer) {
@@ -169,7 +203,7 @@ function hideCartNotification() {
     // Reset after transition
     setTimeout(function () {
         notification.classList.remove('hide');
-        var progressBar = document.getElementById('cart-notification-progress-bar');
+        var progressBar = notification.querySelector('#cart-notification-progress-bar');
         if (progressBar) progressBar.style.animation = 'none';
     }, 400);
 }

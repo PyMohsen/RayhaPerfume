@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load product_tags %}
+{% block meta_robots %}<meta name="robots" content="noindex, follow">{% endblock %}
 {% block title %}جستجو: {{ query }}{% endblock %}
+{% block meta_description %}نتایج جستجوی عطر و ادکلن برای «{{ query }}» در فروشگاه اینترنتی عطر رایحا.{% endblock %}
 {% block content %}
 <div class="container">
     <h1 class="page-title">نتایج جستجو {% if query %}برای «{{ query }}»{% endif %}</h1>

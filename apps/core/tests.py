@@ -55,3 +55,47 @@ class ReturnPolicyViewTest(TestCase):
         self.assertIn('core:return_policy', sitemap.items())
         self.assertNotIn('core:terms', sitemap.items())
 
+
+class SeoAndSerpLeakTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_footer_has_data_nosnippet(self):
+        """مطمئن شویم فوتر دارای صفت data-nosnippet است تا توسط گوگل در اسنیپت SERP ایندکس نشود"""
+        response = self.client.get(reverse('core:home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<footer class="footer" data-nosnippet>')
+
+    def test_live_search_raw_text_not_in_dom(self):
+        """مطمئن شویم متن‌های استاتیک سرچ زنده در DOM اولیه وجود ندارند"""
+        response = self.client.get(reverse('core:home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'در حال جستجو...')
+        self.assertNotContains(response, 'نتیجه‌ای یافت نشد')
+        self.assertNotContains(response, 'مشاهده همه نتایج')
+
+    def test_cart_notification_raw_text_not_in_dom(self):
+        """مطمئن شویم متن نوتیفیکیشن سبد خرید در DOM اولیه صفحات وجود ندارد"""
+        response = self.client.get(reverse('core:home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'کالا اضافه شد!')
+        self.assertNotContains(response, 'برو به سبد خرید')
+
+    def test_dedicated_meta_descriptions(self):
+        """مطمئن شویم صفحات اصلی دارای تگ meta description اختصاصی هستند"""
+        pages = [
+            (reverse('core:home'), 'فروشگاه اینترنتی عطر رایحا'),
+            (reverse('core:about'), 'آشنایی با فروشگاه اینترنتی عطر رایحا'),
+            (reverse('core:contact'), 'اطلاعات تماس با عطر رایحا'),
+            (reverse('core:faq'), 'پاسخ به متداول‌ترین سوالات کاربران'),
+            (reverse('core:return_policy'), 'قوانین، ضوابط و شرایط بازگشت و مرجوعی کالا'),
+            (reverse('products:list'), 'فروشگاه آنلاین عطر رایحا'),
+        ]
+        for url, expected_phrase in pages:
+            with self.subTest(url=url):
+                res = self.client.get(url)
+                self.assertEqual(res.status_code, 200)
+                content = res.content.decode('utf-8')
+                self.assertIn('<meta name="description" content="', content)
+                self.assertIn(expected_phrase, content)
+

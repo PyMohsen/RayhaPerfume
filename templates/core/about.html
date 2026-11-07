@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}درباره ما{% endblock %}
+{% block meta_description %}{% if site_settings.about_text %}{{ site_settings.about_text|striptags|truncatechars:155 }}{% else %}آشنایی با فروشگاه اینترنتی عطر رایحا، مرجع تخصصی عرضه انواع عطر و ادکلن اصل با ضمانت اصالت کالا، بهترین قیمت و هدف ارائه تجربه خریدی مطمئن و لذت‌بخش.{% endif %}{% endblock %}
 {% block content %}
 <div class="container">
     <div class="page-header"><h1 class="page-title">درباره ما</h1></div>

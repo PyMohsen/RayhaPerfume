@@ -2,8 +2,17 @@
 {% load static %}
 {% load product_tags %}
 
-{% block title %}{{ perfume.name }}{% endblock %}
-{% block meta_description %}{{ perfume.short_description|default:perfume.description|striptags|truncatewords:25 }}{% endblock %}
+{% block title %}{{ perfume.name }} - خرید و قیمت عطر {{ perfume.brand }}{% endblock %}
+{% block meta_description %}{{ perfume.seo_description }}{% endblock %}
+
+{% block extra_head %}
+    <meta property="og:title" content="{{ perfume.name }} - خرید عطر اصل {{ perfume.brand }}">
+    <meta property="og:description" content="{{ perfume.seo_description }}">
+    <meta property="og:type" content="product">
+    {% if perfume.primary_image %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ perfume.primary_image.image.url }}">
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container">

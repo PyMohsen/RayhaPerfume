@@ -2,7 +2,8 @@
 {% load static %}
 {% load product_tags %}
 
-{% block title %}{% if active_chips %}فیلتر شده ({% for chip in active_chips %}{{ chip.label }}{% if not forloop.last %}، {% endif %}{% endfor %}) | {% endif %}{% if search_query %}جستجو: {{ search_query }} | {% endif %}فروشگاه{% endblock %}
+{% block title %}{% if active_chips %}عطر و ادکلن ({% for chip in active_chips %}{{ chip.label }}{% if not forloop.last %}، {% endif %}{% endfor %}){% elif search_query %}جستجو: {{ search_query }}{% else %}خرید عطر و ادکلن اصل - لیست محصولات{% endif %}{% endblock %}
+{% block meta_description %}{% if active_chips %}خرید آنلاین عطر و ادکلن اصل بر اساس فیلتر {% for chip in active_chips %}{{ chip.label }}{% if not forloop.last %}، {% endif %}{% endfor %} با ضمانت اصالت کالا و بهترین قیمت در فروشگاه عطر رایحا.{% elif search_query %}نتایج جستجو و خرید عطر {{ search_query }} با بهترین قیمت و ضمانت اصالت کالا در فروشگاه اینترنتی عطر رایحا.{% else %}فروشگاه آنلاین عطر رایحا؛ مشاهده و خرید انواع عطر و ادکلن اورجینال مردانه و زنانه، مقایسه قیمت و مشخصات با تضمین اصالت و ارسال سریع.{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container">

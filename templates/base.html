@@ -7,8 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="description" content="{% block meta_description %}فروشگاه اینترنتی عطر رایحا - خرید عطر اصل با بهترین قیمت{% endblock %}">
+    {% block meta_robots %}{% endblock %}
+    <meta name="description" content="{% block meta_description %}فروشگاه اینترنتی عطر رایحا؛ مرجع تخصصی خرید آنلاین انواع عطر و ادکلن اصل زنانه و مردانه با ضمانت ۱۰۰٪ اصالت کالا و ارسال سریع به سراسر کشور.{% endblock %}">
     <title>{% block title %}عطر رایحا{% endblock %} | فروشگاه عطر</title>
+    {% block extra_head %}{% endblock %}
     
     <!-- Favicon Package -->
     <link rel="icon" type="image/png" href="{% static 'images/favicon-96x96.png' %}" sizes="96x96" />
@@ -33,7 +35,7 @@
     
     <!-- Messages (hidden, converted to toasts via JS) -->
     {% if messages %}
-    <div class="messages-container" id="messages-container"
+    <div class="messages-container" id="messages-container" data-nosnippet
          data-messages='[{% for message in messages %}{"text":"{{ message|escapejs }}","type":"{{ message.tags }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
     </div>
     <script>
@@ -66,30 +68,6 @@
     <script src="{% static 'js/live_search.js' %}"></script>
     <script src="{% static 'js/cart.js' %}"></script>
     {% block extra_js %}{% endblock %}
-
-    <!-- Cart Add Notification -->
-    <div class="cart-notification" id="cart-notification">
-        <div class="cart-notification-content">
-            <a href="/cart/" class="cart-notification-link">
-                برو به سبد خرید
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
-                </svg>
-            </a>
-            <div class="cart-notification-right">
-                <span class="cart-notification-text">کالا اضافه شد!</span>
-                <span class="cart-notification-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10B981">
-                        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
-                    </svg>
-                </span>
-                <button class="cart-notification-close" onclick="hideCartNotification()" aria-label="بستن">&times;</button>
-            </div>
-        </div>
-        <div class="cart-notification-progress">
-            <div class="cart-notification-progress-bar" id="cart-notification-progress-bar"></div>
-        </div>
-    </div>
 
 </body>
 </html>

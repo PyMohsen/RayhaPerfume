@@ -20,11 +20,6 @@
     // ==========================================
     var desktopInput = document.getElementById('glass-search-input');
     var desktopDropdown = document.getElementById('live-search-dropdown');
-    var desktopResults = document.getElementById('live-search-results');
-    var desktopLoading = document.getElementById('live-search-loading');
-    var desktopEmpty = document.getElementById('live-search-empty');
-    var desktopViewAll = document.getElementById('live-search-view-all');
-    var desktopTotal = document.getElementById('live-search-total');
     var searchOverlay = document.getElementById('glass-search-overlay');
 
     // ==========================================
@@ -32,11 +27,6 @@
     // ==========================================
     var mobileInput = document.getElementById('mobile-search-input');
     var mobileDropdown = document.getElementById('mobile-live-search-dropdown');
-    var mobileResults = document.getElementById('mobile-live-search-results');
-    var mobileLoading = document.getElementById('mobile-live-search-loading');
-    var mobileEmpty = document.getElementById('mobile-live-search-empty');
-    var mobileViewAll = document.getElementById('mobile-live-search-view-all');
-    var mobileTotal = document.getElementById('mobile-live-search-total');
 
     // If neither input exists, bail
     if (!desktopInput && !mobileInput) return;
@@ -60,19 +50,80 @@
     }
 
     // ==========================================
+    // Dynamically build dropdown DOM elements on first search
+    // (Prevents crawler SERP indexing of empty/loading states)
+    // ==========================================
+    function ensureDropdownElements(ctx) {
+        if (ctx.resultsContainer) return;
+        var dropdown = ctx.dropdown;
+        if (!dropdown) return;
+
+        // Loading state
+        var loading = document.createElement('div');
+        loading.className = 'live-search-loading';
+        loading.id = ctx.prefix + '-loading';
+        loading.style.display = 'none';
+        loading.innerHTML = '<div class="live-search-spinner"></div><span>در حال جستجو...</span>';
+        dropdown.appendChild(loading);
+        ctx.loadingEl = loading;
+
+        // Results container
+        var results = document.createElement('div');
+        results.className = 'live-search-results';
+        results.id = ctx.prefix + '-results';
+        results.style.display = 'none';
+        dropdown.appendChild(results);
+        ctx.resultsContainer = results;
+
+        // Empty state
+        var empty = document.createElement('div');
+        empty.className = 'live-search-empty';
+        empty.id = ctx.prefix + '-empty';
+        empty.style.display = 'none';
+        empty.innerHTML =
+            '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">' +
+                '<circle cx="11" cy="11" r="8" />' +
+                '<path d="m21 21-4.35-4.35" />' +
+            '</svg>' +
+            '<span>نتیجه‌ای یافت نشد</span>';
+        dropdown.appendChild(empty);
+        ctx.emptyEl = empty;
+
+        // View All Link
+        var viewAll = document.createElement('a');
+        viewAll.href = '#';
+        viewAll.className = 'live-search-view-all';
+        viewAll.id = ctx.prefix + '-view-all';
+        viewAll.style.display = 'none';
+        viewAll.innerHTML =
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">' +
+                '<circle cx="11" cy="11" r="8" />' +
+                '<path d="m21 21-4.35-4.35" />' +
+            '</svg>' +
+            '<span>مشاهده همه نتایج (<span id="' + ctx.prefix + '-total">0</span>)</span>' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon">' +
+                '<path d="m15 18-6-6 6-6" />' +
+            '</svg>';
+        dropdown.appendChild(viewAll);
+        ctx.viewAllEl = viewAll;
+        ctx.totalEl = viewAll.querySelector('#' + ctx.prefix + '-total');
+    }
+
+    // ==========================================
     // Create a search context for each mode
     // ==========================================
-    function createSearchContext(input, dropdown, resultsContainer, loadingEl, emptyEl, viewAllEl, totalEl) {
+    function createSearchContext(input, dropdown, prefix) {
         if (!input || !dropdown) return null;
 
         var ctx = {
             input: input,
             dropdown: dropdown,
-            resultsContainer: resultsContainer,
-            loadingEl: loadingEl,
-            emptyEl: emptyEl,
-            viewAllEl: viewAllEl,
-            totalEl: totalEl,
+            prefix: prefix,
+            resultsContainer: null,
+            loadingEl: null,
+            emptyEl: null,
+            viewAllEl: null,
+            totalEl: null,
             debounceTimer: null,
             currentRequest: null,
             activeIndex: -1,
@@ -91,6 +142,7 @@
         };
 
         ctx.showLoading = function () {
+            ensureDropdownElements(ctx);
             ctx.loadingEl.style.display = 'flex';
             ctx.resultsContainer.style.display = 'none';
             ctx.emptyEl.style.display = 'none';
@@ -99,6 +151,7 @@
         };
 
         ctx.showResults = function () {
+            ensureDropdownElements(ctx);
             ctx.loadingEl.style.display = 'none';
             ctx.resultsContainer.style.display = 'block';
             ctx.emptyEl.style.display = 'none';
@@ -107,6 +160,7 @@
         };
 
         ctx.showEmpty = function () {
+            ensureDropdownElements(ctx);
             ctx.loadingEl.style.display = 'none';
             ctx.resultsContainer.style.display = 'none';
             ctx.emptyEl.style.display = 'flex';
@@ -115,14 +169,15 @@
         };
 
         ctx.hideAll = function () {
-            ctx.loadingEl.style.display = 'none';
-            ctx.resultsContainer.style.display = 'none';
-            ctx.emptyEl.style.display = 'none';
-            ctx.viewAllEl.style.display = 'none';
+            if (ctx.loadingEl) ctx.loadingEl.style.display = 'none';
+            if (ctx.resultsContainer) ctx.resultsContainer.style.display = 'none';
+            if (ctx.emptyEl) ctx.emptyEl.style.display = 'none';
+            if (ctx.viewAllEl) ctx.viewAllEl.style.display = 'none';
             ctx.hideDropdown();
         };
 
         ctx.clearHighlight = function () {
+            if (!ctx.resultsContainer) return;
             var items = ctx.resultsContainer.querySelectorAll('.live-search-item');
             for (var i = 0; i < items.length; i++) {
                 items[i].classList.remove('active');
@@ -130,6 +185,7 @@
         };
 
         ctx.highlightItem = function (index) {
+            if (!ctx.resultsContainer) return;
             var items = ctx.resultsContainer.querySelectorAll('.live-search-item');
             if (index < 0 || index >= items.length) return;
             ctx.clearHighlight();
@@ -298,6 +354,7 @@
 
         // Keyboard navigation
         ctx.input.addEventListener('keydown', function (e) {
+            if (!ctx.resultsContainer) return;
             var items = ctx.resultsContainer.querySelectorAll('.live-search-item');
             if (!ctx.dropdown.classList.contains('active') || items.length === 0) return;
 
@@ -341,11 +398,7 @@
     // ==========================================
     // Create and initialize desktop search
     // ==========================================
-    var desktopCtx = createSearchContext(
-        desktopInput, desktopDropdown, desktopResults,
-        desktopLoading, desktopEmpty, desktopViewAll, desktopTotal
-    );
-
+    var desktopCtx = createSearchContext(desktopInput, desktopDropdown, 'live-search');
     initSearchContext(desktopCtx);
 
     // Close desktop dropdown when search overlay closes
@@ -365,11 +418,7 @@
     // ==========================================
     // Create and initialize mobile search
     // ==========================================
-    var mobileCtx = createSearchContext(
-        mobileInput, mobileDropdown, mobileResults,
-        mobileLoading, mobileEmpty, mobileViewAll, mobileTotal
-    );
-
+    var mobileCtx = createSearchContext(mobileInput, mobileDropdown, 'mobile-live-search');
     initSearchContext(mobileCtx);
 
 })();
