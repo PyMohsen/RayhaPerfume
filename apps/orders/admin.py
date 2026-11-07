@@ -2,6 +2,11 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import Order, OrderItem, CouponCode, PaymentSession, DirectPayment
+from .eitaayar import (
+    notify_admin_new_order,
+    notify_admin_tracking_code_updated,
+    notify_admin_order_status_changed,
+)
 
 
 class OrderItemInline(admin.TabularInline):
@@ -77,6 +82,35 @@ class OrderAdmin(admin.ModelAdmin):
                 obj.return_image.url
             )
         return 'تصویری ثبت نشده است'
+
+    actions = ['send_order_to_eitaa']
+
+    @admin.action(description='ارسال اعلان اطلاعات سفارش به گروه ایتا')
+    def send_order_to_eitaa(self, request, queryset):
+        count = 0
+        for order in queryset:
+            notify_admin_new_order(order)
+            count += 1
+        self.message_user(request, f'اعلان {count} سفارش با موفقیت به صف ارسال ایتا فرستاده شد.', level='success')
+
+    def save_model(self, request, obj, form, change):
+        old_tracking = None
+        old_status = None
+        if change and obj.pk:
+            old_order = Order.objects.filter(pk=obj.pk).values('tracking_code', 'status').first()
+            if old_order:
+                old_tracking = old_order.get('tracking_code')
+                old_status = old_order.get('status')
+
+        super().save_model(request, obj, form, change)
+
+        if change:
+            # اگر کد رهگیری پستی اضافه یا ویرایش شد
+            if 'tracking_code' in form.changed_data and obj.tracking_code and obj.tracking_code != old_tracking:
+                notify_admin_tracking_code_updated(obj.id)
+            # اگر وضعیت سفارش توسط ادمین تغییر کرد
+            elif 'status' in form.changed_data and obj.status != old_status:
+                notify_admin_order_status_changed(obj.id, old_status or '', obj.status)
 
 
 @admin.register(CouponCode)

@@ -23,6 +23,13 @@ from .forms import OrderReturnForm, DirectPaymentForm
 from .sep import SepPaymentService
 from .torobpay import TorobPayError, TorobPayService
 from .postex import PostexTrackingService
+from .eitaayar import (
+    notify_admin_new_order,
+    notify_admin_return_requested,
+    notify_admin_return_cancelled,
+    notify_admin_order_cancelled,
+    notify_admin_direct_payment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +146,8 @@ def _verify_and_create_torobpay_order(payment_session):
         payment_session.status = PaymentSession.Status.COMPLETED
         payment_session.order = order
         payment_session.save(update_fields=['status', 'order', 'updated_at'])
+
+        transaction.on_commit(lambda o_id=order.id: notify_admin_new_order(o_id))
 
     return order
 
@@ -570,6 +579,7 @@ def payment_callback_view(request):
             payment_session.status = PaymentSession.Status.COMPLETED
             payment_session.order = order
             payment_session.save(update_fields=['status', 'order', 'updated_at'])
+            transaction.on_commit(lambda o_id=order.id: notify_admin_new_order(o_id))
     except IntegrityError:
         return redirect('orders:payment_failure')
     except (DatabaseError, ValueError) as exc:
@@ -719,6 +729,7 @@ def cancel_order_view(request, order_number):
 
             order.status = Order.Status.CANCELLED
             order.save(update_fields=['status', 'updated_at'])
+            transaction.on_commit(lambda o_id=order.id: notify_admin_order_cancelled(o_id))
     except DatabaseError:
         logger.exception('Could not save cancellation for order %s.', order.order_number)
         messages.error(request, 'لغو سفارش ثبت نشد؛ لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.')
@@ -780,6 +791,7 @@ def request_return_view(request, order_number):
                 update_fields.append('return_image')
 
             order.save(update_fields=update_fields)
+            transaction.on_commit(lambda o_id=order.id: notify_admin_return_requested(o_id))
     except DatabaseError:
         logger.exception('Could not save return request for order %s.', order.order_number)
         messages.error(request, 'خطا در ثبت درخواست مرجوعی؛ لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.')
@@ -835,6 +847,7 @@ def cancel_return_request_view(request, order_number):
                 'return_requested_at',
                 'updated_at',
             ])
+            transaction.on_commit(lambda o_id=order.id: notify_admin_return_cancelled(o_id))
     except DatabaseError:
         logger.exception('Could not cancel return request for order %s.', order.order_number)
         messages.error(request, 'خطا در لغو درخواست مرجوعی؛ لطفاً دوباره تلاش کنید.')
@@ -977,6 +990,7 @@ def verify_and_settle_direct_payment(payment):
             payment.ref_id = tx_id
             payment.paid_at = timezone.now()
             payment.save(update_fields=['status', 'torob_transaction_id', 'ref_id', 'paid_at', 'updated_at'])
+            transaction.on_commit(lambda p_id=payment.id: notify_admin_direct_payment(p_id))
         return True, 'پرداخت با موفقیت تأیید و تسویه شد.'
     except TorobPayError as exc:
         # در صورت بروز خطا در مرحله تسویه، یک بار دیگر وضعیت را استعلام می‌کنیم
@@ -997,6 +1011,7 @@ def verify_and_settle_direct_payment(payment):
                         payment.ref_id = tx_id
                         payment.paid_at = timezone.now()
                         payment.save(update_fields=['status', 'torob_transaction_id', 'ref_id', 'paid_at', 'updated_at'])
+                        transaction.on_commit(lambda p_id=payment.id: notify_admin_direct_payment(p_id))
                     return True, 'پرداخت با موفقیت تسویه و تأیید شد.'
         except Exception:
             pass
@@ -1103,6 +1118,7 @@ def direct_pay_callback_view(request):
         payment.card_number = str(callback_data.get('CID') or '')
         payment.paid_at = timezone.now()
         payment.save(update_fields=['status', 'ref_id', 'payment_ref_num', 'card_number', 'paid_at', 'updated_at'])
+        transaction.on_commit(lambda p_id=payment.id: notify_admin_direct_payment(p_id))
 
     return redirect('pay_result', tracking_number=payment.tracking_number)
 

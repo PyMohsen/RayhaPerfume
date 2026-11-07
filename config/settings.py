@@ -215,6 +215,12 @@ POSTEX_API_KEY = os.getenv('POSTEX_API_KEY', '').strip()
 POSTEX_COURIER = os.getenv('POSTEX_COURIER', 'IR_POST').strip()
 
 
+# Eitaayar Notification Settings (وب‌سرویس ارسال پیام و اعلان به گروه ایتا)
+EITAAYAR_TOKEN = os.getenv('EITAAYAR_TOKEN', '').strip()
+EITAAYAR_CHAT_ID = os.getenv('EITAAYAR_CHAT_ID', '').strip()
+EITAAYAR_ENABLED = os.getenv('EITAAYAR_ENABLED', 'True').lower() in ('true', '1', 'yes')
+
+
 # ============================================
 # CKEditor 5 Rich Text Editor Settings
 # ============================================
