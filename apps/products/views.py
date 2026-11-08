@@ -2,7 +2,7 @@ from urllib.parse import unquote
 from django.http import JsonResponse
 from django.db.models import (
     Q, Min, Max, Count, Exists, OuterRef,
-    Subquery, F, ExpressionWrapper, IntegerField, Case, When,
+    Subquery, F, ExpressionWrapper, IntegerField, Case, When, Value,
 )
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
@@ -132,7 +132,20 @@ def product_list_view(request):
     if only_discount:
         perfumes = perfumes.filter(variants__discount_percent__gt=0)
 
-    # مرتب‌سازی
+    # تشخیص موجود بودن (کالاهای دارای حداقل یک واریانت با موجودی بیشتر از صفر)
+    has_stock = PerfumeVariant.objects.filter(
+        perfume=OuterRef('pk'),
+        stock__gt=0,
+    )
+    perfumes = perfumes.annotate(
+        is_in_stock=Case(
+            When(Exists(has_stock), then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    )
+
+    # مرتب‌سازی (کالاهای موجود همیشه ابتدا و کالاهای ناموجود همیشه در انتها)
     if sort in ('price_low', 'price_high'):
         effective_price = Case(
             When(
@@ -157,19 +170,20 @@ def product_list_view(request):
         perfumes = perfumes.annotate(
             sort_price=Coalesce(
                 Subquery(v50_price),
-                Subquery(fallback_price)
+                Subquery(fallback_price),
+                Value(0),
             )
         )
         if sort == 'price_low':
-            perfumes = perfumes.order_by('sort_price')
+            perfumes = perfumes.order_by('-is_in_stock', 'sort_price', '-created_at')
         else:
-            perfumes = perfumes.order_by('-sort_price')
+            perfumes = perfumes.order_by('-is_in_stock', '-sort_price', '-created_at')
     elif sort == 'popular':
-        perfumes = perfumes.order_by('-views_count')
+        perfumes = perfumes.order_by('-is_in_stock', '-views_count', '-created_at')
     elif sort == 'oldest':
-        perfumes = perfumes.order_by('created_at')
+        perfumes = perfumes.order_by('-is_in_stock', 'created_at')
     else:  # newest
-        perfumes = perfumes.order_by('-created_at')
+        perfumes = perfumes.order_by('-is_in_stock', '-created_at')
 
     perfumes = perfumes.distinct()
 
@@ -322,10 +336,20 @@ def search_view(request):
     perfumes = Perfume.objects.none()
 
     if query:
+        has_stock = PerfumeVariant.objects.filter(
+            perfume=OuterRef('pk'),
+            stock__gt=0,
+        )
         perfumes = Perfume.objects.filter(
             build_fuzzy_q(query, ['name', 'brand', 'description']),
             is_active=True,
-        ).prefetch_related('variants', 'images')
+        ).annotate(
+            is_in_stock=Case(
+                When(Exists(has_stock), then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).prefetch_related('variants', 'images').order_by('-is_in_stock', '-created_at').distinct()
 
     context = {
         'perfumes': perfumes,

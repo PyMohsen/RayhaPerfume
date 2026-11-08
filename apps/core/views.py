@@ -15,17 +15,32 @@ from .models import SiteSettings, Slider, FAQ
 def home_view(request):
     """صفحه اصلی"""
     sliders = Slider.objects.filter(is_active=True)
-    featured_perfumes = Perfume.objects.filter(
-        is_active=True, is_featured=True
-    ).prefetch_related('variants', 'images')[:8]
 
-    latest_perfumes = Perfume.objects.filter(
-        is_active=True
-    ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
+    # فقط عطرهای فعال با موجودی بیشتر از صفر در صفحه اصلی نمایش داده می‌شوند
+    available_perfumes = Perfume.objects.filter(
+        is_active=True,
+        variants__stock__gt=0,
+    )
 
-    popular_perfumes = Perfume.objects.filter(
-        is_active=True
-    ).prefetch_related('variants', 'images').order_by('-views_count')[:8]
+    featured_perfumes = (
+        available_perfumes.filter(is_featured=True)
+        .prefetch_related('variants', 'images')
+        .distinct()[:8]
+    )
+
+    latest_perfumes = (
+        available_perfumes
+        .prefetch_related('variants', 'images')
+        .order_by('-created_at')
+        .distinct()[:8]
+    )
+
+    popular_perfumes = (
+        available_perfumes
+        .prefetch_related('variants', 'images')
+        .order_by('-views_count')
+        .distinct()[:8]
+    )
 
     # دسته‌بندی‌ها
     genders = Gender.objects.all()
@@ -33,25 +48,36 @@ def home_view(request):
     tastes = Taste.objects.all()
     seasons = Season.objects.all()
 
-    # عطرهای تخفیف‌دار
-    discounted_perfumes = Perfume.objects.filter(
-        is_active=True,
-        variants__discount_percent__gt=0,
-    ).prefetch_related('variants', 'images').distinct()[:8]
+    # عطرهای تخفیف‌دار موجود (تخفیف بیشتر از صفر و موجودی انبار بیشتر از صفر)
+    discounted_perfumes = (
+        Perfume.objects.filter(
+            is_active=True,
+            variants__discount_percent__gt=0,
+            variants__stock__gt=0,
+        )
+        .prefetch_related('variants', 'images')
+        .distinct()[:8]
+    )
 
-    # عطرهای مردانه: شامل عطرهایی که مردانه یا زنانه-و-مردانه هستند
-    men_perfumes = Perfume.objects.filter(
-        is_active=True
-    ).filter(
-        Q(gender__slug='مردانه')
-    ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
+    # عطرهای مردانه موجود
+    men_perfumes = (
+        available_perfumes.filter(
+            Q(gender__slug='مردانه')
+        )
+        .prefetch_related('variants', 'images')
+        .order_by('-created_at')
+        .distinct()[:8]
+    )
 
-    # عطرهای زنانه: شامل عطرهایی که زنانه یا زنانه-و-مردانه هستند
-    women_perfumes = Perfume.objects.filter(
-        is_active=True
-    ).filter(
-        Q(gender__slug='زنانه')
-    ).prefetch_related('variants', 'images').order_by('-created_at')[:8]
+    # عطرهای زنانه موجود
+    women_perfumes = (
+        available_perfumes.filter(
+            Q(gender__slug='زنانه')
+        )
+        .prefetch_related('variants', 'images')
+        .order_by('-created_at')
+        .distinct()[:8]
+    )
 
     context = {
         'sliders': sliders,
