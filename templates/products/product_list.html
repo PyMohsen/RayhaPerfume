@@ -649,6 +649,12 @@ function goToPage(event, pageNum, targetUrl) {
         event.preventDefault();
     }
 
+    // بازگشت فوری و نرم به بالای صفحه با کلیک روی شماره صفحه
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+
     const shopContent = document.querySelector('.shop-content');
     if (shopContent) {
         shopContent.style.opacity = '0.35';
@@ -676,15 +682,11 @@ function goToPage(event, pageNum, targetUrl) {
 
         updateResultCounters(doc);
 
-        // اسکرول نرم به بالای لیست محصولات
-        const scrollToTarget = document.querySelector('.shop-toolbar') || document.querySelector('.shop-content');
-        if (scrollToTarget) {
-            const topOffset = scrollToTarget.getBoundingClientRect().top + window.pageYOffset - 100;
-            window.scrollTo({
-                top: Math.max(0, topOffset),
-                behavior: 'smooth'
-            });
-        }
+        // اطمینان از قرارگیری در بالای صفحه پس از لود کامل محصولات جدید
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     })
     .catch(err => {
         console.error('Error navigating to page:', err);
