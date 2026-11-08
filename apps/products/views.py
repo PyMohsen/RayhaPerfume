@@ -1,4 +1,5 @@
 from urllib.parse import unquote
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.db.models import (
     Q, Min, Max, Count, Exists, OuterRef,
@@ -187,6 +188,22 @@ def product_list_view(request):
 
     perfumes = perfumes.distinct()
 
+    # تعداد کل نتایج فیلتر شده قبل از صفحه‌بندی
+    total_count = perfumes.count()
+
+    # صفحه‌بندی محصولات (۱۲ محصول در هر صفحه - متناسب با گرید ۴، ۳ و ۲ ستونه)
+    per_page = 12
+    paginator = Paginator(perfumes, per_page)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # بازه شماره صفحات هوشمند (Smart Ellipsis)
+    elided_page_range = paginator.get_elided_page_range(
+        number=page_obj.number,
+        on_each_side=1,
+        on_ends=1,
+    )
+
     # چیپ‌های فیلترهای فعال برای نمایش به کاربر
     active_chips = []
     for g in genders:
@@ -212,7 +229,11 @@ def product_list_view(request):
     has_active_filters = bool(active_chips)
 
     context = {
-        'perfumes': perfumes,
+        'perfumes': page_obj,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'total_count': total_count,
+        'elided_page_range': elided_page_range,
         'genders': genders,
         'natures': natures,
         'tastes': tastes,

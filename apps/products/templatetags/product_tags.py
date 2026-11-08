@@ -82,6 +82,25 @@ def query_transform(request, **kwargs):
     return updated.urlencode()
 
 
+@register.simple_tag(takes_context=True)
+def url_replace(context, **kwargs):
+    """
+    تولید Query String با حفظ کامل تمام فیلترهای فعلی و جایگزینی یا حذف پارامترهای جدید.
+    پشتیبانی از پارامترهای تک‌مقداره و چندمقداره (مانند gender, nature, season و غیره).
+    نحوه استفاده در قالب: ?{% url_replace page=2 %}
+    """
+    request = context.get('request')
+    if not request:
+        return ''
+    query = request.GET.copy()
+    for key, value in kwargs.items():
+        if value is None or value == '':
+            query.pop(key, None)
+        else:
+            query[key] = str(value)
+    return query.urlencode()
+
+
 @register.filter
 def jalali_date(value):
     """تبدیل تاریخ میلادی به شمسی"""

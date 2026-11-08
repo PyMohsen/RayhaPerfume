@@ -175,3 +175,112 @@ class ProductListStockOrderingTests(TestCase):
         self.assertIn(self.p_in_stock_cheap, perfumes)
         self.assertIn(self.p_in_stock_expensive, perfumes)
 
+
+class ProductPaginationTests(TestCase):
+    """تست‌های کامل سیستم صفحه‌بندی محصولات"""
+
+    def setUp(self):
+        self.client = Client()
+        self.gender = Gender.objects.create(name='یونیسکس', slug='unisex')
+        # ایجاد ۲۸ عطر تستی
+        self.perfumes = []
+        for i in range(1, 29):
+            p = Perfume.objects.create(
+                name=f'عطر شماره {i}',
+                name_en=f'Perfume {i}',
+                slug=f'perfume-{i}',
+                brand='رایحا',
+                gender=self.gender,
+                is_active=True,
+            )
+            PerfumeVariant.objects.create(
+                perfume=p,
+                size=50,
+                price=1000000 * i,
+                stock=5,
+                sku=f'SKU-TEST-{i}',
+            )
+            self.perfumes.append(p)
+
+    def test_pagination_page_1_has_12_items_and_total_count(self):
+        """صفحه اول شامل ۱۲ محصول است و total_count کل محصولات را برمی‌گرداند"""
+        response = self.client.get(reverse('products:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_count'], 28)
+        self.assertEqual(len(response.context['page_obj']), 12)
+        self.assertEqual(response.context['page_obj'].number, 1)
+        self.assertEqual(response.context['paginator'].num_pages, 3)
+
+        content = response.content.decode('utf-8')
+        # بررسی نمایش کل تعداد در هدر
+        self.assertIn('۲۸ عطر یافت شد', content)
+        # بررسی وضعیت ناوبری: دکمه قبلی باید غیرفعال باشد
+        self.assertIn('pagination-btn-prev is-disabled', content)
+        # دکمه بعدی باید فعال باشد
+        self.assertIn('pagination-btn-next', content)
+        self.assertNotIn('pagination-btn-next is-disabled', content)
+
+    def test_pagination_page_2(self):
+        """صفحه دوم شامل ۱۲ محصول بعدی است"""
+        response = self.client.get(reverse('products:list') + '?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_count'], 28)
+        self.assertEqual(len(response.context['page_obj']), 12)
+        self.assertEqual(response.context['page_obj'].number, 2)
+
+        content = response.content.decode('utf-8')
+        # هم دکمه قبلی و هم بعدی باید فعال باشند
+        self.assertNotIn('pagination-btn-prev is-disabled', content)
+        self.assertNotIn('pagination-btn-next is-disabled', content)
+
+    def test_pagination_last_page(self):
+        """صفحه آخر شامل محصولات باقیمانده (۴ محصول) است و دکمه بعدی غیرفعال است"""
+        response = self.client.get(reverse('products:list') + '?page=3')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['page_obj']), 4)
+        self.assertEqual(response.context['page_obj'].number, 3)
+
+        content = response.content.decode('utf-8')
+        # دکمه بعدی باید غیرفعال باشد
+        self.assertIn('pagination-btn-next is-disabled', content)
+        # دکمه قبلی باید فعال باشد
+        self.assertNotIn('pagination-btn-prev is-disabled', content)
+
+    def test_invalid_page_number_falls_back_to_page_1(self):
+        """ورود شماره صفحه نامعتبر (رشته یا منفی) بدون خطا صفحه اول را لود می‌کند"""
+        response = self.client.get(reverse('products:list') + '?page=invalid')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['page_obj'].number, 1)
+
+    def test_out_of_range_page_number_falls_back_to_last_page(self):
+        """ورود شماره صفحه فراتر از محدوده، صفحه آخر را لود می‌کند"""
+        response = self.client.get(reverse('products:list') + '?page=9999')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['page_obj'].number, 3)
+
+    def test_url_replace_template_tag_preserves_multiple_filters(self):
+        """تگ url_replace تمام پارامترهای GET شامل فیلترهای چند مقداره را حفظ کرده و فقط page را جایگزین می‌کند"""
+        from django.test import RequestFactory
+        from apps.products.templatetags.product_tags import url_replace
+        factory = RequestFactory()
+        request = factory.get('/products/?gender=men&gender=women&sort=popular&page=1')
+        context = {'request': request}
+        new_qs = url_replace(context, page=2)
+        self.assertIn('gender=men', new_qs)
+        self.assertIn('gender=women', new_qs)
+        self.assertIn('sort=popular', new_qs)
+        self.assertIn('page=2', new_qs)
+        self.assertNotIn('page=1', new_qs)
+
+    def test_single_page_hides_pagination_block(self):
+        """اگر تعداد کل محصولات کمتر یا مساوی ۱۲ باشد، کل بلاک صفحه‌بندی مخفی می‌شود"""
+        Perfume.objects.filter(id__gt=self.perfumes[4].id).delete()
+        self.assertEqual(Perfume.objects.count(), 5)
+
+        response = self.client.get(reverse('products:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['paginator'].num_pages, 1)
+        content = response.content.decode('utf-8')
+        self.assertNotIn('pagination-wrapper', content)
+        self.assertNotIn('pagination-nav', content)
+
