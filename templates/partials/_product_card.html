@@ -4,11 +4,22 @@
 <div class="product-card">
     <a href="{{ perfume.get_absolute_url }}" class="product-card-link">
         <!-- Image & Badges -->
-        <div class="product-card-image">
-            {% if perfume.primary_image %}
-            <img src="{{ perfume.primary_image.image.url }}" 
-                 alt="{{ perfume.primary_image.alt_text|default:perfume.name }}" 
+        {% with primary_img=perfume.primary_image secondary_img=perfume.secondary_image %}
+        <div class="product-card-image{% if secondary_img %} has-secondary-image{% endif %}">
+            {% if primary_img %}
+            <img src="{{ primary_img.image.url }}" 
+                 alt="{{ primary_img.alt_text|default:perfume.name }}" 
+                 class="product-card-img-primary"
                  loading="lazy">
+            {% if secondary_img %}
+            <img src="{{ secondary_img.image.url }}" 
+                 alt="" 
+                 aria-hidden="true"
+                 class="product-card-img-secondary"
+                 loading="lazy"
+                 decoding="async"
+                 onerror="this.style.display='none'">
+            {% endif %}
             {% else %}
             <div class="product-card-placeholder">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
@@ -16,6 +27,7 @@
                 </svg>
             </div>
             {% endif %}
+        {% endwith %}
 
             {% with variant=perfume.display_variant %}
             <!-- Top Right Discount Badge -->

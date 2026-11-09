@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from apps.products.models import Perfume, Gender, PerfumeVariant
+from apps.products.models import Perfume, Gender, PerfumeVariant, PerfumeImage
 
 
 class PerfumeSeoTests(TestCase):
@@ -283,4 +283,129 @@ class ProductPaginationTests(TestCase):
         content = response.content.decode('utf-8')
         self.assertNotIn('pagination-wrapper', content)
         self.assertNotIn('pagination-nav', content)
+
+
+class ProductCardSecondaryImageTests(TestCase):
+    """تست‌های تصویر دوم عطر و نمایش آن روی کارت محصول"""
+
+    def setUp(self):
+        self.client = Client()
+        self.gender = Gender.objects.create(name='مردانه', slug='مردانه')
+        self.perfume = Perfume.objects.create(
+            name='عطر تست دو تصویر',
+            name_en='Dual Image Perfume',
+            slug='dual-image-perfume',
+            brand='رایحا',
+            gender=self.gender,
+            is_active=True,
+        )
+        PerfumeVariant.objects.create(
+            perfume=self.perfume,
+            size=50,
+            price=2500000,
+            stock=5,
+            sku='SKU-DUAL-50',
+        )
+
+    def test_secondary_image_none_when_zero_or_one_image(self):
+        self.assertIsNone(self.perfume.primary_image)
+        self.assertIsNone(self.perfume.secondary_image)
+
+        img1 = PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/img1.jpg',
+            is_primary=True,
+            order=0,
+        )
+        self.assertEqual(self.perfume.primary_image, img1)
+        self.assertIsNone(self.perfume.secondary_image)
+
+    def test_secondary_image_picks_second_ordered_image(self):
+        img_second = PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/second.jpg',
+            is_primary=False,
+            order=1,
+        )
+        img_third = PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/third.jpg',
+            is_primary=False,
+            order=2,
+        )
+        img_primary = PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/primary.jpg',
+            is_primary=True,
+            order=5,
+        )
+
+        # بدون prefetch
+        self.assertEqual(self.perfume.primary_image, img_primary)
+        self.assertEqual(self.perfume.secondary_image, img_second)
+        self.assertNotEqual(self.perfume.secondary_image, img_third)
+
+        # با prefetch (بدون کوئری اضافی)
+        prefetched = Perfume.objects.prefetch_related('images').get(pk=self.perfume.pk)
+        with self.assertNumQueries(0):
+            self.assertEqual(prefetched.primary_image, img_primary)
+            self.assertEqual(prefetched.secondary_image, img_second)
+
+    def test_secondary_image_without_primary_flag(self):
+        img1 = PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/first_no_flag.jpg',
+            is_primary=False,
+            order=0,
+        )
+        img2 = PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/second_no_flag.jpg',
+            is_primary=False,
+            order=1,
+        )
+
+        prefetched = Perfume.objects.prefetch_related('images').get(pk=self.perfume.pk)
+        self.assertEqual(prefetched.primary_image, img1)
+        self.assertEqual(prefetched.secondary_image, img2)
+
+    def test_product_card_renders_secondary_image_when_present(self):
+        PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/card_primary.jpg',
+            is_primary=True,
+            order=0,
+        )
+        PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/card_secondary.jpg',
+            is_primary=False,
+            order=1,
+        )
+
+        response = self.client.get(reverse('products:list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('has-secondary-image', content)
+        self.assertIn('product-card-img-primary', content)
+        self.assertIn('product-card-img-secondary', content)
+        self.assertIn('card_primary.jpg', content)
+        self.assertIn('card_secondary.jpg', content)
+
+    def test_product_card_without_secondary_image_omits_secondary_markup(self):
+        PerfumeImage.objects.create(
+            perfume=self.perfume,
+            image='perfumes/only_primary.jpg',
+            is_primary=True,
+            order=0,
+        )
+
+        response = self.client.get(reverse('products:list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('product-card-img-primary', content)
+        self.assertIn('only_primary.jpg', content)
+        self.assertNotIn('has-secondary-image', content)
+        self.assertNotIn('product-card-img-secondary', content)
+
 

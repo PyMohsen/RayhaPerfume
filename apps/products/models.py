@@ -393,6 +393,23 @@ class Perfume(models.Model):
         return img
 
     @property
+    def secondary_image(self):
+        """تصویر دوم محصول برای نمایش هنگام هاور روی کارت"""
+        primary = self.primary_image
+        if not primary:
+            return None
+        if hasattr(self, '_prefetched_objects_cache') and 'images' in self._prefetched_objects_cache:
+            images = sorted(
+                self.images.all(),
+                key=lambda img: (not img.is_primary, img.order, img.pk or 0),
+            )
+            for img in images:
+                if img.pk != primary.pk:
+                    return img
+            return None
+        return self.images.exclude(pk=primary.pk).first()
+
+    @property
     def min_price(self):
         """کمترین قیمت واریانت‌ها"""
         variant = self.variants.filter(stock__gt=0).order_by('price').first()
