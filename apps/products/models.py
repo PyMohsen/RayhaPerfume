@@ -484,6 +484,31 @@ class Perfume(models.Model):
         return None
 
     @property
+    def specs_volume(self):
+        """
+        حجم برای نمایش در جدول مشخصات:
+        اگر واریانت ۵۰ میل موجود بود: 50 میلی لیتر
+        در غیر این‌صورت اگر ۱۰۰ میل موجود بود: 100 میلی لیتر
+        و اگر هیچ واریانتی موجود نبود: ناموجود
+        """
+        variants = list(self.variants.all())
+        for v in variants:
+            if v.size == 50 and v.is_available:
+                return '50 میلی لیتر'
+        for v in variants:
+            if v.size == 100 and v.is_available:
+                return '100 میلی لیتر'
+        for v in variants:
+            if v.is_available:
+                return f'{v.size} میلی لیتر'
+        return 'ناموجود'
+
+    @property
+    def volume_display(self):
+        """نام مستعار برای specs_volume"""
+        return self.specs_volume
+
+    @property
     def is_available(self):
         """آیا موجود است؟"""
         if hasattr(self, '_prefetched_objects_cache') and 'variants' in self._prefetched_objects_cache:

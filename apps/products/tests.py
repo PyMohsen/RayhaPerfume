@@ -409,3 +409,73 @@ class ProductCardSecondaryImageTests(TestCase):
         self.assertNotIn('product-card-img-secondary', content)
 
 
+class PerfumeSpecsVolumeTests(TestCase):
+    """تست‌های نمایش حجم در مشخصات محصول"""
+
+    def setUp(self):
+        self.client = Client()
+        self.gender = Gender.objects.create(name='مردانه', slug='men')
+        self.perfume = Perfume.objects.create(
+            name='بلو شنل',
+            name_en='Bleu de Chanel',
+            slug='bleu-de-chanel',
+            brand='شنل',
+            gender=self.gender,
+            is_active=True,
+        )
+
+    def test_volume_when_50ml_in_stock(self):
+        # هر دو واریانت ۵۰ و ۱۰۰ موجود هستند؛ باید ۵۰ میلی لیتر برگردد
+        PerfumeVariant.objects.create(perfume=self.perfume, size=50, price=3000000, stock=5, sku='CHANEL-50')
+        PerfumeVariant.objects.create(perfume=self.perfume, size=100, price=5000000, stock=10, sku='CHANEL-100')
+
+        self.assertEqual(self.perfume.specs_volume, '50 میلی لیتر')
+        self.assertEqual(self.perfume.volume_display, '50 میلی لیتر')
+
+    def test_volume_when_50ml_out_of_stock_and_100ml_in_stock(self):
+        # ۵۰ ناموجود و ۱۰۰ موجود است؛ باید ۱۰۰ میلی لیتر برگردد
+        PerfumeVariant.objects.create(perfume=self.perfume, size=50, price=3000000, stock=0, sku='CHANEL-50')
+        PerfumeVariant.objects.create(perfume=self.perfume, size=100, price=5000000, stock=5, sku='CHANEL-100')
+
+        self.assertEqual(self.perfume.specs_volume, '100 میلی لیتر')
+
+    def test_volume_when_only_100ml_exists_and_in_stock(self):
+        # فقط ۱۰۰ موجود است
+        PerfumeVariant.objects.create(perfume=self.perfume, size=100, price=5000000, stock=5, sku='CHANEL-100')
+
+        self.assertEqual(self.perfume.specs_volume, '100 میلی لیتر')
+
+    def test_volume_when_all_variants_out_of_stock(self):
+        # هر دو واریانت ناموجود هستند؛ باید ناموجود برگردد
+        PerfumeVariant.objects.create(perfume=self.perfume, size=50, price=3000000, stock=0, sku='CHANEL-50')
+        PerfumeVariant.objects.create(perfume=self.perfume, size=100, price=5000000, stock=0, sku='CHANEL-100')
+
+        self.assertEqual(self.perfume.specs_volume, 'ناموجود')
+
+    def test_volume_when_no_variants_exist(self):
+        # هیچ واریانتی وجود ندارد
+        self.assertEqual(self.perfume.specs_volume, 'ناموجود')
+
+    def test_specs_volume_rendered_in_product_detail_page(self):
+        # تست نمایش در جدول مشخصات صفحه جزئیات محصول
+        PerfumeVariant.objects.create(perfume=self.perfume, size=50, price=3000000, stock=3, sku='CHANEL-50')
+        PerfumeVariant.objects.create(perfume=self.perfume, size=100, price=5000000, stock=5, sku='CHANEL-100')
+
+        response = self.client.get(reverse('products:detail', kwargs={'slug': self.perfume.slug}))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('<th>حجم</th>', content)
+        self.assertIn('<td>50 میلی لیتر</td>', content)
+
+    def test_specs_volume_rendered_as_unavailable_when_out_of_stock(self):
+        PerfumeVariant.objects.create(perfume=self.perfume, size=50, price=3000000, stock=0, sku='CHANEL-50')
+        PerfumeVariant.objects.create(perfume=self.perfume, size=100, price=5000000, stock=0, sku='CHANEL-100')
+
+        response = self.client.get(reverse('products:detail', kwargs={'slug': self.perfume.slug}))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('<th>حجم</th>', content)
+        self.assertIn('<td>ناموجود</td>', content)
+
+
+
